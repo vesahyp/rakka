@@ -35,6 +35,14 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
   kolmella kirjaimella, kuten flipperissä. Taulut: tänään, tämä viikko, tämä
   kuukausi ja kaikkien aikojen.
 
+## Tapion pöytä
+
+Jokainen peli tuo käpyjä: yhden 20 sekunnista, yhden 60 kaadosta ja
+kahdeksan pomosta. Kävyt jätetään Tapion pöydälle alkuruudusta, ja niistä
+saa pieniä pysyviä asteita elinvoimaan, vahinkoon, palautumiseen ja muihin.
+Asteet ovat pieniä ja hinnat nousevat, joten pöytä helpottaa alkua eikä
+riko peliä. Kaiken saa takaisin yhdellä napilla.
+
 ## Hahmot
 
 Jokaisella on oma aloitusase ja omat vahvuutensa. Osa aukeaa saavutuksilla:

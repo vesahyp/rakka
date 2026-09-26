@@ -21,6 +21,7 @@ export interface Offer {
 export function computeStats(s: SimState): void {
   const st: Stats = { ...BASE_STATS };
   applyDelta(st, s.character.stats);
+  applyDelta(st, s.meta);
   for (const p of s.passives) {
     const def = PASSIVES[p.id];
     for (let i = 0; i < p.level; i++) applyDelta(st, def.perLevel);

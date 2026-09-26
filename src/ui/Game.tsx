@@ -5,6 +5,7 @@ import { Renderer } from '../render/renderer';
 import { InputController } from '../input/input';
 import { rollOffers, applyOffer, openChest, type Offer, type ChestResult } from '../game/upgrades';
 import type { CharacterDef } from '../game/content/characters';
+import type { StatDelta } from '../game/stats';
 import { WEAPONS } from '../game/content/weapons';
 import { PASSIVES } from '../game/content/passives';
 import { POWERS } from '../game/content/powers';
@@ -45,7 +46,7 @@ interface Hud {
 
 type Overlay = { kind: 'none' } | { kind: 'levelup'; offers: Offer[] } | { kind: 'chest'; result: ChestResult } | { kind: 'pause' };
 
-export function Game({ character, seed, onEnd, onQuit, onRestart }: { character: CharacterDef; seed: number; onEnd: (r: RunSummary) => void; onQuit: () => void; onRestart: () => void }) {
+export function Game({ character, seed, meta, onEnd, onQuit, onRestart }: { character: CharacterDef; seed: number; meta: StatDelta; onEnd: (r: RunSummary) => void; onQuit: () => void; onRestart: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const simRef = useRef<SimState | null>(null);
@@ -64,7 +65,7 @@ export function Game({ character, seed, onEnd, onQuit, onRestart }: { character:
   useEffect(() => {
     const canvas = canvasRef.current!;
     const root = rootRef.current!;
-    const s = createState(seed, character);
+    const s = createState(seed, character, meta);
     initRun(s);
     simRef.current = s;
     if (import.meta.env.DEV) (window as unknown as { __sim: SimState }).__sim = s;

@@ -143,3 +143,9 @@ table.records td.name { font-family: ui-monospace, Menlo, monospace; font-weight
 .barlist .track { flex: 1; height: 8px; border-radius: 4px; background: rgba(0,0,0,0.3); }
 .barlist .track > div { height: 8px; border-radius: 4px; background: var(--accent-2); }
 .barlist .v { width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* altar */
+.cones { font-size: 22px; font-weight: 900; color: var(--accent); margin: 6px 0; }
+.card .btn.ghost { min-width: 74px; padding: 10px 12px; font-size: 15px; margin: 0; flex: none; }
+.card .btn.ghost:disabled { opacity: 0.4; cursor: default; }
+.earned { color: var(--accent-2); font-weight: 800; margin: 4px 0; }

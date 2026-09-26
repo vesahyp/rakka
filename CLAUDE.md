@@ -51,6 +51,7 @@ src/
   input/input.ts      floating thumb stick and keyboard
   ui/                 React: Game (loop + HUD + overlays), Screens, Cards
   records.ts          localStorage records and unlocks
+  meta.ts             Tapion pöytä: cones from runs buy small permanent stat ranks
   audio.ts            Web Audio synth: effects, the music loop, the mosquito whine
   version.ts          build id and the newer-build check behind the update banner
   ui/StatsScreen.tsx  the traffic board, opened with ?stats (TRACKING.md)

@@ -9,8 +9,9 @@ import type { RunSummary } from './Game';
 import { Initials, RankLine } from './Initials';
 import { fetchTop, PERIOD_LABELS, type Period, type TopEntry } from '../api';
 import { audio } from '../audio';
+import type { Meta } from '../meta';
 
-export function Title({ records, onPlay, onRecords }: { records: Records; onPlay: () => void; onRecords: () => void }) {
+export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: Records; meta: Meta; onPlay: () => void; onRecords: () => void; onAltar: () => void }) {
   const best = records.best[0];
   const [muted, setMuted] = useState(audio.muted);
   return (
@@ -30,6 +31,9 @@ export function Title({ records, onPlay, onRecords }: { records: Records; onPlay
       <div className="row">
         <button className="btn ghost" onClick={onRecords} data-ui>
           Tulostaulu
+        </button>
+        <button className="btn ghost" onClick={onAltar} data-ui>
+          🌲 Tapion pöytä{meta.cones > 0 ? ` (${meta.cones})` : ''}
         </button>
         <button
           className="btn ghost"
@@ -110,7 +114,7 @@ export function Select({ records, onPick, onBack }: { records: Records; onPick: 
   );
 }
 
-export function Death({ r, rank, charBest, onAgain, onMenu }: { r: RunSummary; rank: number; charBest: boolean; onAgain: () => void; onMenu: () => void }) {
+export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSummary; rank: number; charBest: boolean; cones: number; onAgain: () => void; onMenu: () => void }) {
   // Runs under a minute do not go on the table; the API refuses them too.
   const [stage, setStage] = useState<'ask' | 'done'>(r.time >= 60 ? 'ask' : 'done');
   const [ranks, setRanks] = useState<Record<Period, number> | null>(null);
@@ -130,6 +134,7 @@ export function Death({ r, rank, charBest, onAgain, onMenu }: { r: RunSummary; r
         />
       )}
       {ranks && <RankLine ranks={ranks} />}
+      {cones > 0 && <div className="earned">+{cones} käpyä Tapion pöydälle</div>}
       {rank === 0 && <div className="record">Uusi paras aika!</div>}
       {rank > 0 && <div className="record">Sija {rank + 1} omissa tuloksissa</div>}
       {rank !== 0 && charBest && <div className="record">Hahmon paras aika</div>}

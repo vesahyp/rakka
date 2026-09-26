@@ -1,5 +1,5 @@
 import { Rng } from './rng';
-import { BASE_STATS, type Stats } from './stats';
+import { BASE_STATS, type Stats, type StatDelta } from './stats';
 import type { CharacterDef } from './content/characters';
 import type { Enemy, Projectile, Zone, Gem, Pickup, WeaponState, PassiveState, FloatText, Effect, RunStats } from './types';
 import { Grid } from './grid';
@@ -41,6 +41,8 @@ export interface SimState {
   time: number;
   minute: number;
   character: CharacterDef;
+  /** permanent bonuses from the altar, applied like character traits */
+  meta: StatDelta;
   player: Player;
   stats: Stats;
   weapons: WeaponState[];
@@ -72,6 +74,8 @@ export interface SimState {
   tier: number;
   /** sound names queued by the sim this frame; the UI drains and plays them */
   sounds: string[];
+  /** screen shake left, seconds */
+  shake: number;
 }
 
 export function xpForLevel(level: number): number {
@@ -84,13 +88,14 @@ export function xpForLevel(level: number): number {
   return 2293 + 70 * (level - 79);
 }
 
-export function createState(seed: number, character: CharacterDef): SimState {
+export function createState(seed: number, character: CharacterDef, meta: StatDelta = {}): SimState {
   const s: SimState = {
     seed,
     rng: new Rng(seed),
     time: 0,
     minute: 0,
     character,
+    meta,
     player: {
       x: 0,
       y: 0,
@@ -137,6 +142,7 @@ export function createState(seed: number, character: CharacterDef): SimState {
     gameOver: false,
     tier: 0,
     sounds: [],
+    shake: 0,
   };
   return s;
 }
