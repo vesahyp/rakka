@@ -10,6 +10,8 @@ import { PASSIVES } from '../game/content/passives';
 import { OfferCard } from './Cards';
 import { icon } from './icons';
 import { fmtTime, track } from '../records';
+import { botInput, botPick } from '../../tools/autoplayer';
+import { Rng } from '../game/rng';
 
 export interface RunSummary {
   character: CharacterDef;
@@ -77,6 +79,16 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
     };
     window.addEventListener('resize', onResize);
 
+    // Dev: ?bot=1 lets the balance bot play in the real renderer, so late
+    // minutes can be looked at without playing there by hand. ?speed=N runs
+    // the sim N times faster.
+    const params = new URLSearchParams(location.search);
+    const bot = import.meta.env.DEV && params.get('bot') === '1';
+    const speed = import.meta.env.DEV ? Math.max(1, Number(params.get('speed') ?? 1)) : 1;
+    const botRng = new Rng(seed ^ 0x5151);
+    const perf = { frames: 0, ms: 0, worst: 0 };
+    (window as unknown as { __perf: typeof perf }).__perf = perf;
+
     let last = performance.now();
     let acc = 0;
     let hudAcc = 0;
@@ -115,27 +127,33 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
       }
       pauseKey = pk;
 
+      const t0 = performance.now();
       if (ov.kind === 'none' && !s.gameOver) {
-        acc += dt;
+        acc += dt * speed;
         let n = 0;
-        while (acc >= DT && n < 4) {
-          step(s, input.read(), DT);
+        while (acc >= DT && n < 4 * speed) {
+          step(s, bot ? botInput(s, botRng, s.time) : input.read(), DT);
           acc -= DT;
           n++;
           if (s.pendingChests > 0) {
             s.pendingChests--;
             const result = openChest(s);
             track('chest', { size: result.size, items: result.items.map((i) => i.id).join(',') });
+            if (bot) continue;
             setOverlay({ kind: 'chest', result });
             break;
           }
           if (s.pendingLevelUps > 0) {
             s.pendingLevelUps--;
+            if (bot) {
+              applyOffer(s, botPick(s, rollOffers(s), botRng, { weaponBias: 0.6 }));
+              continue;
+            }
             setOverlay({ kind: 'levelup', offers: rollOffers(s) });
             break;
           }
         }
-        if (acc > DT * 4) acc = 0;
+        if (acc > DT * 4 * speed) acc = 0;
       } else if (s.gameOver) {
         step(s, { dx: 0, dy: 0 }, dt);
         deathAcc += dt;
@@ -157,6 +175,10 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
       }
 
       renderer.render(s, dt);
+      const ms = performance.now() - t0;
+      perf.frames++;
+      perf.ms += ms;
+      if (ms > perf.worst) perf.worst = ms;
       hudAcc += dt;
       if (hudAcc > 0.1) {
         hudAcc = 0;
