@@ -1,0 +1,7 @@
+{
+  "name": "rakka-traffic",
+  "cloud": "aws",
+  "version": 1,
+  "catalog": "clavesa_rakka_traffic",
+  "system_catalog": "clavesa_rakka_traffic_system"
+}

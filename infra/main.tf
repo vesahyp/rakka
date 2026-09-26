@@ -139,7 +139,10 @@ resource "aws_cloudfront_distribution" "site" {
     # AWS-managed "CachingOptimized" policy (honors origin Cache-Control,
     # so t.gif's no-store upload metadata keeps every beacon hitting the
     # logs).
-    cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    cache_policy_id = aws_cloudfront_cache_policy.cors.id
+    # AWS-managed CORS-S3Origin: forwards Origin and the CORS request
+    # headers to S3, which answers with the bucket's CORS rules.
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf"
   }
 
   # SPA error responses (403/404 -> /index.html) belong here once the
@@ -152,5 +155,47 @@ resource "aws_cloudfront_distribution" "site" {
 
   viewer_certificate {
     cloudfront_default_certificate = true
+  }
+}
+
+########################################################################
+# CORS for /data/analytics.json, read by the board on GitHub Pages. S3
+# answers the CORS headers itself; CloudFront forwards the Origin header
+# to it and keys the cache on Origin, so a cached answer always carries
+# the header for the origin that asked. The SimpleCORS response policy
+# above proved unreliable across edge nodes for cached objects.
+########################################################################
+
+resource "aws_s3_bucket_cors_configuration" "site" {
+  bucket = aws_s3_bucket.site.id
+  cors_rule {
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["*"]
+    allowed_headers = ["*"]
+    max_age_seconds = 3600
+  }
+}
+
+resource "aws_cloudfront_cache_policy" "cors" {
+  name        = "rakka-cors-cache"
+  comment     = "CachingOptimized plus the Origin header in the key"
+  default_ttl = 86400
+  max_ttl     = 31536000
+  min_ttl     = 1
+  parameters_in_cache_key_and_forwarded_to_origin {
+    enable_accept_encoding_brotli = true
+    enable_accept_encoding_gzip   = true
+    cookies_config {
+      cookie_behavior = "none"
+    }
+    headers_config {
+      header_behavior = "whitelist"
+      headers {
+        items = ["Origin"]
+      }
+    }
+    query_strings_config {
+      query_string_behavior = "none"
+    }
   }
 }

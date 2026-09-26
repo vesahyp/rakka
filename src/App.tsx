@@ -2,12 +2,13 @@ import { useState } from 'react';
 import type { CharacterDef } from './game/content/characters';
 import { Game, type RunSummary } from './ui/Game';
 import { Title, Select, Death, RecordsScreen } from './ui/Screens';
+import { StatsScreen } from './ui/StatsScreen';
 import { loadRecords, saveRun, type Records } from './records';
 import { UpdateBanner } from './ui/Update';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { BUILD } from './version';
 
-type Screen = { kind: 'title' } | { kind: 'select' } | { kind: 'records' } | { kind: 'run'; character: CharacterDef; seed: number } | { kind: 'dead'; r: RunSummary; rank: number; charBest: boolean };
+type Screen = { kind: 'title' } | { kind: 'select' } | { kind: 'records' } | { kind: 'stats' } | { kind: 'run'; character: CharacterDef; seed: number } | { kind: 'dead'; r: RunSummary; rank: number; charBest: boolean };
 
 export default function App() {
   return (
@@ -18,7 +19,8 @@ export default function App() {
 }
 
 function Screens() {
-  const [screen, setScreen] = useState<Screen>({ kind: 'title' });
+  // ?stats opens the traffic board; nothing in the game links to it.
+  const [screen, setScreen] = useState<Screen>(() => (new URLSearchParams(location.search).has('stats') ? { kind: 'stats' } : { kind: 'title' }));
   const [records, setRecords] = useState<Records>(() => loadRecords());
 
   const start = (character: CharacterDef) => setScreen({ kind: 'run', character, seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0 });
@@ -33,6 +35,9 @@ function Screens() {
       break;
     case 'records':
       body = <RecordsScreen records={records} onBack={() => setScreen({ kind: 'title' })} />;
+      break;
+    case 'stats':
+      body = <StatsScreen onBack={() => setScreen({ kind: 'title' })} />;
       break;
     case 'run':
       body = (

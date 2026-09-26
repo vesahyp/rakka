@@ -34,5 +34,20 @@ make deploy-pixel  # upload public/t.gif with no-store
 ```
 
 Logs land in `s3://rakka-cloudfront-logs/cloudfront/` with a 90-day
-lifecycle. The nightly clavesa rollup and the dashboard are the next slice
-(ROADMAP).
+lifecycle.
+
+## The rollup and the board
+
+`analytics/` is a clavesa workspace in kivikko's shape: the log bucket is
+the source, `events.py` parses the double-encoded beacon query string and
+flags bots, and four SQL nodes roll the days up, estimate trailing uniques
+from HLL sketches, and write `data/analytics.json` to the pixel bucket with
+a five-minute cache. The workspace is local only: never run `clavesa
+deploy` from `analytics/`. The nightly is `clavesa pipeline run
+rakka-traffic` on this machine, wrapped by `analytics/run-analytics.sh`,
+which the 08:30 cron in `jeeves/crontab` runs. `make analytics` runs it now.
+
+The board is the game itself opened with `?stats`, reading the JSON across
+origins (the distribution answers with `Access-Control-Allow-Origin: *`).
+Nothing links to it and it is not authenticated: obscurity only, so nothing
+on it may be something that cannot survive being found.

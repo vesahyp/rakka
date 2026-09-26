@@ -6,8 +6,6 @@ Forward-looking only. Shipped items are deleted; git history is the record.
 
 - Meta unlocks between runs: weapons and passives that enter the pool only
   after a first evolution, a first 20-minute run, and so on.
-- Traffic rollup and dashboard: a clavesa workspace over the pixel logs in
-  the kivikko shape, nightly cron at a free hour, `/stats` route.
 
 ## Later
 

@@ -7,6 +7,7 @@
 #   make shots      # phone screenshots into shots/ (needs make shots-setup)
 #   make plan/apply # Terraform for the analytics pixel host (infra/)
 #   make deploy-pixel  # upload t.gif with no-store to the pixel bucket
+#   make analytics  # run the traffic rollup now (the 08:30 cron does it nightly)
 #
 # AWS profile: personal by default; PROFILE=name overrides.
 
@@ -14,7 +15,7 @@ PROFILE ?= personal
 AWS      = AWS_PROFILE=$(PROFILE) aws
 TF       = AWS_PROFILE=$(PROFILE) terraform -chdir=infra
 
-.PHONY: dev build check sim-check balance shots shots-setup preview plan apply outputs deploy-pixel
+.PHONY: dev build check sim-check balance shots shots-setup preview plan apply outputs deploy-pixel analytics
 
 dev:
 	npm run dev
@@ -57,3 +58,6 @@ outputs:
 
 deploy-pixel:
 	$(AWS) s3 cp public/t.gif s3://$$($(TF) output -raw bucket_name)/t.gif --content-type image/gif --cache-control "no-store"
+
+analytics:
+	analytics/run-analytics.sh && tail -3 analytics/logs/analytics.log

@@ -52,7 +52,10 @@ src/
   records.ts          localStorage records and unlocks
   audio.ts            Web Audio synth: effects, the music loop, the mosquito whine
   version.ts          build id and the newer-build check behind the update banner
+  ui/StatsScreen.tsx  the traffic board, opened with ?stats (TRACKING.md)
   api.ts              the global records API client (infra/records.tf)
+analytics/            the clavesa workspace that rolls the pixel logs into
+                        data/analytics.json; run-analytics.sh is the 08:30 cron
 tools/
   sim-check.ts        npm run sim-check: weapon table + assertions
   balance.ts          npm run balance: bot runs, one line per run

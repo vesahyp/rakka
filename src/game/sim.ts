@@ -16,12 +16,15 @@ const MAX_ENEMIES = 520;
 
 /** HP multiplier by minute. Linear early, exponential after twenty, endless. */
 export function enemyHpScale(minute: number, curse: number): number {
+  // A build that can stand still at minute 15 must not be able to at 20:
+  // HP compounds 24 percent a minute from minute 12, on top of the linear
+  // part, and the director also spawns more (see direct()).
   const linear = 1 + minute * 0.12;
-  const late = minute > 15 ? Math.pow(1.2, minute - 15) : 1;
+  const late = minute > 12 ? Math.pow(1.27, minute - 12) : 1;
   return linear * late * (0.7 + 0.3 * curse);
 }
 export function enemyDamageScale(minute: number): number {
-  const late = minute > 20 ? Math.pow(1.05, minute - 20) : 1;
+  const late = minute > 15 ? Math.pow(1.07, minute - 15) : 1;
   return (1 + minute * 0.035) * late;
 }
 
@@ -184,8 +187,9 @@ function direct(s: SimState, dt: number): void {
   const { entries, tier } = currentWave(s);
   s.tier = tier;
   const curse = s.stats.curse;
-  const rateMul = curse * (1 + tier * 0.3);
-  const capMul = curse * (1 + tier * 0.25);
+  const pressure = s.minute > 15 ? 1 + (s.minute - 15) * 0.1 : 1;
+  const rateMul = curse * (1 + tier * 0.3) * pressure;
+  const capMul = curse * (1 + tier * 0.25) * pressure;
   if (s.enemies.length < MAX_ENEMIES) {
     // Alive counts per type, once.
     const alive: Record<string, number> = {};
