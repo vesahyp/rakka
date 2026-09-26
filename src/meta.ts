@@ -20,17 +20,17 @@ export interface AltarItem {
 }
 
 export const ALTAR: AltarItem[] = [
-  { id: 'elinvoima', name: 'Elinvoima', desc: 'Paksumpi nahka.', ranks: 5, price: 10, perRank: { maxHp: 6 }, rankText: '+6 elinvoima', icon: 'pakuri' },
-  { id: 'vahinko', name: 'Vahinko', desc: 'Terävämpi terä.', ranks: 5, price: 12, perRank: { might: 0.03 }, rankText: '+3 % vahinko', icon: 'terva' },
-  { id: 'palautuminen', name: 'Palautuminen', desc: 'Haavat umpeutuvat.', ranks: 3, price: 15, perRank: { regen: 0.1 }, rankText: '+0.1 elinvoimaa/s', icon: 'hunaja' },
-  { id: 'suoja', name: 'Suoja', desc: 'Osuma sattuu vähemmän.', ranks: 2, price: 25, perRank: { armor: 1 }, rankText: '+1 suoja', icon: 'karhunnahka' },
-  { id: 'nopeus', name: 'Nopeus', desc: 'Kevyemmät jalat.', ranks: 3, price: 12, perRank: { moveSpeed: 0.03 }, rankText: '+3 % nopeus', icon: 'villasukat' },
-  { id: 'alue', name: 'Alue', desc: 'Aseet ulottuvat kauemmas.', ranks: 3, price: 12, perRank: { area: 0.03 }, rankText: '+3 % alue', icon: 'kompassi' },
-  { id: 'lataus', name: 'Latausaika', desc: 'Nopeampi käsi.', ranks: 3, price: 15, perRank: { cooldown: 0.02 }, rankText: '-2 % latausaika', icon: 'kahvipannu' },
-  { id: 'onni', name: 'Onni', desc: 'Metsä suosii.', ranks: 3, price: 12, perRank: { luck: 0.05 }, rankText: '+5 % onni', icon: 'ketunhanta' },
-  { id: 'kokemus', name: 'Kokemus', desc: 'Opit nopeammin.', ranks: 3, price: 12, perRank: { growth: 0.03 }, rankText: '+3 % kokemus', icon: 'riimukivi' },
-  { id: 'keraysalue', name: 'Keräysalue', desc: 'Marjat lentävät kauempaa.', ranks: 3, price: 8, perRank: { magnet: 0.1 }, rankText: '+10 % keräysalue', icon: 'pihlaja' },
-  { id: 'ylosnousemus', name: 'Ylösnousemus', desc: 'Yksi paluu toisesta maailmasta, joka pelissä.', ranks: 1, price: 120, perRank: { revives: 1 }, rankText: '+1 ylösnousemus', icon: 'sammonsiru' },
+  { id: 'elinvoima', name: 'Elinvoima', desc: 'Paksumpi nahka.', ranks: 5, price: 30, perRank: { maxHp: 6 }, rankText: '+6 elinvoima', icon: 'pakuri' },
+  { id: 'vahinko', name: 'Vahinko', desc: 'Terävämpi terä.', ranks: 5, price: 36, perRank: { might: 0.03 }, rankText: '+3 % vahinko', icon: 'terva' },
+  { id: 'palautuminen', name: 'Palautuminen', desc: 'Haavat umpeutuvat.', ranks: 3, price: 45, perRank: { regen: 0.1 }, rankText: '+0.1 elinvoimaa/s', icon: 'hunaja' },
+  { id: 'suoja', name: 'Suoja', desc: 'Osuma sattuu vähemmän.', ranks: 2, price: 80, perRank: { armor: 1 }, rankText: '+1 suoja', icon: 'karhunnahka' },
+  { id: 'nopeus', name: 'Nopeus', desc: 'Kevyemmät jalat.', ranks: 3, price: 36, perRank: { moveSpeed: 0.03 }, rankText: '+3 % nopeus', icon: 'villasukat' },
+  { id: 'alue', name: 'Alue', desc: 'Aseet ulottuvat kauemmas.', ranks: 3, price: 36, perRank: { area: 0.03 }, rankText: '+3 % alue', icon: 'kompassi' },
+  { id: 'lataus', name: 'Latausaika', desc: 'Nopeampi käsi.', ranks: 3, price: 45, perRank: { cooldown: 0.02 }, rankText: '-2 % latausaika', icon: 'kahvipannu' },
+  { id: 'onni', name: 'Onni', desc: 'Metsä suosii.', ranks: 3, price: 36, perRank: { luck: 0.05 }, rankText: '+5 % onni', icon: 'ketunhanta' },
+  { id: 'kokemus', name: 'Kokemus', desc: 'Opit nopeammin.', ranks: 3, price: 36, perRank: { growth: 0.03 }, rankText: '+3 % kokemus', icon: 'riimukivi' },
+  { id: 'keraysalue', name: 'Keräysalue', desc: 'Marjat lentävät kauempaa.', ranks: 3, price: 24, perRank: { magnet: 0.1 }, rankText: '+10 % keräysalue', icon: 'pihlaja' },
+  { id: 'ylosnousemus', name: 'Ylösnousemus', desc: 'Yksi paluu toisesta maailmasta, joka pelissä.', ranks: 1, price: 400, perRank: { revives: 1 }, rankText: '+1 ylösnousemus', icon: 'sammonsiru' },
 ];
 
 export interface Meta {
@@ -61,7 +61,9 @@ function save(m: Meta): void {
 
 /** Cones a finished run pays. */
 export function conesForRun(r: { time: number; kills: number; bosses: number }): number {
-  return Math.floor(r.time / 20) + Math.floor(r.kills / 60) + r.bosses * 8;
+  // Slow on purpose: a twenty-minute run pays about thirty, the whole altar
+  // costs about three thousand, so filling it is months of play.
+  return Math.floor(r.time / 120) + Math.floor(r.kills / 400) + r.bosses * 2;
 }
 
 export function earnCones(n: number): Meta {
@@ -74,7 +76,7 @@ export function earnCones(n: number): Meta {
 
 export function rankPrice(item: AltarItem, rank: number): number {
   // rank is the one being bought, 1-based
-  return Math.round(item.price * (1 + 0.6 * (rank - 1)));
+  return Math.round(item.price * (1 + 0.8 * (rank - 1)));
 }
 
 export function buy(m: Meta, id: string): Meta | null {
