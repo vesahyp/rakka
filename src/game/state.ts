@@ -63,6 +63,8 @@ export interface SimState {
   gameOver: boolean;
   /** endless tier once the authored waves run out */
   tier: number;
+  /** sound names queued by the sim this frame; the UI drains and plays them */
+  sounds: string[];
 }
 
 export function xpForLevel(level: number): number {
@@ -120,6 +122,7 @@ export function createState(seed: number, character: CharacterDef): SimState {
     run: { kills: 0, damageDealt: 0, damageTaken: 0, chests: 0, bosses: 0, maxLevel: 1 },
     gameOver: false,
     tier: 0,
+    sounds: [],
   };
   return s;
 }

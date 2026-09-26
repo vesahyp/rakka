@@ -50,6 +50,7 @@ src/
   input/input.ts      floating thumb stick and keyboard
   ui/                 React: Game (loop + HUD + overlays), Screens, Cards
   records.ts          localStorage records and unlocks
+  audio.ts            Web Audio synth: effects, the music loop, the mosquito whine
   api.ts              the global records API client (infra/records.tf)
 tools/
   sim-check.ts        npm run sim-check: weapon table + assertions
@@ -60,7 +61,9 @@ tools/
 ## Rules
 
 1. **The sim is headless.** Nothing under `src/game/` may touch `window`,
-   `document` or React. This is what makes `sim-check` and `balance` possible.
+   `document`, React or audio. This is what makes `sim-check` and `balance`
+   possible. Sounds are names pushed onto `state.sounds`; the game loop
+   drains them into `audio.play`.
 2. **Fixed step.** The sim runs at `DT = 1/60`; the render loop accumulates
    real time and calls `step` a whole number of times. Never pass a frame
    delta into `step`.

@@ -64,6 +64,7 @@ h2 { margin: 0 0 12px; font-size: 26px; }
 .bossbar .name { font-weight: 900; font-size: 13px; color: #ffb0a0; text-shadow: 0 1px 3px #000; }
 .bossbar .bar { height: 8px; border-radius: 4px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,120,120,0.5); overflow: hidden; }
 .bossbar .bar > div { height: 100%; background: #e0503a; }
+.mutebtn { top: calc(var(--sat) + 114px); font-size: 16px; }
 .pausebtn { position: absolute; right: calc(var(--sar) + 10px); top: calc(var(--sat) + 68px); width: 40px; height: 40px; border-radius: 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); font-size: 18px; font-weight: 900; cursor: pointer; }
 .stick { position: absolute; width: 88px; height: 88px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); transform: translate(-50%, -50%); pointer-events: none; }
 .stick > div { position: absolute; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.7); left: 50%; top: 50%; transform: translate(-50%, -50%); }

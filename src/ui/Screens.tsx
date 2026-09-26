@@ -8,19 +8,41 @@ import { characterSprite, sprite } from '../render/sprites';
 import type { RunSummary } from './Game';
 import { Initials, RankLine } from './Initials';
 import { fetchTop, PERIOD_LABELS, type Period, type TopEntry } from '../api';
+import { audio } from '../audio';
 
 export function Title({ records, onPlay, onRecords }: { records: Records; onPlay: () => void; onRecords: () => void }) {
   const best = records.best[0];
+  const [muted, setMuted] = useState(audio.muted);
   return (
     <div className="screen">
       <h1 className="logo">RÄKKÄ</h1>
       <p className="tagline">Metsä ei lopu. Räkkä ei lopu.</p>
-      <button className="btn primary" onClick={onPlay} data-ui>
+      <button
+        className="btn primary"
+        onClick={() => {
+          audio.unlock();
+          onPlay();
+        }}
+        data-ui
+      >
         Pelaa
       </button>
-      <button className="btn ghost" onClick={onRecords} data-ui>
-        Tulokset
-      </button>
+      <div className="row">
+        <button className="btn ghost" onClick={onRecords} data-ui>
+          Tulostaulu
+        </button>
+        <button
+          className="btn ghost"
+          data-ui
+          onClick={() => {
+            audio.unlock();
+            audio.setMuted(!muted);
+            setMuted(!muted);
+          }}
+        >
+          {muted ? '🔇 Äänet pois' : '🔊 Äänet päällä'}
+        </button>
+      </div>
       {best && (
         <p className="small" style={{ marginTop: 20 }}>
           Paras: {fmtTime(best.time)}, taso {best.level}
@@ -58,7 +80,16 @@ export function Select({ records, onPick, onBack }: { records: Records; onPick: 
           const w = WEAPONS[c.weapon];
           const pc = records.perChar[c.id];
           return (
-            <button key={c.id} className={'char' + (open ? '' : ' locked')} disabled={!open} onClick={() => onPick(c)} data-ui>
+            <button
+              key={c.id}
+              className={'char' + (open ? '' : ' locked')}
+              disabled={!open}
+              onClick={() => {
+                audio.unlock();
+                onPick(c);
+              }}
+              data-ui
+            >
               <Portrait c={c} />
               <div className="name">{c.name}</div>
               <div className="title">{c.title}</div>

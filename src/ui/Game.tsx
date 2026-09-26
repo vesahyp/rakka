@@ -12,6 +12,7 @@ import { icon } from './icons';
 import { fmtTime, track } from '../records';
 import { botInput, botPick } from '../../tools/autoplayer';
 import { Rng } from '../game/rng';
+import { audio } from '../audio';
 
 export interface RunSummary {
   character: CharacterDef;
@@ -49,6 +50,7 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
   const [overlay, setOverlayState] = useState<Overlay>({ kind: 'none' });
   const [hud, setHud] = useState<Hud | null>(null);
   const [stick, setStick] = useState<{ cx: number; cy: number; x: number; y: number } | null>(null);
+  const [muted, setMuted] = useState(audio.muted);
   const endedRef = useRef(false);
 
   const setOverlay = (o: Overlay) => {
@@ -68,6 +70,8 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
     const input = new InputController();
     input.attach(root);
     track('run_start', { character: character.id, seed });
+    audio.unlock();
+    audio.startMusic();
 
     let wake: { release: () => Promise<void> } | null = null;
     const nav = navigator as Navigator & { wakeLock?: { request: (t: 'screen') => Promise<{ release: () => Promise<void> }> } };
@@ -139,6 +143,7 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
             s.pendingChests--;
             const result = openChest(s);
             track('chest', { size: result.size, items: result.items.map((i) => i.id).join(',') });
+            audio.play(result.items.some((i) => i.kind === 'evolve') ? 'evolve' : result.size > 1 ? 'chestbig' : 'chest');
             if (bot) continue;
             setOverlay({ kind: 'chest', result });
             break;
@@ -174,6 +179,16 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
         }
       }
 
+      // Sounds queued by the sim, then the mosquito whine from the swarm nearby.
+      if (s.sounds.length > 0) {
+        for (const name of s.sounds) audio.play(name as never);
+        s.sounds.length = 0;
+      }
+      if (ov.kind === 'none' && !s.gameOver) {
+        let near = 0;
+        for (const e of s.enemies) if (e.def.behaviour === 'swarm' && Math.abs(e.x - s.player.x) < 220 && Math.abs(e.y - s.player.y) < 220) near++;
+        audio.setSwarm(near);
+      } else audio.setSwarm(0);
       renderer.render(s, dt);
       const ms = performance.now() - t0;
       perf.frames++;
@@ -190,6 +205,7 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
 
     return () => {
       cancelAnimationFrame(raf);
+      audio.stopMusic();
       window.removeEventListener('resize', onResize);
       input.detach(root);
       wake?.release().catch(() => undefined);
@@ -217,6 +233,7 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
   const pick = (o: Offer) => {
     const s = simRef.current!;
     applyOffer(s, o);
+    audio.play('tap');
     track('pick', { id: o.id, level: o.level, kind: o.kind });
     setOverlay({ kind: 'none' });
   };
@@ -275,9 +292,22 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
             </div>
           )}
           {overlay.kind === 'none' && (
-            <button className="pausebtn" data-ui onClick={() => setOverlay({ kind: 'pause' })} aria-label="Tauko">
-              II
-            </button>
+            <>
+              <button className="pausebtn" data-ui onClick={() => setOverlay({ kind: 'pause' })} aria-label="Tauko">
+                II
+              </button>
+              <button
+                className="pausebtn mutebtn"
+                data-ui
+                aria-label={muted ? 'Äänet päälle' : 'Äänet pois'}
+                onClick={() => {
+                  audio.setMuted(!muted);
+                  setMuted(!muted);
+                }}
+              >
+                {muted ? '🔇' : '🔊'}
+              </button>
+            </>
           )}
         </>
       )}

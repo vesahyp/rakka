@@ -19,6 +19,8 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 - **Arkut** putoavat eliiteistä (kultainen rengas) ja pomoista. Arkku antaa
   yhden, kolme tai viisi päivitystä.
 - **Pomo** saapuu viiden minuutin välein.
+- **Äänet** saa pois nappulasta pelin aikana tai alkuruudusta. Valinta
+  muistetaan.
 - **Peli ei pääty voittoon.** Se päättyy kun metsä ottaa omansa. Tulos on
   aika, taso ja kaadot. Kymmenen parasta tallentuu laitteelle.
 - **Tulostaulu.** Yli minuutin kestänyt peli pääsee yhteiselle taululle

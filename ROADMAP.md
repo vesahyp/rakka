@@ -4,8 +4,6 @@ Forward-looking only. Shipped items are deleted; git history is the record.
 
 ## Next
 
-- Sound: a few effects (hit, level-up, chest, boss) and a loop. Muted by
-  default on first visit, remembered.
 - Meta unlocks between runs: weapons and passives that enter the pool only
   after a first evolution, a first 20-minute run, and so on.
 - Traffic rollup and dashboard: a clavesa workspace over the pixel logs in

@@ -3,6 +3,10 @@ import type { Enemy } from './types';
 
 const MAX_TEXTS = 48;
 
+export function sound(s: SimState, name: string): void {
+  if (s.sounds.length < 64) s.sounds.push(name);
+}
+
 export function addText(s: SimState, x: number, y: number, text: string, color: string, big = false): void {
   if (s.texts.length >= MAX_TEXTS && !big) return;
   s.texts.push({ x, y: y - 10, text, life: 0.7, color, big });
@@ -14,6 +18,7 @@ export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number,
   const d = Math.max(1, Math.round(dmg));
   e.hp -= d;
   e.flash = 0.08;
+  sound(s, 'hit');
   if (d < 9999) s.run.damageDealt += d;
   if (kb > 0 && e.def.kbResist < 1) {
     // The forest digs in: knockback loses a third by minute five and most

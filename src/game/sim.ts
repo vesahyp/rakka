@@ -4,7 +4,7 @@ import type { Enemy, EnemyDef, Input, PickupKind } from './types';
 import { ENEMIES, BOSS_ORDER, type EnemyId } from './content/enemies';
 import { WAVES, SWARM_EVENTS, BOSS_MINUTES, type SpawnEntry } from './content/waves';
 import { updateWeapons, updateProjectiles, updateZones } from './weapons';
-import { addText, healPlayer, hurt, onScreen } from './combat';
+import { addText, healPlayer, hurt, onScreen, sound } from './combat';
 import { computeStats } from './upgrades';
 
 export const DT = 1 / 60;
@@ -241,6 +241,7 @@ function direct(s: SimState, dt: number): void {
     s.bossIndex++;
     s.bossesAlive++;
     s.banner = { text: `${ENEMIES[id].name} saapuu`, sub: 'Pomo', life: 3 };
+    sound(s, 'boss');
     const i = BOSS_MINUTES.indexOf(s.nextBossMinute);
     s.nextBossMinute = i >= 0 && i + 1 < BOSS_MINUTES.length ? BOSS_MINUTES[i + 1] : s.nextBossMinute + 5;
   }
@@ -255,6 +256,7 @@ function swarm(s: SimState, kind: 'ring' | 'column', def: EnemyDef, count: numbe
       spawnEnemy(s, def, p.x + Math.cos(a) * r, p.y + Math.sin(a) * r);
     }
     s.banner = { text: 'Räkkä', sub: `${def.name} joka suunnasta`, life: 2.5 };
+    sound(s, 'swarm');
   } else {
     // A column crosses the screen from one side, past the player.
     const horizontal = s.rng.chance(0.5);
@@ -279,6 +281,7 @@ function swarm(s: SimState, kind: 'ring' | 'column', def: EnemyDef, count: numbe
       e.vy = horizontal ? 0 : dir;
     }
     s.banner = { text: 'Vaellus', sub: `${def.name} marssii ohi`, life: 2.5 };
+    sound(s, 'swarm');
   }
 }
 
@@ -427,6 +430,7 @@ function updateEnemies(s: SimState, dt: number): void {
           p.hp -= dmg;
           p.hurtFlash = 0.15;
           s.run.damageTaken += dmg;
+          sound(s, 'hurt');
           if (p.hp <= 0) die(s);
         }
       }
@@ -447,11 +451,13 @@ function die(s: SimState): void {
       if (!e.boss && Math.hypot(e.x - p.x, e.y - p.y) < 260) hurt(s, e, 9999, 0, 0, 0);
     }
     s.banner = { text: 'Lovi', sub: 'Palaat toisesta maailmasta', life: 2.5 };
+    sound(s, 'revive');
     return;
   }
   p.hp = 0;
   p.alive = false;
   s.gameOver = true;
+  sound(s, 'death');
 }
 
 // ---------------------------------------------------------------- deaths and drops
@@ -470,6 +476,7 @@ function reap(s: SimState): void {
     es.pop();
     if (e.hp === -1 && e.t2 === 3) continue; // walked off
     s.run.kills++;
+    sound(s, 'kill');
     if (s.effects.length < 60) s.effects.push({ kind: 'puff', x: e.x, y: e.y, x2: 0, y2: 0, life: 0.28, maxLife: 0.28, color: e.boss ? '#ffd166' : '#dfe8d8', radius: e.def.radius * e.scale * 1.6 });
     if (e.boss) {
       s.bossesAlive--;
@@ -479,6 +486,7 @@ function reap(s: SimState): void {
       // A boss pays in a spray of berries.
       for (let k = 0; k < 12; k++) addGem(s, e.x + (s.rng.next() - 0.5) * 80, e.y + (s.rng.next() - 0.5) * 80, Math.ceil(e.def.xp / 12));
       s.banner = { text: `${e.def.name} kaatui`, sub: 'Arkku putosi', life: 2.5 };
+      sound(s, 'bosskill');
       continue;
     }
     if (e.elite) {
@@ -513,6 +521,7 @@ function gainXp(s: SimState, v: number): void {
     p.level++;
     p.xpNext = xpForLevel(p.level);
     s.pendingLevelUps++;
+    sound(s, 'levelup');
     s.effects.push({ kind: 'levelup', x: p.x, y: p.y, x2: 0, y2: 0, life: 0.6, maxLife: 0.6, color: '#f0b830', radius: 90 });
     s.run.maxLevel = Math.max(s.run.maxLevel, p.level);
   }
@@ -536,6 +545,7 @@ function updateGems(s: SimState, dt: number): void {
       g.y += (dy / d) * sp * dt;
       if (d < 12) {
         gainXp(s, g.value);
+        sound(s, 'gem');
         gs[i] = gs[gs.length - 1];
         gs.pop();
       }
@@ -565,14 +575,17 @@ function collect(s: SimState, kind: PickupKind, x: number, y: number): void {
   switch (kind) {
     case 'kanttarelli':
       healPlayer(s, 30);
+      sound(s, 'pickup');
       break;
     case 'lakka':
       for (const g of s.gems) g.pull = true;
       addText(s, x, y, 'Lakka! Marjat lentävät', '#ffb347', true);
+      sound(s, 'pickup');
       break;
     case 'kekale':
       for (const e of s.enemies) if (!e.boss && onScreen(s, e.x, e.y, 40)) hurt(s, e, 9999, 0, 0, 0);
       s.effects.push({ kind: 'burst', x, y, x2: 0, y2: 0, life: 0.5, maxLife: 0.5, color: '#ff8a3d', radius: 400 });
+      sound(s, 'ember');
       break;
     case 'arkku':
       s.pendingChests++;
