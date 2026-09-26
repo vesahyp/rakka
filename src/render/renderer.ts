@@ -85,6 +85,15 @@ export class Renderer {
     return cv;
   }
 
+  /** True when the canvas element's size no longer matches the buffer. */
+  needsResize(): boolean {
+    const c = this.canvas;
+    const w = c.clientWidth || window.innerWidth;
+    const h = c.clientHeight || window.innerHeight;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    return w !== this.cssW || h !== this.cssH || dpr !== this.dpr;
+  }
+
   render(s: SimState, dt: number): void {
     this.t += dt;
     const ctx = this.ctx;

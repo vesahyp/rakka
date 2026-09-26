@@ -21,6 +21,9 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 - **Pomo** saapuu viiden minuutin välein.
 - **Äänet** saa pois nappulasta pelin aikana tai alkuruudusta. Valinta
   muistetaan.
+- **Pysty tai vaaka**, kumpi vain. Kääntäminen kesken pelin toimii.
+- **Uusi versio** ilmoittaa itsestään. Päivitä-nappi lataa pelin uudelleen,
+  myös kotinäytön sovelluksessa. Tauko-valikosta voi aloittaa alusta.
 - **Peli ei pääty voittoon.** Se päättyy kun metsä ottaa omansa. Tulos on
   aika, taso ja kaadot. Kymmenen parasta tallentuu laitteelle.
 - **Tulostaulu.** Yli minuutin kestänyt peli pääsee yhteiselle taululle

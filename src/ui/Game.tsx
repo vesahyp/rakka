@@ -13,6 +13,7 @@ import { fmtTime, track } from '../records';
 import { botInput, botPick } from '../../tools/autoplayer';
 import { Rng } from '../game/rng';
 import { audio } from '../audio';
+import { UpdateBanner } from './Update';
 
 export interface RunSummary {
   character: CharacterDef;
@@ -42,7 +43,7 @@ interface Hud {
 
 type Overlay = { kind: 'none' } | { kind: 'levelup'; offers: Offer[] } | { kind: 'chest'; result: ChestResult } | { kind: 'pause' };
 
-export function Game({ character, seed, onEnd, onQuit }: { character: CharacterDef; seed: number; onEnd: (r: RunSummary) => void; onQuit: () => void }) {
+export function Game({ character, seed, onEnd, onQuit, onRestart }: { character: CharacterDef; seed: number; onEnd: (r: RunSummary) => void; onQuit: () => void; onRestart: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const simRef = useRef<SimState | null>(null);
@@ -82,6 +83,8 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
       s.view = renderer.view();
     };
     window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    window.visualViewport?.addEventListener('resize', onResize);
 
     // Dev: ?bot=1 lets the balance bot play in the real renderer, so late
     // minutes can be looked at without playing there by hand. ?speed=N runs
@@ -132,6 +135,9 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
       pauseKey = pk;
 
       const t0 = performance.now();
+      // Rotation on iOS reports the old size at the resize event; the truth
+      // is the element's size on the next frame, so check it every frame.
+      if (renderer.needsResize()) onResize();
       if (ov.kind === 'none' && !s.gameOver) {
         acc += dt * speed;
         let n = 0;
@@ -207,6 +213,8 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
       cancelAnimationFrame(raf);
       audio.stopMusic();
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
       input.detach(root);
       wake?.release().catch(() => undefined);
     };
@@ -341,6 +349,7 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
       )}
       {overlay.kind === 'pause' && s && (
         <div className="overlay" data-ui>
+          <UpdateBanner />
           <h2>Tauko</h2>
           <div className="stats">
             <span>Aika</span>
@@ -391,6 +400,9 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
           <div className="row" style={{ marginTop: 16 }}>
             <button className="btn primary" onClick={() => setOverlay({ kind: 'none' })}>
               Jatka
+            </button>
+            <button className="btn ghost" onClick={onRestart}>
+              Aloita alusta
             </button>
             <button className="btn ghost" onClick={onQuit}>
               Lopeta peli

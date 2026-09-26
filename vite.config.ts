@@ -1,18 +1,43 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { execSync } from 'node:child_process';
+
+// The build id is the commit, or the time when there is no git (CI always
+// has git). It is baked into the bundle and written to version.json so the
+// running app can notice a newer deploy (src/version.ts).
+function buildId(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() || String(Date.now());
+  } catch {
+    return String(Date.now());
+  }
+}
+
+function versionFile(id: string): Plugin {
+  return {
+    name: 'rakka-version-json',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: id }) });
+    },
+  };
+}
 
 // GitHub Pages serves a project site under https://<user>.github.io/rakka/,
 // so production builds and `vite preview` use that base. Dev stays at '/'.
-export default defineConfig(({ command, isPreview }) => ({
-  base: command === 'build' || isPreview ? '/rakka/' : '/',
-  plugins: [react()],
-  build: {
-    rolldownOptions: {
-      output: {
-        codeSplitting: {
-          groups: [{ name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ }],
+export default defineConfig(({ command, isPreview }) => {
+  const id = buildId();
+  return {
+    base: command === 'build' || isPreview ? '/rakka/' : '/',
+    plugins: [react(), versionFile(id)],
+    define: { __BUILD__: JSON.stringify(id) },
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [{ name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ }],
+          },
         },
       },
     },
-  },
-}));
+  };
+});

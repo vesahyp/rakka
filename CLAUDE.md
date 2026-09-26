@@ -51,6 +51,7 @@ src/
   ui/                 React: Game (loop + HUD + overlays), Screens, Cards
   records.ts          localStorage records and unlocks
   audio.ts            Web Audio synth: effects, the music loop, the mosquito whine
+  version.ts          build id and the newer-build check behind the update banner
   api.ts              the global records API client (infra/records.tf)
 tools/
   sim-check.ts        npm run sim-check: weapon table + assertions
