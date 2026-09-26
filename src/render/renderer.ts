@@ -317,13 +317,17 @@ export class Renderer {
         break;
       }
       case 'net': {
-        ctx.strokeStyle = `rgba(120,200,220,${0.55 * Math.min(1, k * 2)})`;
-        ctx.lineWidth = 1;
+        ctx.fillStyle = `rgba(80,160,190,${0.12 * Math.min(1, k * 2)})`;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(140,210,230,${0.22 * Math.min(1, k * 2)})`;
+        ctx.lineWidth = 0.8;
         ctx.save();
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.clip();
-        for (let i = -r; i <= r; i += 10) {
+        for (let i = -r; i <= r; i += 16) {
           ctx.beginPath();
           ctx.moveTo(x + i, y - r);
           ctx.lineTo(x + i, y + r);
@@ -332,8 +336,8 @@ export class Renderer {
           ctx.stroke();
         }
         ctx.restore();
-        ctx.strokeStyle = tint;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(140,210,230,${0.5 * Math.min(1, k * 2)})`;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.stroke();

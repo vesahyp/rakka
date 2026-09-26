@@ -248,7 +248,7 @@ export function Game({ character, seed, onEnd, onQuit }: { character: CharacterD
                   </div>
                 ))}
               </div>
-              <div style={{ textAlign: 'right' }}>
+              <div className="hudright">
                 <div className="timer">{fmtTime(hud.time)}</div>
                 <div className="kills">☠ {hud.kills}</div>
               </div>

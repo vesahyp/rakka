@@ -17,7 +17,7 @@ const MAX_ENEMIES = 520;
 /** HP multiplier by minute. Linear early, exponential after twenty, endless. */
 export function enemyHpScale(minute: number, curse: number): number {
   const linear = 1 + minute * 0.12;
-  const late = minute > 15 ? Math.pow(1.16, minute - 15) : 1;
+  const late = minute > 15 ? Math.pow(1.2, minute - 15) : 1;
   return linear * late * (0.7 + 0.3 * curse);
 }
 export function enemyDamageScale(minute: number): number {
@@ -148,7 +148,9 @@ export function spawnEnemy(s: SimState, def: EnemyDef, x: number, y: number, opt
   const elite = !!opts.elite;
   const boss = !!opts.boss;
   const tier = opts.tier ?? s.tier;
-  let hp = def.hp * enemyHpScale(s.minute, s.stats.curse) * (1 + tier * 0.35);
+  const scale = enemyHpScale(s.minute, s.stats.curse);
+  // Bosses and elites ride a gentler curve: they are fights, not walls.
+  let hp = def.hp * (boss || elite ? Math.pow(scale, 0.75) : scale) * (1 + tier * 0.35);
   if (elite) hp *= 9;
   if (boss) hp *= 1 + s.bossIndex * 0.15;
   const e: Enemy = {

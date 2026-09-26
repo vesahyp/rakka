@@ -16,7 +16,10 @@ export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number,
   e.flash = 0.08;
   if (d < 9999) s.run.damageDealt += d;
   if (kb > 0 && e.def.kbResist < 1) {
-    const f = kb * (1 - e.def.kbResist) * 4;
+    // The forest digs in: knockback loses a third by minute five and most
+    // of its push by minute thirty, so a late crowd cannot be held off
+    // with force alone.
+    const f = (kb * (1 - e.def.kbResist) * 4) / (1 + s.minute / 10);
     e.kx += kx * f;
     e.ky += ky * f;
     // A knocked tick lets go.
@@ -33,8 +36,10 @@ export function healPlayer(s: SimState, amount: number): void {
   if (got >= 1) addText(s, s.player.x, s.player.y - 14, `+${Math.round(got)}`, '#7bf07b');
 }
 
-export function slowEnemy(e: Enemy, slow: number, time: number): void {
+export function slowEnemy(s: SimState, e: Enemy, slow: number, time: number): void {
   if (slow <= 0) return;
+  // Slows fade with the minutes for the same reason as knockback.
+  slow *= Math.max(0.35, 1 - s.minute / 45);
   if (slow >= e.slow || e.slowTime <= 0) {
     e.slow = slow;
     e.slowTime = time;

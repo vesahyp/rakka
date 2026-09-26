@@ -364,7 +364,7 @@ export function updateProjectiles(s: SimState, dt: number): void {
           ky = pr.vy / v;
         }
         hurt(s, e, pr.damage, kx, ky, pr.knockback);
-        if (pr.slow > 0) slowEnemy(e, pr.slow, 1.5);
+        if (pr.slow > 0) slowEnemy(s, e, pr.slow, 1.5);
         if (pr.heal > 0) healPlayer(s, pr.heal);
         pr.hit.add(e.id);
         pr.pierce--;
@@ -420,7 +420,7 @@ export function updateZones(s: SimState, dt: number): void {
         }
         const d = Math.sqrt(d2) || 1;
         hurt(s, e, z.damage, dx / d, dy / d, z.knockback);
-        if (z.slow > 0) slowEnemy(e, z.slow, z.tick * 2.5);
+        if (z.slow > 0) slowEnemy(s, e, z.slow, z.tick * 2.5);
         if (z.heal > 0) healPlayer(s, z.heal);
       });
     }

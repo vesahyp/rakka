@@ -75,13 +75,13 @@ export const WEAPONS: Record<string, WeaponDef> = {
   puukko: {
     id: 'puukko', name: 'Puukko', desc: 'Heität puukon kulkusuuntaan. Nopea ja tarkka.', pattern: 'throwFacing',
     base: base({ damage: 10, amount: 1, speed: 420, cooldown: 0.8, pierce: 1, knockback: 20, area: 6, interval: 0.09 }),
-    levels: [amt(), dmg(5), amt(), pierce(1), dmg(5), amt(), pierce(1)],
+    levels: [amt(), dmg(8), amt(), pierce(1), dmg(8), amt(), pierce(1)],
     evolvesWith: 'tuohikontti', evolvesTo: 'puukkosade', rarity: 100, icon: 'puukko', tint: '#d8d8e0',
   },
   vihta: {
     id: 'vihta', name: 'Vihta', desc: 'Huiskit koivunoksilla eteen ja taakse vuorotellen.', pattern: 'sweep',
     base: base({ damage: 12, amount: 1, area: 1, cooldown: 1.35, knockback: 60, interval: 0.14 }),
-    levels: [amt(), dmg(5), area(15), dmg(5), amt(), area(15), dmg(8)],
+    levels: [amt(), dmg(8), area(15), dmg(8), amt(), area(15), dmg(12)],
     evolvesWith: 'pakuri', evolvesTo: 'loyly', rarity: 100, icon: 'vihta', tint: '#7bc96f',
   },
   kokko: {
@@ -93,7 +93,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   kantele: {
     id: 'kantele', name: 'Kantele', desc: 'Näppäät kielen. Ääniaalto työntää lähellä olevat pois.', pattern: 'ring',
     base: base({ damage: 9, amount: 1, area: 100, speed: 260, cooldown: 2.6, knockback: 140, interval: 0.2 }),
-    levels: [dmg(4), area(20), kb(60), dmg(5), amt(), area(20), cd(0.5)],
+    levels: [dmg(8), area(20), kb(60), dmg(8), amt(), area(20), cd(0.5)],
     evolvesWith: 'riimukivi', evolvesTo: 'vainonlaulu', rarity: 80, icon: 'kantele', tint: '#e8d27a',
   },
   ukonvasara: {
@@ -105,13 +105,13 @@ export const WEAPONS: Record<string, WeaponDef> = {
   kierukka: {
     id: 'kierukka', name: 'Hyttyskierukka', desc: 'Savuava kierukka. Vahingoittaa kaikkea ympärilläsi.', pattern: 'aura',
     base: base({ damage: 3, amount: 1, area: 52, cooldown: 0.9, knockback: 8 }),
-    levels: [area(15), dmg(1), cd(0.1), area(15), dmg(1), cd(0.1), dmg(2)],
+    levels: [area(15), dmg(2), cd(0.1), area(15), dmg(2), cd(0.1), dmg(3)],
     evolvesWith: 'hunaja', evolvesTo: 'savusauna', rarity: 90, icon: 'kierukka', tint: '#b8e0c8',
   },
   sarvet: {
     id: 'sarvet', name: 'Tapion sarvet', desc: 'Hirvensarvet kiertävät sinua ja tömäyttävät vastaantulijat.', pattern: 'orbit',
     base: base({ damage: 12, amount: 1, area: 9, speed: 1, duration: 3.5, cooldown: 3.0, knockback: 45, pierce: Infinity }),
-    levels: [amt(), dmg(5), spd(30), dur(30), amt(), area(30), dmg(8)],
+    levels: [amt(), dmg(8), spd(30), dur(30), amt(), area(30), dmg(12)],
     evolvesWith: 'villasukat', evolvesTo: 'hirvilauma', rarity: 80, icon: 'sarvet', tint: '#c9a46c',
   },
   kirves: {
@@ -123,7 +123,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   jousi: {
     id: 'jousi', name: 'Jousi', desc: 'Ammut nuolen lähintä vihollista kohti.', pattern: 'nearest',
     base: base({ damage: 12, amount: 1, area: 5, speed: 520, cooldown: 0.95, pierce: 1, knockback: 15, interval: 0.1 }),
-    levels: [amt(), dmg(5), amt(), pierce(1), dmg(5), amt(), cd(0.2)],
+    levels: [amt(), dmg(6), amt(), pierce(1), dmg(6), amt(), cd(0.2)],
     evolvesWith: 'tulukset', evolvesTo: 'tulinuolet', rarity: 100, icon: 'jousi', tint: '#e0c08a',
   },
   kiuas: {
@@ -155,22 +155,22 @@ export const WEAPONS: Record<string, WeaponDef> = {
   // Evolutions. One level, no further upgrades.
   puukkosade: {
     id: 'puukkosade', name: 'Puukkosade', desc: 'Puukkoja sataa lakkaamatta kulkusuuntaan.', pattern: 'throwFacing', evolved: true,
-    base: base({ damage: 16, amount: 5, speed: 520, cooldown: 0.28, pierce: 4, knockback: 25, area: 7, interval: 0.04 }),
+    base: base({ damage: 30, amount: 5, speed: 520, cooldown: 0.28, pierce: 6, knockback: 25, area: 7, interval: 0.04 }),
     levels: [], rarity: 0, icon: 'puukko', tint: '#ffffff',
   },
   loyly: {
     id: 'loyly', name: 'Löyly', desc: 'Kiuas kiehuu. Huiskaisu ympäröi sinut ja jokainen osuma parantaa.', pattern: 'sweep', evolved: true,
-    base: base({ damage: 40, amount: 3, area: 1.6, cooldown: 1.0, knockback: 90, interval: 0.12, heal: 1 }),
+    base: base({ damage: 60, amount: 3, area: 1.9, cooldown: 0.9, knockback: 90, interval: 0.12, heal: 1 }),
     levels: [], rarity: 0, icon: 'vihta', tint: '#e8fff0',
   },
   juhannuskokko: {
     id: 'juhannuskokko', name: 'Juhannuskokko', desc: 'Kokko ei sammu. Se seuraa sinua ja polttaa kaiken.', pattern: 'aura', evolved: true,
-    base: base({ damage: 12, amount: 1, area: 95, cooldown: 0.3, knockback: 10 }),
+    base: base({ damage: 22, amount: 1, area: 100, cooldown: 0.25, knockback: 10 }),
     levels: [], rarity: 0, icon: 'kokko', tint: '#ffb347',
   },
   vainonlaulu: {
     id: 'vainonlaulu', name: 'Väinön laulu', desc: 'Laulu joka pysäyttää metsän. Aallot hidastavat ja työntävät.', pattern: 'ring', evolved: true,
-    base: base({ damage: 30, amount: 3, area: 130, speed: 300, cooldown: 1.6, knockback: 220, interval: 0.25, slow: 0.5 }),
+    base: base({ damage: 30, amount: 2, area: 140, speed: 300, cooldown: 1.5, knockback: 220, interval: 0.3, slow: 0.5 }),
     levels: [], rarity: 0, icon: 'kantele', tint: '#fff3b0',
   },
   ukonilma: {
@@ -180,12 +180,12 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   savusauna: {
     id: 'savusauna', name: 'Savusauna', desc: 'Paksu savu. Vahingoittaa laajalti ja jokainen osuma parantaa.', pattern: 'aura', evolved: true,
-    base: base({ damage: 9, amount: 1, area: 90, cooldown: 0.45, knockback: 12, heal: 0.15 }),
+    base: base({ damage: 18, amount: 1, area: 95, cooldown: 0.4, knockback: 12, heal: 0.15 }),
     levels: [], rarity: 0, icon: 'kierukka', tint: '#d9e8dc',
   },
   hirvilauma: {
     id: 'hirvilauma', name: 'Hirvilauma', desc: 'Lauma sarvia kiertää sinua tauotta.', pattern: 'orbit', evolved: true,
-    base: base({ damage: 28, amount: 6, area: 12, speed: 1.6, duration: 9999, cooldown: 0.5, knockback: 70, pierce: Infinity }),
+    base: base({ damage: 45, amount: 7, area: 13, speed: 1.6, duration: 9999, cooldown: 0.5, knockback: 70, pierce: Infinity }),
     levels: [], rarity: 0, icon: 'sarvet', tint: '#e0b878',
   },
   kalevankirves: {

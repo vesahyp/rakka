@@ -47,10 +47,12 @@ h2 { margin: 0 0 12px; font-size: 26px; }
 .xpbar { height: 14px; border-radius: 7px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.15); overflow: hidden; position: relative; }
 .xpbar > div { height: 100%; background: linear-gradient(90deg, #3a7ad8, #6ab0ff); transition: width 0.1s linear; }
 .xpbar span { position: absolute; right: 8px; top: -1px; font-size: 11px; font-weight: 800; text-shadow: 0 1px 2px #000; }
-.hudrow { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; font-weight: 800; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0,0,0,0.6); }
+.hudrow { display: flex; align-items: flex-start; justify-content: space-between; margin-top: 6px; gap: 8px; font-weight: 800; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0,0,0,0.6); }
+.hudright { text-align: right; margin-right: 48px; flex: none; }
 .timer { font-size: 22px; letter-spacing: 0.05em; }
 .kills { font-size: 15px; }
 .items { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.items { max-width: 62%; }
 .items .it { width: 30px; height: 30px; border-radius: 8px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 17px; position: relative; }
 .items .it b { position: absolute; right: 1px; bottom: -1px; font-size: 9px; color: var(--accent); text-shadow: 0 1px 2px #000; }
 .items .it.evo { border-color: var(--accent); box-shadow: 0 0 8px rgba(240,184,48,0.5); }
@@ -58,7 +60,7 @@ h2 { margin: 0 0 12px; font-size: 26px; }
 .hpbar { position: absolute; left: 50%; bottom: calc(var(--sab) + 18px); transform: translateX(-50%); width: 160px; height: 12px; border-radius: 6px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); overflow: hidden; pointer-events: none; }
 .hpbar > div { height: 100%; background: linear-gradient(90deg, #c0392b, #ff6b5b); transition: width 0.1s linear; }
 .hpbar span { position: absolute; left: 0; right: 0; top: -1px; text-align: center; font-size: 10px; font-weight: 800; text-shadow: 0 1px 2px #000; }
-.bossbar { position: absolute; left: 50%; top: calc(var(--sat) + 92px); transform: translateX(-50%); width: min(70%, 320px); pointer-events: none; text-align: center; }
+.bossbar { position: absolute; left: 50%; top: calc(var(--sat) + 124px); transform: translateX(-50%); width: min(70%, 320px); pointer-events: none; text-align: center; }
 .bossbar .name { font-weight: 900; font-size: 13px; color: #ffb0a0; text-shadow: 0 1px 3px #000; }
 .bossbar .bar { height: 8px; border-radius: 4px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,120,120,0.5); overflow: hidden; }
 .bossbar .bar > div { height: 100%; background: #e0503a; }
