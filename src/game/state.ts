@@ -76,6 +76,8 @@ export interface SimState {
   sounds: string[];
   /** screen shake left, seconds */
   shake: number;
+  /** how many Tuoni have been sent */
+  tuoni: number;
 }
 
 export function xpForLevel(level: number): number {
@@ -143,6 +145,7 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     tier: 0,
     sounds: [],
     shake: 0,
+    tuoni: 0,
   };
   return s;
 }

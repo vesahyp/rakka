@@ -16,6 +16,10 @@ export function addText(s: SimState, x: number, y: number, text: string, color: 
 /** Apply damage to an enemy. Knockback direction is (kx, ky), unit or zero. */
 export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number, kb: number): void {
   if (e.hp <= 0) return;
+  if (e.def.id === 'tuoni') {
+    e.flash = 0.05;
+    return;
+  }
   let crit = false;
   if (dmg < 9999) {
     dmg *= damageMultiplier(s);

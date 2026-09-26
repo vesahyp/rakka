@@ -384,6 +384,31 @@ const DEFS: Record<string, Def> = {
       poly(c, [-6, 6, 6, 6, 0, 10], '#0a2a3a', '', 0);
     },
   },
+  tuoni: {
+    hw: 18,
+    hh: 26,
+    draw: (c) => {
+      poly(c, [-14, 22, 14, 22, 10, -10, 0, -16, -10, -10], '#141018', '#000', 1);
+      c.beginPath();
+      c.arc(0, -14, 8, Math.PI, Math.PI * 2);
+      c.fillStyle = '#141018';
+      c.fill();
+      ell(c, 0, -11, 5, 4, '#0a080c', '', 0);
+      eye(c, -2.5, -12, 1.2, '#b0f0ff', '#b0f0ff');
+      eye(c, 2.5, -12, 1.2, '#b0f0ff', '#b0f0ff');
+      line(c, 12, 20, 16, -24, '#5a4a3a', 2.2);
+      c.beginPath();
+      c.moveTo(16, -24);
+      c.quadraticCurveTo(4, -34, -10, -26);
+      c.quadraticCurveTo(2, -26, 16, -20);
+      c.closePath();
+      c.fillStyle = '#c8d0d8';
+      c.fill();
+      c.strokeStyle = OUT;
+      c.lineWidth = 0.8;
+      c.stroke();
+    },
+  },
   // pickups and gems
   gem1: { hw: 5, hh: 5, draw: (c) => { ell(c, 0, 0, 3.4, 3.4, '#3a5ad8'); ell(c, -1, -1, 1, 1, '#c8d8ff', '', 0); } },
   gem2: { hw: 5, hh: 5, draw: (c) => { ell(c, 0, 0, 3.6, 3.6, '#d83a4a'); ell(c, -1, -1, 1, 1, '#ffd0d0', '', 0); } },

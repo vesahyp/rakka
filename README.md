@@ -24,6 +24,8 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 - **Arkut** putoavat eliiteistä (kultainen rengas) ja pomoista. Arkku antaa
   yhden, kolme tai viisi päivitystä.
 - **Pomo** saapuu viiden minuutin välein.
+- **Tuoni** saapuu 28. minuutilla, eikä sitä voi tappaa. Kolmenkymmenen
+  jälkeen tulee joka minuutti yksi lisää. Metsä ei lopu, mutta peli loppuu.
 - **Äänet** saa pois nappulasta pelin aikana tai alkuruudusta. Valinta
   muistetaan.
 - **Pysty tai vaaka**, kumpi vain. Kääntäminen kesken pelin toimii.

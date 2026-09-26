@@ -26,6 +26,10 @@ export const ENEMIES = {
   nakki: def({ id: 'nakki', name: 'Näkki', hp: 3200, speed: 70, damage: 28, xp: 350, radius: 22, kbResist: 1, behaviour: 'boss', sprite: 'nakki', scale: 2.0 }),
   stallu: def({ id: 'stallu', name: 'Stállu', hp: 4200, speed: 52, damage: 34, xp: 420, radius: 30, kbResist: 1, behaviour: 'boss', sprite: 'stallu', scale: 2.4 }),
   ajattara: def({ id: 'ajattara', name: 'Ajattara', hp: 5500, speed: 64, damage: 30, xp: 500, radius: 22, kbResist: 1, behaviour: 'boss', sprite: 'ajattara', scale: 2.0 }),
+  // Tuoni, death itself: unkillable, faster than any build, no drops. One
+  // at minute 28 and one more every minute from thirty, so the endless
+  // run ends. hurt() refuses to damage it.
+  tuoni: def({ id: 'tuoni', name: 'Tuoni', hp: 1e12, speed: 135, damage: 70, xp: 0, radius: 20, kbResist: 1, behaviour: 'phase', sprite: 'tuoni', scale: 2.2 }),
   ikuturso: def({ id: 'ikuturso', name: 'Iku-Turso', hp: 9000, speed: 50, damage: 40, xp: 800, radius: 32, kbResist: 1, behaviour: 'boss', sprite: 'turso', scale: 2.6 }),
 } satisfies Record<string, EnemyDef>;
 

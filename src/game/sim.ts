@@ -23,6 +23,10 @@ export function enemyHpScale(minute: number, curse: number): number {
   const late = minute > 12 ? Math.pow(1.25, minute - 12) : 1;
   return linear * late * (0.7 + 0.3 * curse);
 }
+/** Enemies speed up after twenty so a kiting build is caught by thirty. */
+export function enemySpeedScale(minute: number): number {
+  return minute > 20 ? 1 + (minute - 20) * 0.04 : 1;
+}
 export function enemyDamageScale(minute: number): number {
   const late = minute > 15 ? Math.pow(1.07, minute - 15) : 1;
   return (1 + minute * 0.035) * late;
@@ -195,7 +199,7 @@ function direct(s: SimState, dt: number): void {
   const { entries, tier } = currentWave(s);
   s.tier = tier;
   const curse = s.stats.curse;
-  const pressure = s.minute > 15 ? 1 + (s.minute - 15) * 0.1 : 1;
+  const pressure = s.minute > 15 ? 1 + (s.minute - 15) * 0.14 : 1;
   const rateMul = curse * (1 + tier * 0.3) * pressure;
   const capMul = curse * (1 + tier * 0.25) * pressure;
   if (s.enemies.length < MAX_ENEMIES) {
@@ -242,6 +246,17 @@ function direct(s: SimState, dt: number): void {
       const pool: EnemyId[] = ['hyttynen', 'makara', 'muurahainen', 'hirvikarpanen', 'liekkio', 'ampiainen'];
       swarm(s, k % 2 === 0 ? 'ring' : 'column', ENEMIES[pool[k % pool.length]], Math.round((120 + k * 20) * curse));
     }
+  }
+
+  // Tuoni: one at 28, one more every minute from 30.
+  const due = s.minute >= 28 ? 1 + Math.max(0, Math.floor(s.minute - 29)) : 0;
+  if (s.tuoni < due) {
+    s.tuoni++;
+    spawnPoint(s, tmp, 80);
+    spawnEnemy(s, ENEMIES.tuoni, tmp.x, tmp.y);
+    s.banner = { text: 'Tuoni saapuu', sub: s.tuoni === 1 ? 'Metsä sulkeutuu' : 'Toinen tulee', life: 3.5 };
+    sound(s, 'boss');
+    s.shake = 1.2;
   }
 
   // Bosses
@@ -316,6 +331,7 @@ function updateEnemies(s: SimState, dt: number): void {
   const p = s.player;
   const es = s.enemies;
   const dmgScale = enemyDamageScale(s.minute);
+  const speedScale = enemySpeedScale(s.minute);
   const farX = s.view.w / 2 + 160;
   const farY = s.view.h / 2 + 160;
   for (let i = 0; i < es.length; i++) {
@@ -329,7 +345,7 @@ function updateEnemies(s: SimState, dt: number): void {
     e.wobble += dt * 6;
 
     // Relocate stragglers so the pressure stays on. Bosses and columns walk.
-    if (!e.boss && e.t2 < 3 && (Math.abs(e.x - p.x) > farX || Math.abs(e.y - p.y) > farY)) {
+    if (!e.boss && e.def.id !== 'tuoni' && e.t2 < 3 && (Math.abs(e.x - p.x) > farX || Math.abs(e.y - p.y) > farY)) {
       spawnPoint(s, tmp);
       e.x = tmp.x;
       e.y = tmp.y;
@@ -341,7 +357,7 @@ function updateEnemies(s: SimState, dt: number): void {
     const dist = Math.hypot(dx, dy) || 1;
     const ux = dx / dist;
     const uy = dy / dist;
-    let speed = e.def.speed * (1 - e.slow);
+    let speed = e.def.speed * (1 - e.slow) * (e.def.id === 'tuoni' ? 1 : speedScale);
     let mx = ux;
     let my = uy;
 
@@ -516,6 +532,7 @@ function reap(s: SimState): void {
     es[i] = es[es.length - 1];
     es.pop();
     if (e.hp === -1 && e.t2 === 3) continue; // walked off
+    if (e.def.id === 'tuoni') continue;
     s.run.kills++;
     sound(s, 'kill');
     onKill(s, e);
@@ -657,7 +674,7 @@ function collect(s: SimState, kind: PickupKind, x: number, y: number): void {
       sound(s, 'pickup');
       break;
     case 'kekale':
-      for (const e of s.enemies) if (!e.boss && onScreen(s, e.x, e.y, 40)) hurt(s, e, 9999, 0, 0, 0);
+      for (const e of s.enemies) if (!e.boss && e.def.id !== 'tuoni' && onScreen(s, e.x, e.y, 40)) hurt(s, e, 9999, 0, 0, 0);
       s.effects.push({ kind: 'burst', x, y, x2: 0, y2: 0, life: 0.5, maxLife: 0.5, color: '#ff8a3d', radius: 400 });
       sound(s, 'ember');
       break;
