@@ -14,10 +14,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Räkkä</title>
-    <!-- Analytics pixel. Empty endpoint keeps the tracker dormant; fill in
-         the pixel_url terraform output after `make apply` (see TRACKING.md). -->
+    <!-- Analytics: the clavesa tracker (vendored unmodified from
+         clavesa-dev/web-tracker) beacons to a 1x1 GIF on our CloudFront; its
+         access logs are the datastore. See TRACKING.md. Off on localhost and
+         for the ?bot=1 screenshot runs, so our own traffic never counts. -->
     <script>
-      window.TRACKER_CONFIG = { endpoint: "" };
+      window.TRACKER_CONFIG = {
+        endpoint: "https://d1x53tebijcunt.cloudfront.net/t.gif",
+        enabled: !/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !/[?&]bot=1/.test(location.search)
+      };
     </script>
     <script defer src="/tracker.js"></script>
   </head>

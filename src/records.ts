@@ -78,9 +78,9 @@ export function fmtTime(t: number): string {
 }
 
 export function track(event: string, data: Record<string, unknown> = {}): void {
-  const w = window as unknown as { __rakka?: { track?: (e: string, d: Record<string, unknown>) => void } };
+  const w = window as unknown as { __clvtracker?: { track?: (e: string, d: Record<string, unknown>) => void } };
   try {
-    w.__rakka?.track?.(event, data);
+    w.__clvtracker?.track?.(event, data);
   } catch {
     /* tracker is optional */
   }

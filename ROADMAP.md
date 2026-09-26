@@ -10,8 +10,8 @@ Forward-looking only. Shipped items are deleted; git history is the record.
   `jeeves/practices/serverless`. Local records stay the fallback.
 - Meta unlocks between runs: weapons and passives that enter the pool only
   after a first evolution, a first 20-minute run, and so on.
-- Tracking pixel on CloudFront (`make apply`), then fill `TRACKER_CONFIG` in
-  `index.html`. Same shape as sceggle.
+- Traffic rollup and dashboard: a clavesa workspace over the pixel logs in
+  the kivikko shape, nightly cron at a free hour, `/stats` route.
 
 ## Later
 
