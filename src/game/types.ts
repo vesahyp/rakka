@@ -177,7 +177,7 @@ export interface FloatText {
 }
 
 export interface Effect {
-  kind: 'bolt' | 'burst' | 'levelup' | 'chest' | 'revive';
+  kind: 'bolt' | 'burst' | 'levelup' | 'chest' | 'revive' | 'puff';
   x: number;
   y: number;
   x2: number;

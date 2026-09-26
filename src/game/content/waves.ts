@@ -24,8 +24,8 @@ export interface Wave {
 export const WAVES: Wave[] = [
   { at: 0, spawns: [{ type: 'hyttynen', rate: 1.2, cap: 30 }] },
   { at: 1, spawns: [{ type: 'hyttynen', rate: 2, cap: 50 }, { type: 'punkki', rate: 0.2, cap: 5 }] },
-  { at: 2, spawns: [{ type: 'hyttynen', rate: 2.5, cap: 60 }, { type: 'makara', rate: 1.5, cap: 40 }, { type: 'punkki', rate: 0.3, cap: 8 }] },
-  { at: 3, spawns: [{ type: 'makara', rate: 3, cap: 70 }, { type: 'punkki', rate: 0.5, cap: 14 }, { type: 'paarma', rate: 0.4, cap: 8 }] },
+  { at: 2, spawns: [{ type: 'hyttynen', rate: 2.5, cap: 60 }, { type: 'makara', rate: 1.2, cap: 36 }, { type: 'punkki', rate: 0.3, cap: 8 }] },
+  { at: 3, spawns: [{ type: 'makara', rate: 2.2, cap: 55 }, { type: 'hyttynen', rate: 1.5, cap: 40 }, { type: 'punkki', rate: 0.5, cap: 14 }, { type: 'paarma', rate: 0.4, cap: 8 }] },
   { at: 4, spawns: [{ type: 'hyttynen', rate: 3, cap: 60 }, { type: 'paarma', rate: 0.8, cap: 16 }, { type: 'punkki', rate: 0.6, cap: 18 }, { type: 'menninkainen', rate: 0.4, cap: 8, elite: 0.05 }] },
   { at: 5, spawns: [{ type: 'makara', rate: 4, cap: 90 }, { type: 'menninkainen', rate: 0.7, cap: 14, elite: 0.05 }, { type: 'paarma', rate: 0.6, cap: 14 }] },
   { at: 6, spawns: [{ type: 'hirvikarpanen', rate: 2, cap: 40 }, { type: 'gufihtar', rate: 0.5, cap: 10, elite: 0.06 }, { type: 'punkki', rate: 0.8, cap: 24 }] },

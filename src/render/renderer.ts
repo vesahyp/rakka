@@ -222,6 +222,25 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(e.x2, e.y2, e.radius, 0, Math.PI * 2);
         ctx.fill();
+      } else if (e.kind === 'puff') {
+        ctx.fillStyle = e.color;
+        ctx.globalAlpha = k * 0.7;
+        const r = e.radius * (1.2 - k);
+        for (let i = 0; i < 4; i++) {
+          const a = i * 1.57 + e.x * 0.1;
+          ctx.beginPath();
+          ctx.arc(e.x + Math.cos(a) * r * 0.6, e.y + Math.sin(a) * r * 0.6, r * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      } else if (e.kind === 'levelup') {
+        ctx.strokeStyle = e.color;
+        ctx.globalAlpha = k;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius * (1 - k) + 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
       } else if (e.kind === 'burst' || e.kind === 'revive') {
         ctx.strokeStyle = e.color;
         ctx.globalAlpha = k;

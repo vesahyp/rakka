@@ -388,7 +388,7 @@ function updateEnemies(s: SimState, dt: number): void {
         let px = 0;
         let py = 0;
         let n = 0;
-        for (let k = 0; k < cell.length && n < 5; k++) {
+        for (let k = 0; k < cell.length && n < 8; k++) {
           const o = cell[k];
           if (o === e || o.hp <= 0) continue;
           const ox = e.x - o.x;
@@ -404,8 +404,8 @@ function updateEnemies(s: SimState, dt: number): void {
           }
         }
         if (n > 0) {
-          e.x += px * 60 * dt;
-          e.y += py * 60 * dt;
+          e.x += px * 140 * dt;
+          e.y += py * 140 * dt;
         }
       }
     }
@@ -470,6 +470,7 @@ function reap(s: SimState): void {
     es.pop();
     if (e.hp === -1 && e.t2 === 3) continue; // walked off
     s.run.kills++;
+    if (s.effects.length < 60) s.effects.push({ kind: 'puff', x: e.x, y: e.y, x2: 0, y2: 0, life: 0.28, maxLife: 0.28, color: e.boss ? '#ffd166' : '#dfe8d8', radius: e.def.radius * e.scale * 1.6 });
     if (e.boss) {
       s.bossesAlive--;
       s.run.bosses++;
@@ -512,6 +513,7 @@ function gainXp(s: SimState, v: number): void {
     p.level++;
     p.xpNext = xpForLevel(p.level);
     s.pendingLevelUps++;
+    s.effects.push({ kind: 'levelup', x: p.x, y: p.y, x2: 0, y2: 0, life: 0.6, maxLife: 0.6, color: '#f0b830', radius: 90 });
     s.run.maxLevel = Math.max(s.run.maxLevel, p.level);
   }
 }

@@ -22,15 +22,23 @@ try {
   await page.waitForTimeout(300);
   await shot('02-select');
   await page.getByRole('button', { name: /Lemminkäinen/ }).click();
+  // Returns false once the bot has died; the death screen is the last shot.
   const at = async (minute, name) => {
-    await page.waitForFunction((m) => window.__sim && window.__sim.time >= m * 60, minute, { timeout: 120000 });
+    await page.waitForFunction((m) => window.__sim && (window.__sim.time >= m * 60 || window.__sim.gameOver), minute, { timeout: 300000 });
     await page.waitForTimeout(200);
+    const over = await page.evaluate(() => window.__sim.gameOver);
+    if (over) {
+      await page.waitForSelector('.screen');
+      await page.waitForTimeout(300);
+      await shot('09-death');
+      return false;
+    }
     await shot(name);
+    return true;
   };
-  await at(0.25, '03-run-start');
-  await at(4, '04-run-minute-4');
-  await at(10, '05-run-minute-10');
-  await at(16, '06-run-minute-16');
+  for (const [m, name] of [[0.25, '03-run-start'], [4, '04-run-minute-4'], [10, '05-run-minute-10'], [16, '06-run-minute-16'], [24, '07-run-minute-24']]) {
+    if (!(await at(m, name))) break;
+  }
   const perf = await page.evaluate(() => window.__perf);
   console.log(`frames ${perf.frames}, avg ${(perf.ms / perf.frames).toFixed(2)} ms, worst ${perf.worst.toFixed(1)} ms (sim+render, headless)`);
 } finally {
