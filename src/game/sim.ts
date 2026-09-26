@@ -16,12 +16,13 @@ const MAX_ENEMIES = 520;
 
 /** HP multiplier by minute. Linear early, exponential after twenty, endless. */
 export function enemyHpScale(minute: number, curse: number): number {
-  const linear = 1 + minute * 0.11;
-  const late = minute > 20 ? Math.pow(1.11, minute - 20) : 1;
+  const linear = 1 + minute * 0.12;
+  const late = minute > 15 ? Math.pow(1.16, minute - 15) : 1;
   return linear * late * (0.7 + 0.3 * curse);
 }
 export function enemyDamageScale(minute: number): number {
-  return 1 + minute * 0.035;
+  const late = minute > 20 ? Math.pow(1.05, minute - 20) : 1;
+  return (1 + minute * 0.035) * late;
 }
 
 export function initRun(s: SimState): void {
@@ -194,10 +195,22 @@ function direct(s: SimState, dt: number): void {
       const cap = Math.ceil(en.cap * capMul);
       while (n-- > 0 && (alive[en.type] ?? 0) < cap && s.enemies.length < MAX_ENEMIES) {
         spawnPoint(s, tmp);
-        const elite = s.rng.chance((en.elite ?? 0) + tier * 0.03);
-        spawnEnemy(s, ENEMIES[en.type], tmp.x, tmp.y, { elite, tier });
+        spawnEnemy(s, ENEMIES[en.type], tmp.x, tmp.y, { tier });
         alive[en.type] = (alive[en.type] ?? 0) + 1;
       }
+    }
+  }
+
+  // Elites: one every so often, from the types the wave marks as elite
+  // capable. A chest per elite is the pacing of upgrades, so this timer is
+  // the knob, not a per-spawn chance.
+  const eliteEvery = Math.max(30, 70 - s.minute - tier * 5) / curse;
+  if (s.time - s.lastElite >= eliteEvery && s.time > 100) {
+    const pool = entries.filter((e) => e.elite);
+    if (pool.length > 0) {
+      s.lastElite = s.time;
+      spawnPoint(s, tmp);
+      spawnEnemy(s, ENEMIES[s.rng.pick(pool).type], tmp.x, tmp.y, { elite: true, tier });
     }
   }
 
@@ -341,8 +354,8 @@ function updateEnemies(s: SimState, dt: number): void {
         e.t1 -= dt;
         if (e.t1 <= 0) {
           e.t1 = 4;
-          e.kx = ux * 300;
-          e.ky = uy * 300;
+          e.kx = ux * 240;
+          e.ky = uy * 240;
           if (e.def.id === 'ajattara' || e.def.id === 'stallu') {
             const minion = e.def.id === 'ajattara' ? ENEMIES.makara : ENEMIES.gufihtar;
             const n = e.def.id === 'ajattara' ? 8 : 3;
@@ -406,7 +419,7 @@ function updateEnemies(s: SimState, dt: number): void {
     if (dist < r && p.alive) {
       e.contact -= dt;
       if (e.contact <= 0) {
-        e.contact = e.def.behaviour === 'stick' ? 0.4 : 0.55;
+        e.contact = e.def.behaviour === 'stick' ? 0.4 : e.boss ? 1.0 : 0.55;
         if (p.invuln <= 0) {
           const dmg = Math.max(1, Math.round(e.def.damage * dmgScale * (e.elite ? 1.5 : 1) - s.stats.armor));
           p.hp -= dmg;
@@ -467,7 +480,7 @@ function reap(s: SimState): void {
     }
     if (e.elite) {
       drop(s, 'arkku', e.x, e.y);
-      addGem(s, e.x, e.y, e.def.xp * 5);
+      addGem(s, e.x, e.y, e.def.xp * 3);
       continue;
     }
     addGem(s, e.x, e.y, e.def.xp);

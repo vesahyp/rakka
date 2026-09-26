@@ -83,9 +83,22 @@ function shoot(s: SimState, ws: WeaponState, def: WeaponDef, n: WeaponNumbers, i
   const dirY = p.dirY;
   switch (def.pattern) {
     case 'throwFacing': {
+      // Thrown the way you walk, but a knife finds the nearest enemy inside
+      // a cone ahead: one thumb cannot aim and walk at once.
+      let a = Math.atan2(dirY, dirX);
+      let bd = 320 * 320;
+      for (const e of s.enemies) {
+        const ex = e.x - p.x;
+        const ey = e.y - p.y;
+        const d2 = ex * ex + ey * ey;
+        if (d2 >= bd || e.hp <= 0) continue;
+        const d = Math.sqrt(d2) || 1;
+        if ((ex * dirX + ey * dirY) / d < 0.6) continue;
+        bd = d2;
+        a = Math.atan2(ey, ex);
+      }
       // Fan slightly so five knives are five knives, not one.
-      const spread = (index - (n.amount - 1) / 2) * 0.09;
-      const a = Math.atan2(dirY, dirX) + spread;
+      a += (index - (n.amount - 1) / 2) * 0.09;
       proj(s, 'blade', ws, n, p.x, p.y, Math.cos(a) * n.speed, Math.sin(a) * n.speed, { life: 1.4, maxLife: 1.4 });
       break;
     }

@@ -8,7 +8,7 @@ const def = (d: Omit<EnemyDef, 'scale'> & { scale?: number }): EnemyDef => ({ sc
  */
 export const ENEMIES = {
   hyttynen: def({ id: 'hyttynen', name: 'Hyttynen', hp: 3, speed: 62, damage: 1, xp: 1, radius: 5, kbResist: 0, behaviour: 'swarm', sprite: 'mosquito' }),
-  makara: def({ id: 'makara', name: 'Mäkärä', hp: 2, speed: 88, damage: 1, xp: 1, radius: 4, kbResist: 0, behaviour: 'swarm', sprite: 'blackfly', scale: 0.8 }),
+  makara: def({ id: 'makara', name: 'Mäkärä', hp: 2, speed: 76, damage: 1, xp: 1, radius: 4, kbResist: 0, behaviour: 'swarm', sprite: 'blackfly', scale: 0.8 }),
   punkki: def({ id: 'punkki', name: 'Punkki', hp: 28, speed: 26, damage: 4, xp: 4, radius: 7, kbResist: 0.5, behaviour: 'stick', sprite: 'tick' }),
   paarma: def({ id: 'paarma', name: 'Paarma', hp: 16, speed: 55, damage: 5, xp: 3, radius: 7, kbResist: 0.1, behaviour: 'dash', sprite: 'horsefly' }),
   menninkainen: def({ id: 'menninkainen', name: 'Menninkäinen', hp: 48, speed: 52, damage: 6, xp: 8, radius: 10, kbResist: 0.2, behaviour: 'chase', sprite: 'gnome' }),
@@ -22,7 +22,7 @@ export const ENEMIES = {
   gufihtar: def({ id: 'gufihtar', name: 'Gufihtar', hp: 60, speed: 60, damage: 7, xp: 10, radius: 9, kbResist: 0.3, behaviour: 'chase', sprite: 'gufihtar' }),
   cahceravga: def({ id: 'cahceravga', name: 'Čáhcerávga', hp: 110, speed: 66, damage: 14, xp: 16, radius: 11, kbResist: 0.5, behaviour: 'dash', sprite: 'ravga', scale: 1.2 }),
   // bosses
-  otso: def({ id: 'otso', name: 'Otso', hp: 1800, speed: 58, damage: 25, xp: 200, radius: 26, kbResist: 1, behaviour: 'boss', sprite: 'bear', scale: 2.2 }),
+  otso: def({ id: 'otso', name: 'Otso', hp: 1300, speed: 52, damage: 25, xp: 200, radius: 26, kbResist: 1, behaviour: 'boss', sprite: 'bear', scale: 1.8 }),
   nakki: def({ id: 'nakki', name: 'Näkki', hp: 3200, speed: 70, damage: 28, xp: 350, radius: 22, kbResist: 1, behaviour: 'boss', sprite: 'nakki', scale: 2.0 }),
   stallu: def({ id: 'stallu', name: 'Stállu', hp: 4200, speed: 52, damage: 34, xp: 420, radius: 30, kbResist: 1, behaviour: 'boss', sprite: 'stallu', scale: 2.4 }),
   ajattara: def({ id: 'ajattara', name: 'Ajattara', hp: 5500, speed: 64, damage: 30, xp: 500, radius: 22, kbResist: 1, behaviour: 'boss', sprite: 'ajattara', scale: 2.0 }),

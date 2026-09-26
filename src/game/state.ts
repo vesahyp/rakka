@@ -55,6 +55,7 @@ export interface SimState {
   bossIndex: number;
   nextBossMinute: number;
   bossesAlive: number;
+  lastElite: number;
   pendingLevelUps: number;
   pendingChests: number;
   banner: Banner | null;
@@ -65,10 +66,10 @@ export interface SimState {
 }
 
 export function xpForLevel(level: number): number {
-  // Level 1 -> 2 needs 5. Each level adds 10 until 20, 13 until 40, then 16.
-  if (level < 20) return 5 + 10 * (level - 1);
-  if (level < 40) return 195 + 13 * (level - 19);
-  return 455 + 16 * (level - 39);
+  // Level 1 -> 2 needs 8. Each level adds 15 until 20, 20 until 40, then 26.
+  if (level < 20) return 8 + 15 * (level - 1);
+  if (level < 40) return 293 + 20 * (level - 19);
+  return 693 + 26 * (level - 39);
 }
 
 export function createState(seed: number, character: CharacterDef): SimState {
@@ -112,6 +113,7 @@ export function createState(seed: number, character: CharacterDef): SimState {
     bossIndex: 0,
     nextBossMinute: 5,
     bossesAlive: 0,
+    lastElite: 0,
     pendingLevelUps: 0,
     pendingChests: 0,
     banner: null,

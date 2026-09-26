@@ -27,11 +27,14 @@ export function botInput(s: SimState, rng: Rng, t: number): { dx: number; dy: nu
     const dx = p.x - e.x;
     const dy = p.y - e.y;
     const d2 = dx * dx + dy * dy;
-    if (d2 > 150 * 150) continue;
-    const d = Math.sqrt(d2) || 1;
-    const w = ((e.boss ? 6 : e.elite ? 3 : 1) * e.def.damage * 60) / (d * d);
-    tx += (dx / d) * w;
-    ty += (dy / d) * w;
+    const dc = Math.sqrt(d2) || 1;
+    const d = Math.max(6, dc - e.def.radius * e.scale - 9);
+    if (d > 140) continue;
+    const w = ((e.boss ? 8 : e.elite ? 3 : 1) * 400) / (d * d);
+    const dx2 = dx / dc;
+    const dy2 = dy / dc;
+    tx += dx2 * w;
+    ty += dy2 * w;
     threat += w;
   }
   // Nearest pickup, else nearest berry.
@@ -64,13 +67,13 @@ export function botInput(s: SimState, rng: Rng, t: number): { dx: number; dy: nu
     const ax = tx / m;
     const ay = ty / m;
     // Kite: mostly sideways around the crowd, away when hurt or pressed.
-    const away = Math.min(1.5, threat / 8) + (low ? 1 : 0);
+    const away = Math.min(1.6, threat / 6) + (low ? 1 : 0);
     const side = Math.sin(t * 0.5) >= 0 ? 1 : -1;
     dx += ax * away - ay * side * 0.9;
     dy += ay * away + ax * side * 0.9;
   }
   if (bd < Infinity) {
-    const pull = threat > 12 ? 0.3 : 1;
+    const pull = threat > 8 ? 0.25 : 1;
     dx += ((gx - p.x) / bd) * pull;
     dy += ((gy - p.y) / bd) * pull;
   }
