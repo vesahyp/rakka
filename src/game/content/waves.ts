@@ -22,12 +22,12 @@ export interface Wave {
  * every roster member gets the endless HP curve (see sim.ts, enemyHpScale).
  */
 export const WAVES: Wave[] = [
-  { at: 0, spawns: [{ type: 'hyttynen', rate: 1.2, cap: 30 }] },
-  { at: 1, spawns: [{ type: 'hyttynen', rate: 2, cap: 50 }, { type: 'punkki', rate: 0.2, cap: 5 }] },
-  { at: 2, spawns: [{ type: 'hyttynen', rate: 2.5, cap: 60 }, { type: 'makara', rate: 1.2, cap: 36 }, { type: 'punkki', rate: 0.3, cap: 8 }] },
-  { at: 3, spawns: [{ type: 'makara', rate: 2.2, cap: 55 }, { type: 'hyttynen', rate: 1.5, cap: 40 }, { type: 'punkki', rate: 0.5, cap: 14 }, { type: 'paarma', rate: 0.4, cap: 8 }] },
-  { at: 4, spawns: [{ type: 'hyttynen', rate: 3, cap: 60 }, { type: 'paarma', rate: 0.8, cap: 16 }, { type: 'punkki', rate: 0.6, cap: 18 }, { type: 'menninkainen', rate: 0.4, cap: 8, elite: 0.05 }] },
-  { at: 5, spawns: [{ type: 'makara', rate: 4, cap: 90 }, { type: 'menninkainen', rate: 0.7, cap: 14, elite: 0.05 }, { type: 'paarma', rate: 0.6, cap: 14 }] },
+  { at: 0, spawns: [{ type: 'hyttynen', rate: 2.2, cap: 45 }] },
+  { at: 1, spawns: [{ type: 'hyttynen', rate: 3.2, cap: 75 }, { type: 'punkki', rate: 0.3, cap: 8 }] },
+  { at: 2, spawns: [{ type: 'hyttynen', rate: 3.5, cap: 80 }, { type: 'makara', rate: 2, cap: 50 }, { type: 'punkki', rate: 0.4, cap: 12 }] },
+  { at: 3, spawns: [{ type: 'makara', rate: 3.5, cap: 80 }, { type: 'hyttynen', rate: 2.5, cap: 60 }, { type: 'punkki', rate: 0.6, cap: 16 }, { type: 'paarma', rate: 0.6, cap: 12 }] },
+  { at: 4, spawns: [{ type: 'hyttynen', rate: 4.5, cap: 90 }, { type: 'paarma', rate: 1, cap: 20 }, { type: 'punkki', rate: 0.8, cap: 22 }, { type: 'menninkainen', rate: 0.6, cap: 12, elite: 0.05 }] },
+  { at: 5, spawns: [{ type: 'makara', rate: 5.5, cap: 120 }, { type: 'menninkainen', rate: 1, cap: 18, elite: 0.05 }, { type: 'paarma', rate: 0.9, cap: 18 }] },
   { at: 6, spawns: [{ type: 'hirvikarpanen', rate: 2, cap: 40 }, { type: 'gufihtar', rate: 0.5, cap: 10, elite: 0.06 }, { type: 'punkki', rate: 0.8, cap: 24 }] },
   { at: 7, spawns: [{ type: 'muurahainen', rate: 4.5, cap: 100 }, { type: 'hirvikarpanen', rate: 1.5, cap: 30 }, { type: 'menninkainen', rate: 0.6, cap: 14 }] },
   { at: 8, spawns: [{ type: 'hyttynen', rate: 5, cap: 110 }, { type: 'peikko', rate: 0.25, cap: 4, elite: 0.1 }, { type: 'menninkainen', rate: 1, cap: 20, elite: 0.06 }] },
@@ -58,7 +58,8 @@ export interface SwarmEvent {
 }
 
 export const SWARM_EVENTS: SwarmEvent[] = [
-  { atSeconds: 90, kind: 'ring', type: 'hyttynen', count: 60 },
+  { atSeconds: 50, kind: 'ring', type: 'hyttynen', count: 50 },
+  { atSeconds: 110, kind: 'ring', type: 'hyttynen', count: 80 },
   { atSeconds: 210, kind: 'column', type: 'muurahainen', count: 50 },
   { atSeconds: 330, kind: 'ring', type: 'makara', count: 90 },
   { atSeconds: 450, kind: 'column', type: 'muurahainen', count: 80 },

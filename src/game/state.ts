@@ -75,10 +75,13 @@ export interface SimState {
 }
 
 export function xpForLevel(level: number): number {
-  // Level 1 -> 2 needs 8. Each level adds 15 until 20, 20 until 40, then 26.
+  // Level 1 -> 2 needs 8. Each level adds 15 until 20, 20 until 40, 40
+  // until 80, then 70: the pool is picked clean around level a hundred and
+  // a level past that should be rare.
   if (level < 20) return 8 + 15 * (level - 1);
   if (level < 40) return 293 + 20 * (level - 19);
-  return 693 + 26 * (level - 39);
+  if (level < 80) return 693 + 40 * (level - 39);
+  return 2293 + 70 * (level - 79);
 }
 
 export function createState(seed: number, character: CharacterDef): SimState {

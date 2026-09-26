@@ -19,8 +19,8 @@ export function enemyHpScale(minute: number, curse: number): number {
   // A build that can stand still at minute 15 must not be able to at 20:
   // HP compounds 24 percent a minute from minute 12, on top of the linear
   // part, and the director also spawns more (see direct()).
-  const linear = 1 + minute * 0.12;
-  const late = minute > 12 ? Math.pow(1.27, minute - 12) : 1;
+  const linear = 1 + minute * 0.18;
+  const late = minute > 12 ? Math.pow(1.25, minute - 12) : 1;
   return linear * late * (0.7 + 0.3 * curse);
 }
 export function enemyDamageScale(minute: number): number {
