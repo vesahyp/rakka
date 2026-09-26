@@ -50,6 +50,7 @@ src/
   input/input.ts      floating thumb stick and keyboard
   ui/                 React: Game (loop + HUD + overlays), Screens, Cards
   records.ts          localStorage records and unlocks
+  api.ts              the global records API client (infra/records.tf)
 tools/
   sim-check.ts        npm run sim-check: weapon table + assertions
   balance.ts          npm run balance: bot runs, one line per run
@@ -83,6 +84,9 @@ tools/
   a floor, not a player: it kites and collects but has no plan. A change that
   moves the bot's average survival moves the human's too, in the same
   direction.
+- `make plan` and `make apply` for `infra/`: the tracking pixel host and the
+  records API (DynamoDB + Lambda + HTTP API). The API URL is baked into
+  `src/api.ts`, the pixel URL into `index.html`.
 - Deploy is automatic: every push to `main` builds and publishes to GitHub
   Pages (`.github/workflows/deploy.yml`) at https://vesahyp.github.io/rakka/.
 - Screenshots come from `make shots` (Playwright, iPhone emulation), never

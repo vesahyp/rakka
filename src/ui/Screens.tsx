@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CHARACTERS, type CharacterDef } from '../game/content/characters';
 import { WEAPONS } from '../game/content/weapons';
 import { PASSIVES } from '../game/content/passives';
@@ -6,6 +6,8 @@ import { isUnlocked, fmtTime, type Records } from '../records';
 import { icon } from './icons';
 import { characterSprite, sprite } from '../render/sprites';
 import type { RunSummary } from './Game';
+import { Initials, RankLine } from './Initials';
+import { fetchTop, PERIOD_LABELS, type Period, type TopEntry } from '../api';
 
 export function Title({ records, onPlay, onRecords }: { records: Records; onPlay: () => void; onRecords: () => void }) {
   const best = records.best[0];
@@ -78,14 +80,27 @@ export function Select({ records, onPick, onBack }: { records: Records; onPick: 
 }
 
 export function Death({ r, rank, charBest, onAgain, onMenu }: { r: RunSummary; rank: number; charBest: boolean; onAgain: () => void; onMenu: () => void }) {
+  // Runs under a minute do not go on the table; the API refuses them too.
+  const [stage, setStage] = useState<'ask' | 'done'>(r.time >= 60 ? 'ask' : 'done');
+  const [ranks, setRanks] = useState<Record<Period, number> | null>(null);
   return (
     <div className="screen">
       <h2 style={{ color: 'var(--danger)' }}>Metsä otti omansa</h2>
       <p className="small">
         {r.character.name} selviytyi {fmtTime(r.time)}
       </p>
+      {stage === 'ask' && (
+        <Initials
+          r={r}
+          onDone={(rk) => {
+            setRanks(rk);
+            setStage('done');
+          }}
+        />
+      )}
+      {ranks && <RankLine ranks={ranks} />}
       {rank === 0 && <div className="record">Uusi paras aika!</div>}
-      {rank > 0 && <div className="record">Sija {rank + 1} tuloksissa</div>}
+      {rank > 0 && <div className="record">Sija {rank + 1} omissa tuloksissa</div>}
       {rank !== 0 && charBest && <div className="record">Hahmon paras aika</div>}
       <div className="stats">
         <span>Taso</span>
@@ -111,22 +126,76 @@ export function Death({ r, rank, charBest, onAgain, onMenu }: { r: RunSummary; r
           </span>
         ))}
       </div>
-      <button className="btn primary" onClick={onAgain} data-ui>
-        Uudestaan
-      </button>
-      <button className="btn ghost" onClick={onMenu} data-ui>
-        Valikkoon
-      </button>
+      {stage === 'done' && (
+        <>
+          <button className="btn primary" onClick={onAgain} data-ui>
+            Uudestaan
+          </button>
+          <button className="btn ghost" onClick={onMenu} data-ui>
+            Valikkoon
+          </button>
+        </>
+      )}
     </div>
   );
 }
 
+const TABS: (Period | 'mine')[] = ['day', 'week', 'month', 'all', 'mine'];
+
 export function RecordsScreen({ records, onBack }: { records: Records; onBack: () => void }) {
+  const [tab, setTab] = useState<Period | 'mine'>('day');
+  const [top, setTop] = useState<Record<string, TopEntry[] | 'error' | undefined>>({});
+  useEffect(() => {
+    if (tab === 'mine' || top[tab]) return;
+    let live = true;
+    fetchTop(tab)
+      .then((t) => live && setTop((o) => ({ ...o, [tab]: t })))
+      .catch(() => live && setTop((o) => ({ ...o, [tab]: 'error' })));
+    return () => {
+      live = false;
+    };
+  }, [tab, top]);
+  const charName = (id: string) => CHARACTERS.find((c) => c.id === id)?.name ?? id;
+  const list = tab === 'mine' ? null : top[tab];
   return (
     <div className="screen" style={{ justifyContent: 'flex-start' }}>
-      <h2>Tulokset</h2>
-      {records.best.length === 0 && <p className="small">Ei vielä yhtään peliä.</p>}
-      {records.best.length > 0 && (
+      <h2>Tulostaulu</h2>
+      <div className="tabs">
+        {TABS.map((t) => (
+          <button key={t} className={'tab' + (tab === t ? ' on' : '')} onClick={() => setTab(t)} data-ui>
+            {t === 'mine' ? 'Omat' : PERIOD_LABELS[t]}
+          </button>
+        ))}
+      </div>
+      {tab !== 'mine' && list === undefined && <p className="small">Haetaan…</p>}
+      {tab !== 'mine' && list === 'error' && <p className="small">Tulostaulua ei saatu haettua.</p>}
+      {tab !== 'mine' && Array.isArray(list) && list.length === 0 && <p className="small">Ei vielä tuloksia. Ole ensimmäinen.</p>}
+      {tab !== 'mine' && Array.isArray(list) && list.length > 0 && (
+        <table className="records">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nimi</th>
+              <th>Hahmo</th>
+              <th>Aika</th>
+              <th className="n">Taso</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((e, i) => (
+              <tr key={i}>
+                <td>{i + 1}</td>
+                <td className="name">{e.name}</td>
+                <td>{charName(e.character)}</td>
+                <td>{fmtTime(e.time)}</td>
+                <td className="n">{e.level}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {tab === 'mine' && records.best.length === 0 && <p className="small">Ei vielä yhtään peliä.</p>}
+      {tab === 'mine' && records.best.length > 0 && (
         <table className="records">
           <thead>
             <tr>
@@ -150,9 +219,11 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
           </tbody>
         </table>
       )}
-      <p className="small">
-        {records.runs} peliä, {records.totalKills.toLocaleString('fi')} kaatoa, {fmtTime(records.totalTime)} metsässä
-      </p>
+      {tab === 'mine' && (
+        <p className="small">
+          {records.runs} peliä, {records.totalKills.toLocaleString('fi')} kaatoa, {fmtTime(records.totalTime)} metsässä
+        </p>
+      )}
       <button className="btn ghost" onClick={onBack} data-ui>
         Takaisin
       </button>

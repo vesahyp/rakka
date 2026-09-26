@@ -21,6 +21,9 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 - **Pomo** saapuu viiden minuutin välein.
 - **Peli ei pääty voittoon.** Se päättyy kun metsä ottaa omansa. Tulos on
   aika, taso ja kaadot. Kymmenen parasta tallentuu laitteelle.
+- **Tulostaulu.** Yli minuutin kestänyt peli pääsee yhteiselle taululle
+  kolmella kirjaimella, kuten flipperissä. Taulut: tänään, tämä viikko, tämä
+  kuukausi ja kaikkien aikojen.
 
 ## Hahmot
 
