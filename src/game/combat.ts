@@ -25,7 +25,7 @@ export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number,
     // A knocked tick lets go.
     if (e.def.behaviour === 'stick') e.t2 = 0;
   }
-  if (s.texts.length < MAX_TEXTS) addText(s, e.x + (s.rng.next() - 0.5) * 10, e.y - e.def.radius * e.scale, String(d), e.boss || e.elite ? '#ffd166' : '#ffffff');
+  if (d < 9999 && s.texts.length < MAX_TEXTS) addText(s, e.x + (s.rng.next() - 0.5) * 10, e.y - e.def.radius * e.scale, String(d), e.boss || e.elite ? '#ffd166' : '#ffffff');
 }
 
 export function healPlayer(s: SimState, amount: number): void {
