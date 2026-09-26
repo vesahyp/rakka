@@ -101,8 +101,9 @@ export class Renderer {
     const H = this.canvas.height;
     const sc = this.scale;
     const p = s.player;
-    const camX = p.x;
-    const camY = p.y;
+    const shake = s.shake > 0 ? Math.min(1, s.shake) * 6 : 0;
+    const camX = p.x + (shake ? (Math.random() - 0.5) * shake : 0);
+    const camY = p.y + (shake ? (Math.random() - 0.5) * shake : 0);
     const viewW = W / sc;
     const viewH = H / sc;
     const left = camX - viewW / 2;

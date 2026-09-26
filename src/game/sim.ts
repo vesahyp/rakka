@@ -108,6 +108,7 @@ function decay(s: SimState, dt: number): void {
     s.banner.life -= dt;
     if (s.banner.life <= 0) s.banner = null;
   }
+  s.shake = Math.max(0, s.shake - dt);
 }
 
 // ---------------------------------------------------------------- director
@@ -253,6 +254,7 @@ function direct(s: SimState, dt: number): void {
     s.bossesAlive++;
     s.banner = { text: `${ENEMIES[id].name} saapuu`, sub: 'Pomo', life: 3 };
     sound(s, 'boss');
+    s.shake = 0.7;
     const i = BOSS_MINUTES.indexOf(s.nextBossMinute);
     s.nextBossMinute = i >= 0 && i + 1 < BOSS_MINUTES.length ? BOSS_MINUTES[i + 1] : s.nextBossMinute + 5;
   }
@@ -268,31 +270,43 @@ function swarm(s: SimState, kind: 'ring' | 'column', def: EnemyDef, count: numbe
     }
     s.banner = { text: 'Räkkä', sub: `${def.name} joka suunnasta`, life: 2.5 };
     sound(s, 'swarm');
+    s.shake = 0.4;
   } else {
-    // A column crosses the screen from one side, past the player.
+    // A wall crosses the screen from one side: the whole width, several
+    // ranks deep, bigger and faster than the same creature in a wave. The
+    // ranks are offset so the wall reads as a mass and not as a grid.
     const horizontal = s.rng.chance(0.5);
     const dir = s.rng.chance(0.5) ? 1 : -1;
     const hw = s.view.w / 2 + 40;
     const hh = s.view.h / 2 + 40;
-    for (let i = 0; i < count; i++) {
-      const t = i / count;
-      const along = (t - 0.5) * 2;
-      let x: number;
-      let y: number;
-      if (horizontal) {
-        x = p.x - dir * (hw + i * 14);
-        y = p.y + along * hh * 0.9;
-      } else {
-        x = p.x + along * hw * 0.9;
-        y = p.y - dir * (hh + i * 14);
+    const across = horizontal ? hh : hw;
+    const perRank = Math.max(8, Math.round((across * 2) / 16));
+    const ranks = Math.max(3, Math.ceil((count * 2) / perRank));
+    for (let r = 0; r < ranks; r++) {
+      for (let i = 0; i < perRank; i++) {
+        const along = ((i + (r % 2) * 0.5) / perRank - 0.5) * 2;
+        const depth = r * 15 + (s.rng.next() - 0.5) * 6;
+        let x: number;
+        let y: number;
+        if (horizontal) {
+          x = p.x - dir * (hw + depth);
+          y = p.y + along * across;
+        } else {
+          x = p.x + along * across;
+          y = p.y - dir * (hh + depth);
+        }
+        const e = spawnEnemy(s, def, x, y);
+        e.t2 = 3; // marching: fixed heading, see updateEnemies
+        e.vx = horizontal ? dir : 0;
+        e.vy = horizontal ? 0 : dir;
+        e.scale *= 1.3;
+        e.hp *= 1.5;
+        e.maxHp = e.hp;
       }
-      const e = spawnEnemy(s, def, x, y);
-      e.t2 = 3; // marching: fixed heading, see updateEnemies
-      e.vx = horizontal ? dir : 0;
-      e.vy = horizontal ? 0 : dir;
     }
-    s.banner = { text: 'Vaellus', sub: `${def.name} marssii ohi`, life: 2.5 };
+    s.banner = { text: 'Vaellus', sub: `${def.name} tulee seinänä`, life: 2.5 };
     sound(s, 'swarm');
+    s.shake = 0.9;
   }
 }
 
@@ -388,10 +402,10 @@ function updateEnemies(s: SimState, dt: number): void {
     }
 
     if (e.t2 === 3) {
-      // Column: keep heading, leave the screen, then die quietly far away.
+      // Wall: keep heading, faster than a chaser, then die quietly far away.
       mx = e.vx;
       my = e.vy;
-      speed = e.def.speed * 1.1 * (1 - e.slow);
+      speed = e.def.speed * 1.5 * (1 - e.slow);
       if (Math.abs(e.x - p.x) > farX + 200 || Math.abs(e.y - p.y) > farY + 200) e.hp = -1;
     }
 
