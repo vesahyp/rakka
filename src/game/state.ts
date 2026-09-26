@@ -21,6 +21,12 @@ export interface Player {
   /** seconds since death, for the death animation */
   deadTime: number;
   hurtFlash: number;
+  /** seconds standing still (kanto) */
+  still: number;
+  /** piilopaikka cooldown left */
+  hideCd: number;
+  /** kills since the last elonkorjuu drop */
+  harvest: number;
 }
 
 export interface Banner {
@@ -39,6 +45,7 @@ export interface SimState {
   stats: Stats;
   weapons: WeaponState[];
   passives: PassiveState[];
+  powers: PassiveState[];
   enemies: Enemy[];
   projectiles: Projectile[];
   zones: Zone[];
@@ -96,10 +103,14 @@ export function createState(seed: number, character: CharacterDef): SimState {
       alive: true,
       deadTime: 0,
       hurtFlash: 0,
+      still: 0,
+      hideCd: 0,
+      harvest: 0,
     },
     stats: { ...BASE_STATS },
     weapons: [{ id: character.weapon, level: 1, cooldown: 0.3, burst: 0, burstTimer: 0, side: 1, active: 0 }],
     passives: [],
+    powers: [],
     enemies: [],
     projectiles: [],
     zones: [],

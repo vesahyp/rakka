@@ -16,6 +16,11 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
   olla kuusi, esineitä kuusi.
 - **Kehitä aseita.** Ase täydessä tasossa ja sen pari-esine hallussa: seuraava
   arkku muuttaa aseen lopulliseen muotoonsa.
+- **Taiat** ovat kolmas laji: kaksikymmentä voimaa, jotka muuttavat
+  sääntöä eivätkä vain lukua. Kriittiset osumat, räjähtävät kaadot, salama
+  puremaan, kanto kun seisot paikallasi, Louhen sopimus. Kahdeksan per peli,
+  tarjolla tasosta 8 alkaen ja useammin kun aseet ja esineet ovat täynnä.
+  Arpakivi antaa heittää kortit uudelleen.
 - **Arkut** putoavat eliiteistä (kultainen rengas) ja pomoista. Arkku antaa
   yhden, kolme tai viisi päivitystä.
 - **Pomo** saapuu viiden minuutin välein.

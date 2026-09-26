@@ -98,6 +98,9 @@ export function botPick(s: SimState, offers: Offer[], rng: Rng, o: BotOptions): 
       v += o.weaponBias * 2;
       if (!of.isNew) v += 1.5; // deepen before widening
       if (of.isNew && s.weapons.length >= 4) v -= 2;
+    } else if (of.kind === 'power') {
+      v += 1.5;
+      if (!of.isNew) v += 0.5;
     } else if (of.kind === 'passive') {
       v += (1 - o.weaponBias) * 2;
       // the passive that evolves an owned weapon

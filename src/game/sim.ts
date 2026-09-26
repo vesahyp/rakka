@@ -5,7 +5,7 @@ import { ENEMIES, BOSS_ORDER, type EnemyId } from './content/enemies';
 import { WAVES, SWARM_EVENTS, BOSS_MINUTES, type SpawnEntry } from './content/waves';
 import { updateWeapons, updateProjectiles, updateZones } from './weapons';
 import { addText, healPlayer, hurt, onScreen, sound } from './combat';
-import { computeStats } from './upgrades';
+import { computeStats, powerLevel } from './upgrades';
 
 export const DT = 1 / 60;
 const PLAYER_SPEED = 95;
@@ -46,7 +46,12 @@ export function step(s: SimState, input: Input, dt: number): void {
   // Player
   p.invuln = Math.max(0, p.invuln - dt);
   p.hurtFlash = Math.max(0, p.hurtFlash - dt);
-  if (s.stats.regen > 0 && p.hp < s.stats.maxHp) p.hp = Math.min(s.stats.maxHp, p.hp + s.stats.regen * dt);
+  p.hideCd = Math.max(0, p.hideCd - dt);
+  // Kanto: a second of standing still turns the player into a stump.
+  const kanto = powerLevel(s, 'kanto');
+  const rooted = kanto > 0 && p.still >= 1;
+  const regen = s.stats.regen + (rooted ? 1 * kanto : 0);
+  if (regen > 0 && p.hp < s.stats.maxHp) p.hp = Math.min(s.stats.maxHp, p.hp + regen * dt);
   const len = Math.hypot(input.dx, input.dy);
   if (len > 0.05) {
     const m = Math.min(1, len);
@@ -58,8 +63,10 @@ export function step(s: SimState, input: Input, dt: number): void {
     p.dirY = ny;
     if (Math.abs(nx) > 0.2) p.facing = nx > 0 ? 1 : -1;
     p.moving = true;
+    p.still = 0;
   } else {
     p.moving = false;
+    p.still += dt;
   }
 
   direct(s, dt);
@@ -430,11 +437,27 @@ function updateEnemies(s: SimState, dt: number): void {
       if (e.contact <= 0) {
         e.contact = e.def.behaviour === 'stick' ? 0.4 : e.boss ? 1.0 : 0.55;
         if (p.invuln <= 0) {
-          const dmg = Math.max(1, Math.round(e.def.damage * dmgScale * (e.elite ? 1.5 : 1) - s.stats.armor));
+          const armor = s.stats.armor + (powerLevel(s, 'kanto') > 0 && p.still >= 1 ? 3 * powerLevel(s, 'kanto') : 0);
+          let raw = e.def.damage * dmgScale * (e.elite ? 1.5 : 1);
+          if (e.boss || e.elite) raw *= 1 - 0.25 * powerLevel(s, 'tapionsuoja');
+          const dmg = Math.max(1, Math.round(raw - armor));
           p.hp -= dmg;
           p.hurtFlash = 0.15;
           s.run.damageTaken += dmg;
           sound(s, 'hurt');
+          // Ukon suosio: the biter is struck.
+          const thorns = powerLevel(s, 'ukonsuosio');
+          if (thorns > 0) {
+            hurt(s, e, 20 * thorns * s.stats.might * (1 + s.minute * 0.15), 0, 0, 0);
+            s.effects.push({ kind: 'bolt', x: e.x, y: e.y - 200, x2: e.x, y2: e.y, life: 0.2, maxLife: 0.2, color: '#9fd3ff', radius: 12 });
+          }
+          // Piilopaikka: a hard hit hides the player for a moment.
+          const hide = powerLevel(s, 'piilopaikka');
+          if (hide > 0 && p.hideCd <= 0 && dmg >= s.stats.maxHp * 0.08) {
+            p.invuln = 0.8 * hide + 0.4;
+            p.hideCd = 15;
+            addText(s, p.x, p.y - 16, 'Piilossa', '#c8f0ff', true);
+          }
           if (p.hp <= 0) die(s);
         }
       }
@@ -481,6 +504,7 @@ function reap(s: SimState): void {
     if (e.hp === -1 && e.t2 === 3) continue; // walked off
     s.run.kills++;
     sound(s, 'kill');
+    onKill(s, e);
     if (s.effects.length < 60) s.effects.push({ kind: 'puff', x: e.x, y: e.y, x2: 0, y2: 0, life: 0.28, maxLife: 0.28, color: e.boss ? '#ffd166' : '#dfe8d8', radius: e.def.radius * e.scale * 1.6 });
     if (e.boss) {
       s.bossesAlive--;
@@ -503,6 +527,36 @@ function reap(s: SimState): void {
     if (r < 0.006 * luck) drop(s, 'kanttarelli', e.x, e.y);
     else if (r < 0.0085 * luck) drop(s, 'lakka', e.x, e.y);
     else if (r < 0.0097 * luck) drop(s, 'kekale', e.x, e.y);
+  }
+}
+
+/** Taiat that fire on a kill: Kalman kosketus, Tulikaste, Elonkorjuu. */
+function onKill(s: SimState, e: Enemy): void {
+  const boom = powerLevel(s, 'kalmankosketus');
+  if (boom > 0 && !e.boss) {
+    const r = 34 + e.def.radius * e.scale;
+    const dmg = e.maxHp * 0.12 * boom;
+    s.grid.query(e.x, e.y, r, (o) => {
+      if (o === e || o.hp <= 0) return;
+      const dx = o.x - e.x;
+      const dy = o.y - e.y;
+      if (dx * dx + dy * dy > r * r) return;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      hurt(s, o, dmg, dx / d, dy / d, 10);
+    });
+    if (s.effects.length < 60) s.effects.push({ kind: 'burst', x: e.x, y: e.y, x2: 0, y2: 0, life: 0.25, maxLife: 0.25, color: '#b8a0ff', radius: r });
+  }
+  const fire = powerLevel(s, 'tulikaste');
+  if (fire > 0 && s.rng.chance(0.06 * fire) && s.zones.length < 40) {
+    s.zones.push({ kind: 'fire', weapon: 'tulikaste', x: e.x, y: e.y, radius: 26, life: 2.2, maxLife: 2.2, damage: 4 * s.stats.might * (1 + s.minute * 0.15), tick: 0.5, timer: 0, followPlayer: false, slow: 0, knockback: 0, heal: 0, angle: 0, halfWidth: 0, hit: new Set(), tint: '#ff8a3d' });
+  }
+  const harvest = powerLevel(s, 'elonkorjuu');
+  if (harvest > 0) {
+    s.player.harvest++;
+    if (s.player.harvest >= (harvest >= 2 ? 100 : 150)) {
+      s.player.harvest = 0;
+      drop(s, 'kanttarelli', s.player.x + 20, s.player.y);
+    }
   }
 }
 
@@ -550,6 +604,8 @@ function updateGems(s: SimState, dt: number): void {
       if (d < 12) {
         gainXp(s, g.value);
         sound(s, 'gem');
+        const nl = powerLevel(s, 'nakinlahja');
+        if (nl > 0 && p.hp < s.stats.maxHp) p.hp = Math.min(s.stats.maxHp, p.hp + 0.6 * nl);
         gs[i] = gs[gs.length - 1];
         gs.pop();
       }

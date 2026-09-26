@@ -2,9 +2,10 @@ import type { SimState } from './state';
 import { BASE_STATS, applyDelta, type Stats } from './stats';
 import { PASSIVES, MAX_PASSIVES } from './content/passives';
 import { WEAPONS, BASE_WEAPON_IDS, MAX_WEAPONS, weaponMaxLevel } from './content/weapons';
+import { POWERS, POWER_IDS, MAX_POWERS, POWER_FROM_LEVEL } from './content/powers';
 
 export interface Offer {
-  kind: 'weapon' | 'passive' | 'heal' | 'gold' | 'evolve';
+  kind: 'weapon' | 'passive' | 'power' | 'heal' | 'gold' | 'evolve';
   id: string;
   name: string;
   desc: string;
@@ -24,6 +25,10 @@ export function computeStats(s: SimState): void {
     const def = PASSIVES[p.id];
     for (let i = 0; i < p.level; i++) applyDelta(st, def.perLevel);
   }
+  for (const p of s.powers) {
+    const def = POWERS[p.id];
+    if (def.stats) for (let i = 0; i < p.level; i++) applyDelta(st, def.stats);
+  }
   st.maxHp = Math.max(20, st.maxHp);
   st.moveSpeed = Math.max(0.4, st.moveSpeed);
   st.cooldown = Math.max(0.2, st.cooldown);
@@ -40,6 +45,26 @@ export function ownedWeapon(s: SimState, id: string) {
 }
 export function ownedPassive(s: SimState, id: string) {
   return s.passives.find((p) => p.id === id);
+}
+export function powerLevel(s: SimState, id: string): number {
+  const p = s.powers.find((p) => p.id === id);
+  return p ? p.level : 0;
+}
+
+function powerOffer(s: SimState, id: string): Offer {
+  const def = POWERS[id];
+  const lvl = powerLevel(s, id);
+  return {
+    kind: 'power',
+    id,
+    name: def.name,
+    desc: def.desc,
+    levelText: lvl ? def.levelText : 'Uusi taika',
+    level: lvl + 1,
+    maxLevel: def.maxLevel,
+    isNew: lvl === 0,
+    icon: def.icon,
+  };
 }
 
 function weaponOffer(s: SimState, id: string): Offer {
@@ -108,13 +133,27 @@ function candidates(s: SimState): Candidate[] {
       }
     }
   }
+  // Taiat: rare early, common once the slotted items have nothing left to
+  // level, so the late cards are choices and not heals.
+  if (s.player.level >= POWER_FROM_LEVEL) {
+    const slotted = out.length;
+    const boost = slotted === 0 ? 4 : slotted <= 3 ? 1.6 : 0.45;
+    for (const id of POWER_IDS) {
+      const lvl = powerLevel(s, id);
+      if (lvl >= POWERS[id].maxLevel) continue;
+      if (lvl === 0 && s.powers.length >= MAX_POWERS) continue;
+      out.push({ offer: powerOffer(s, id), weight: POWERS[id].rarity * boost * (lvl ? 1.2 : 1) });
+    }
+  }
   return out;
 }
 
-/** Three cards, four with luck. */
+/** Three cards, four with luck or Väinön viisaus. */
 export function rollOffers(s: SimState): Offer[] {
   const pool = candidates(s);
-  const count = s.rng.chance(Math.min(0.5, (s.stats.luck - 1) * 0.6)) ? 4 : 3;
+  // Rerolls refill to the Arpakivi total at every level-up.
+  s.stats.reroll = 2 * powerLevel(s, 'arpakivi');
+  const count = powerLevel(s, 'vainonviisaus') > 0 || s.rng.chance(Math.min(0.5, (s.stats.luck - 1) * 0.6)) ? 4 : 3;
   const picked: Offer[] = [];
   while (picked.length < count && pool.length > 0) {
     const c = s.rng.weighted(pool, (x) => x.weight);
@@ -137,6 +176,13 @@ export function applyOffer(s: SimState, o: Offer): void {
       const p = ownedPassive(s, o.id);
       if (p) p.level++;
       else s.passives.push({ id: o.id, level: 1 });
+      computeStats(s);
+      break;
+    }
+    case 'power': {
+      const p = s.powers.find((p) => p.id === o.id);
+      if (p) p.level++;
+      else s.powers.push({ id: o.id, level: 1 });
       computeStats(s);
       break;
     }
@@ -193,7 +239,7 @@ export function openChest(s: SimState): ChestResult {
   const evo = readyEvolution(s);
   if (evo) items.push(evolve(s, evo.from, evo.to));
   while (items.length < size) {
-    const pool = candidates(s).filter((c) => !c.offer.isNew);
+    const pool = candidates(s).filter((c) => !c.offer.isNew && c.offer.kind !== 'power');
     if (pool.length === 0) {
       items.push(HEAL_OFFER);
       applyOffer(s, HEAL_OFFER);

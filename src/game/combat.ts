@@ -1,5 +1,6 @@
 import type { SimState } from './state';
 import type { Enemy } from './types';
+import { powerLevel } from './upgrades';
 
 const MAX_TEXTS = 48;
 
@@ -15,6 +16,18 @@ export function addText(s: SimState, x: number, y: number, text: string, color: 
 /** Apply damage to an enemy. Knockback direction is (kx, ky), unit or zero. */
 export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number, kb: number): void {
   if (e.hp <= 0) return;
+  let crit = false;
+  if (dmg < 9999) {
+    dmg *= damageMultiplier(s);
+    if (e.def.behaviour === 'swarm') dmg *= 1 + 0.4 * powerLevel(s, 'rakkatuuli');
+    const cc = 0.1 * powerLevel(s, 'noidansilma');
+    if (cc > 0 && s.rng.chance(cc)) {
+      dmg *= 2;
+      crit = true;
+    }
+    const slow = 0.15 * powerLevel(s, 'jaatavakosketus');
+    if (slow > 0) slowEnemy(s, e, slow, 1);
+  }
   const d = Math.max(1, Math.round(dmg));
   e.hp -= d;
   e.flash = 0.08;
@@ -30,7 +43,19 @@ export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number,
     // A knocked tick lets go.
     if (e.def.behaviour === 'stick') e.t2 = 0;
   }
-  if (d < 9999 && s.texts.length < MAX_TEXTS) addText(s, e.x + (s.rng.next() - 0.5) * 10, e.y - e.def.radius * e.scale, String(d), e.boss || e.elite ? '#ffd166' : '#ffffff');
+  if (d < 9999 && s.texts.length < MAX_TEXTS) addText(s, e.x + (s.rng.next() - 0.5) * 10, e.y - e.def.radius * e.scale, String(d), crit ? '#ff8a3d' : e.boss || e.elite ? '#ffd166' : '#ffffff', crit);
+}
+
+/** Run-state multipliers from taiat: rage when hurt, running, souls eaten. */
+export function damageMultiplier(s: SimState): number {
+  let m = 1;
+  const rage = powerLevel(s, 'karhunraivo');
+  if (rage > 0 && s.player.hp < s.stats.maxHp * 0.35) m += 0.3 * rage;
+  const run = powerLevel(s, 'juoksija');
+  if (run > 0 && s.player.moving) m += 0.15 * run;
+  const souls = powerLevel(s, 'sielunsyoja');
+  if (souls > 0) m += Math.min(1000, s.run.kills) * 0.0002 * souls;
+  return m;
 }
 
 export function healPlayer(s: SimState, amount: number): void {

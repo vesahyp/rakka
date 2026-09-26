@@ -2,6 +2,7 @@ import type { SimState } from './state';
 import type { Projectile, ProjectileKind, WeaponState, Zone, ZoneKind } from './types';
 import { WEAPONS, weaponNumbers, type WeaponDef, type WeaponNumbers } from './content/weapons';
 import { hurt, healPlayer, nearestEnemy, onScreen, slowEnemy } from './combat';
+import { powerLevel } from './upgrades';
 
 /** Numbers after player stats. */
 export function effective(s: SimState, ws: WeaponState): { def: WeaponDef; n: WeaponNumbers } {
@@ -14,6 +15,17 @@ export function effective(s: SimState, ws: WeaponState): { def: WeaponDef; n: We
   n.duration *= st.duration;
   n.cooldown *= st.cooldown;
   if (def.pattern !== 'aura') n.amount += st.amount;
+  const wind = powerLevel(s, 'tuulenselka');
+  if (wind > 0) {
+    n.speed *= 1 + 0.15 * wind;
+    if (n.pierce !== Infinity && def.pattern !== 'aura') n.pierce += 1;
+  }
+  const eagle = powerLevel(s, 'kotkankatse');
+  if (eagle > 0 && def.pattern !== 'aura') {
+    let top = ws;
+    for (const w of s.weapons) if (w.level > top.level || (w.level === top.level && WEAPONS[w.id].evolved)) top = w;
+    if (top === ws) n.amount += eagle;
+  }
   return { def, n };
 }
 

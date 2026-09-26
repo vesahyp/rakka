@@ -2,8 +2,8 @@ import type { Offer } from '../game/upgrades';
 import { icon } from './icons';
 
 export function OfferCard({ o, index, onPick }: { o: Offer; index?: number; onPick?: (o: Offer) => void }) {
-  const cls = 'card' + (o.kind === 'evolve' ? ' evo' : o.isNew ? ' new' : '');
-  const lvl = o.kind === 'evolve' ? 'Kehitys' : o.kind === 'weapon' || o.kind === 'passive' ? (o.isNew ? 'Uusi' : `Taso ${o.level}/${o.maxLevel}`) : '';
+  const cls = 'card' + (o.kind === 'evolve' ? ' evo' : o.kind === 'power' ? ' power' : o.isNew ? ' new' : '');
+  const lvl = o.kind === 'evolve' ? 'Kehitys' : o.kind === 'power' ? (o.isNew ? 'Taika' : `Taika ${o.level}/${o.maxLevel}`) : o.kind === 'weapon' || o.kind === 'passive' ? (o.isNew ? 'Uusi' : `Taso ${o.level}/${o.maxLevel}`) : '';
   return (
     <button className={cls} data-ui onClick={() => onPick?.(o)}>
       <div className="ic">{icon(o.icon)}</div>

@@ -42,6 +42,7 @@ src/
       characters.ts   who you play and their starting traits
       weapons.ts      12 weapons with 8 levels, 12 evolutions
       passives.ts     14 passive items
+      powers.ts       20 taiat: rule-changing perks outside the slots, 8 per run
       enemies.ts      the roster, minute-0 numbers
       waves.ts        what spawns when, swarm events, boss minutes
   render/
@@ -73,7 +74,8 @@ tools/
    delta into `step`.
 3. **Content is data.** A new weapon is a `WeaponDef` plus, if needed, a
    pattern in `weapons.ts`. A new enemy is an `EnemyDef` plus a wave entry.
-   Balance changes are number changes in `content/`.
+   Balance changes are number changes in `content/`. A taika is a `PowerDef`
+   plus its rule, hooked in where the rule lives with `powerLevel(s, id)`.
 4. **Every hit goes through `hurt()`.** Damage numbers, knockback, run stats
    and the tick's flash all live there.
 5. **Bounded arrays.** Enemies cap at 520, berries at 400 (they merge), damage

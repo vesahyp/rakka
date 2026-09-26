@@ -7,6 +7,7 @@ import { rollOffers, applyOffer, openChest, type Offer, type ChestResult } from 
 import type { CharacterDef } from '../game/content/characters';
 import { WEAPONS } from '../game/content/weapons';
 import { PASSIVES } from '../game/content/passives';
+import { POWERS } from '../game/content/powers';
 import { OfferCard } from './Cards';
 import { icon } from './icons';
 import { fmtTime, track } from '../records';
@@ -37,6 +38,7 @@ interface Hud {
   kills: number;
   weapons: { id: string; level: number; evolved: boolean }[];
   passives: { id: string; level: number }[];
+  powers: { id: string; level: number }[];
   boss: { name: string; hp: number; max: number } | null;
   banner: { text: string; sub: string } | null;
 }
@@ -115,6 +117,7 @@ export function Game({ character, seed, onEnd, onQuit, onRestart }: { character:
         kills: s.run.kills,
         weapons: s.weapons.map((w) => ({ id: w.id, level: w.level, evolved: !!WEAPONS[w.id].evolved })),
         passives: s.passives.map((p) => ({ id: p.id, level: p.level })),
+        powers: s.powers.map((p) => ({ id: p.id, level: p.level })),
         boss: boss ? { name: boss.def.name, hp: boss.hp, max: boss.maxHp } : null,
         banner: s.banner ? { text: s.banner.text, sub: s.banner.sub } : null,
       });
@@ -272,6 +275,13 @@ export function Game({ character, seed, onEnd, onQuit, onRestart }: { character:
                     <b>{p.level}</b>
                   </div>
                 ))}
+                {hud.powers.length > 0 && <div className="gap" />}
+                {hud.powers.map((p) => (
+                  <div key={p.id} className="it power" title={POWERS[p.id].name}>
+                    {icon(POWERS[p.id].icon)}
+                    <b>{p.level}</b>
+                  </div>
+                ))}
               </div>
               <div className="hudright">
                 <div className="timer">{fmtTime(hud.time)}</div>
@@ -333,6 +343,18 @@ export function Game({ character, seed, onEnd, onQuit, onRestart }: { character:
               <OfferCard key={o.id + i} o={o} index={i} onPick={pick} />
             ))}
           </div>
+          {s && s.stats.reroll > 0 && (
+            <button
+              className="btn ghost reroll"
+              onClick={() => {
+                s.stats.reroll--;
+                audio.play('tap');
+                setOverlay({ kind: 'levelup', offers: rollOffers(s) });
+              }}
+            >
+              🎲 Heitä uudelleen ({s.stats.reroll})
+            </button>
+          )}
         </div>
       )}
       {overlay.kind === 'chest' && (
@@ -376,6 +398,18 @@ export function Game({ character, seed, onEnd, onQuit, onRestart }: { character:
             <b>{Math.round(s.stats.curse * 100)} %</b>
           </div>
           <div className="cards">
+            {s.powers.map((p) => (
+              <div className="card power" key={p.id} style={{ cursor: 'default' }}>
+                <div className="ic">{icon(POWERS[p.id].icon)}</div>
+                <div className="body">
+                  <div className="name">
+                    <span>{POWERS[p.id].name}</span>
+                    <span className="lvl">Taika {p.level}/{POWERS[p.id].maxLevel}</span>
+                  </div>
+                  <div className="desc">{POWERS[p.id].desc}</div>
+                </div>
+              </div>
+            ))}
             {s.weapons.map((w) => {
               const def = WEAPONS[w.id];
               const evo = def.evolvesWith ? PASSIVES[def.evolvesWith] : null;
