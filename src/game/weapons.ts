@@ -172,7 +172,7 @@ function shoot(s: SimState, ws: WeaponState, def: WeaponDef, n: WeaponNumbers, i
         const dy = e.y - y;
         if (dx * dx + dy * dy <= (n.area + e.def.radius * e.scale) ** 2) {
           const d = Math.hypot(dx, dy) || 1;
-          hurt(s, e, n.damage, dx / d, dy / d, n.knockback);
+          hurt(s, e, n.damage, dx / d, dy / d, n.knockback, ws.id);
         }
       });
       break;
@@ -382,7 +382,7 @@ export function updateProjectiles(s: SimState, dt: number): void {
           kx = pr.vx / v;
           ky = pr.vy / v;
         }
-        hurt(s, e, pr.damage, kx, ky, pr.knockback);
+        hurt(s, e, pr.damage, kx, ky, pr.knockback, pr.weapon);
         if (pr.slow > 0) slowEnemy(s, e, pr.slow, 1.5);
         if (pr.heal > 0) healPlayer(s, pr.heal);
         pr.hit.add(e.id);
@@ -438,7 +438,7 @@ export function updateZones(s: SimState, dt: number): void {
           z.hit.add(e.id);
         }
         const d = Math.sqrt(d2) || 1;
-        hurt(s, e, z.damage, dx / d, dy / d, z.knockback);
+        hurt(s, e, z.damage, dx / d, dy / d, z.knockback, z.weapon);
         if (z.slow > 0) slowEnemy(s, e, z.slow, z.tick * 2.5);
         if (z.heal > 0) healPlayer(s, z.heal);
       });

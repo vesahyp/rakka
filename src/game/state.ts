@@ -146,7 +146,7 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     pendingLevelUps: 0,
     pendingChests: 0,
     banner: null,
-    run: { kills: 0, damageDealt: 0, damageTaken: 0, chests: 0, bosses: 0, maxLevel: 1, cones: 0 },
+    run: { kills: 0, damageDealt: 0, damageTaken: 0, chests: 0, bosses: 0, maxLevel: 1, cones: 0, damageBy: {} },
     gameOver: false,
     tier: 0,
     sounds: [],

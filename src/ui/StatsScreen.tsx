@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { WEAPONS } from '../game/content/weapons';
+import { CHARACTERS } from '../game/content/characters';
 
 /**
  * The traffic board (jeeves practices/web-tracking.md). Reads the nightly
@@ -58,9 +60,12 @@ export function StatsScreen({ onBack }: { onBack: () => void }) {
       latest,
       latestRow,
       runs: sumMaps(last30, 'by', 'run_start').reduce((n, [, v]) => n + v, 0),
-      characters: sumMaps(last30, 'by', 'run_start').slice(0, 11),
+      characters: sumMaps(last30, 'by', 'run_start').map(([k, v]): [string, number] => [CHARACTERS.find((c) => c.id === k)?.name ?? k, v]).slice(0, 11),
       picks: sumMaps(last30, 'by', 'pick').slice(0, 12),
       chests: sumMaps(last30, 'by', 'chest'),
+      weaponDamage: sumMaps(last30, 'by', 'weapon_damage').map(([k, v]): [string, number] => [WEAPONS[k]?.name ?? k, v]),
+      weaponRuns: sumMaps(last30, 'by', 'weapon_runs').map(([k, v]): [string, number] => [WEAPONS[k]?.name ?? k, v]),
+      topWeapon: sumMaps(last30, 'by', 'top_weapon').map(([k, v]): [string, number] => [WEAPONS[k]?.name ?? k, v]),
       referrers: sumMaps(last30, 'bySessions', 'referrer')
         .map(([k, v]): [string, number] => [k === 'direct' ? 'Suoraan' : k, v])
         .slice(0, 8),
@@ -129,6 +134,19 @@ export function StatsScreen({ onBack }: { onBack: () => void }) {
             <BarList items={view.characters} />
           </section>
           <section className="panel">
+            <h3>Aseiden vahinko-osuus, 30 pv</h3>
+            <p className="small">Kokonaisvahinko per ase kaikista päättyneistä peleistä. Yksi ase kaukana muiden edellä on liian vahva; yksi kaukana takana on turha valinta.</p>
+            <BarList items={view.weaponDamage} />
+          </section>
+          <section className="panel">
+            <h3>Eniten vahinkoa tehnyt ase, pelejä 30 pv</h3>
+            <BarList items={view.topWeapon} />
+          </section>
+          <section className="panel">
+            <h3>Ase mukana, pelejä 30 pv</h3>
+            <BarList items={view.weaponRuns} />
+          </section>
+          <section className="panel">
             <h3>Valinnat, 30 pv</h3>
             <BarList items={view.picks} />
           </section>
@@ -168,7 +186,7 @@ function BarList({ items }: { items: [string, number][] }) {
           <div className="track">
             <div style={{ width: `${(v / max) * 100}%` }} />
           </div>
-          <span className="v">{v}</span>
+          <span className="v">{v >= 10000 ? Math.round(v / 1000) + 'k' : v}</span>
         </li>
       ))}
     </ul>

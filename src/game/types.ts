@@ -201,4 +201,6 @@ export interface RunStats {
   bosses: number;
   maxLevel: number;
   cones: number;
+  /** damage dealt per source: a weapon id, or a taika or pickup name */
+  damageBy: Record<string, number>;
 }

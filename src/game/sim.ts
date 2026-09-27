@@ -551,7 +551,7 @@ function updateEnemies(s: SimState, dt: number): void {
           // Ukon suosio: the biter is struck.
           const thorns = powerLevel(s, 'ukonsuosio');
           if (thorns > 0) {
-            hurt(s, e, 20 * thorns * s.stats.might * (1 + s.minute * 0.15), 0, 0, 0);
+            hurt(s, e, 20 * thorns * s.stats.might * (1 + s.minute * 0.15), 0, 0, 0, 'ukonsuosio');
             s.effects.push({ kind: 'bolt', x: e.x, y: e.y - 200, x2: e.x, y2: e.y, life: 0.2, maxLife: 0.2, color: '#9fd3ff', radius: 12 });
           }
           // Piilopaikka: a hard hit hides the player for a moment.
@@ -648,7 +648,7 @@ function onKill(s: SimState, e: Enemy): void {
       const dy = o.y - e.y;
       if (dx * dx + dy * dy > r * r) return;
       const d = Math.sqrt(dx * dx + dy * dy) || 1;
-      hurt(s, o, dmg, dx / d, dy / d, 10);
+      hurt(s, o, dmg, dx / d, dy / d, 10, 'kalmankosketus');
     });
     if (s.effects.length < 60) s.effects.push({ kind: 'burst', x: e.x, y: e.y, x2: 0, y2: 0, life: 0.25, maxLife: 0.25, color: '#b8a0ff', radius: r });
   }
@@ -749,7 +749,7 @@ function collect(s: SimState, kind: PickupKind, x: number, y: number): void {
       sound(s, 'pickup');
       break;
     case 'kekale':
-      for (const e of s.enemies) if (!e.boss && e.def.id !== 'tuoni' && onScreen(s, e.x, e.y, 40)) hurt(s, e, 9999, 0, 0, 0);
+      for (const e of s.enemies) if (!e.boss && e.def.id !== 'tuoni' && onScreen(s, e.x, e.y, 40)) hurt(s, e, 9999, 0, 0, 0, 'kekale');
       s.effects.push({ kind: 'burst', x, y, x2: 0, y2: 0, life: 0.5, maxLife: 0.5, color: '#ff8a3d', radius: 400 });
       sound(s, 'ember');
       break;

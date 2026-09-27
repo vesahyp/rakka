@@ -14,7 +14,7 @@ export function addText(s: SimState, x: number, y: number, text: string, color: 
 }
 
 /** Apply damage to an enemy. Knockback direction is (kx, ky), unit or zero. */
-export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number, kb: number): void {
+export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number, kb: number, source = 'muu'): void {
   if (e.hp <= 0) return;
   if (e.def.id === 'tuoni') {
     e.flash = 0.05;
@@ -36,7 +36,10 @@ export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number,
   e.hp -= d;
   e.flash = 0.08;
   sound(s, 'hit');
-  if (d < 9999) s.run.damageDealt += d;
+  if (d < 9999) {
+    s.run.damageDealt += d;
+    s.run.damageBy[source] = (s.run.damageBy[source] ?? 0) + d;
+  }
   if (kb > 0 && e.def.kbResist < 1) {
     // The forest digs in: knockback loses a third by minute five and most
     // of its push by minute thirty, so a late crowd cannot be held off

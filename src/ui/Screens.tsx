@@ -225,7 +225,15 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
               <tr key={i} className={e.name === mine ? 'me' : ''} title={`${e.bosses} pomoa`}>
                 <td>{i + 1}</td>
                 <td className="name">{e.name}</td>
-                <td>{charName(e.character)}</td>
+                <td>
+                  {charName(e.character)}
+                  {e.top && WEAPONS[e.top] && (
+                    <span className="topw" title={`Eniten vahinkoa: ${WEAPONS[e.top].name}`}>
+                      {' '}
+                      {icon(WEAPONS[e.top].icon)}
+                    </span>
+                  )}
+                </td>
                 <td>{fmtTime(e.time)}</td>
                 <td className="n">{e.level}</td>
                 <td className="n">{e.kills.toLocaleString('fi')}</td>

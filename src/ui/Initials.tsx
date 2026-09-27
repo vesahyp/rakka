@@ -32,7 +32,7 @@ export function Initials({ r, onDone }: { r: RunSummary; onDone: (ranks: Record<
     setError('');
     saveInitials(name);
     try {
-      const ranks = await submitScore({ name, character: r.character.id, time: r.time, level: r.level, kills: r.kills, bosses: r.bosses });
+      const ranks = await submitScore({ name, character: r.character.id, time: r.time, level: r.level, kills: r.kills, bosses: r.bosses, weapons: r.weapons, top: r.topWeapon });
       onDone(ranks);
     } catch {
       setError('Tulos ei mennyt perille. Paikallinen tulos on tallessa.');

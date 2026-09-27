@@ -16,6 +16,9 @@ export interface TopEntry {
   kills: number;
   bosses: number;
   at: string;
+  /** weapon ids in the build, and the one that dealt the most; absent on old rows */
+  weapons?: string[];
+  top?: string;
 }
 
 export const PERIOD_LABELS: Record<Period, string> = { day: 'Tänään', week: 'Viikko', month: 'Kuukausi', all: 'Kaikki' };
@@ -28,7 +31,7 @@ export async function fetchTop(period: Period, limit = 25): Promise<TopEntry[]> 
   return j.top.sort((a, b) => b.time - a.time || b.kills - a.kills || b.level - a.level);
 }
 
-export async function submitScore(s: { name: string; character: string; time: number; level: number; kills: number; bosses: number }): Promise<Record<Period, number>> {
+export async function submitScore(s: { name: string; character: string; time: number; level: number; kills: number; bosses: number; weapons: string[]; top: string | null }): Promise<Record<Period, number>> {
   const r = await fetch(`${RECORDS_API}/scores`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

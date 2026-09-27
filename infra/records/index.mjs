@@ -11,6 +11,7 @@ import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-d
 const TABLE = process.env.TABLE;
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const NAME = /^[A-Z0-9]{3}$/;
+const WEAPON_ID = /^[a-z]{2,24}$/;
 const CHARACTERS = new Set(['vaino', 'lemminkainen', 'ilmarinen', 'louhi', 'aino', 'noaidi', 'kullervo', 'tonttu', 'tapio', 'ukko', 'nyyrikki']);
 
 function periods(date = new Date()) {
@@ -58,7 +59,7 @@ async function top(period, limit) {
       Limit: limit,
     }),
   );
-  return (r.Items ?? []).map((i) => ({ name: i.name, character: i.character, time: i.time, level: i.level, kills: i.kills, bosses: i.bosses, at: i.at }));
+  return (r.Items ?? []).map((i) => ({ name: i.name, character: i.character, time: i.time, level: i.level, kills: i.kills, bosses: i.bosses, at: i.at, weapons: i.weapons, top: i.top }));
 }
 
 async function rank(period, value, time) {
@@ -105,10 +106,14 @@ export const handler = async (event) => {
       if (!(time >= 30 && time <= 4 * 3600)) return json(400, { error: 'time' });
       if (!(level >= 1 && level <= 300) || !(kills >= 0 && kills <= 200000) || !(bosses >= 0 && bosses <= 60)) return json(400, { error: 'stats' });
       if (kills > time * 40 || level > time / 4 + 5) return json(400, { error: 'stats' });
+      // The build: up to six weapon ids and the one that dealt the most.
+      // Optional, so a client without them still scores.
+      const weapons = Array.isArray(b.weapons) ? b.weapons.filter((w) => typeof w === 'string' && WEAPON_ID.test(w)).slice(0, 6) : [];
+      const top = typeof b.top === 'string' && WEAPON_ID.test(b.top) ? b.top : undefined;
       const now = new Date();
       const p = periods(now);
       const id = `${now.toISOString()}#${Math.random().toString(36).slice(2, 8)}`;
-      await db.send(new PutCommand({ TableName: TABLE, Item: { id, name, character, time, level, kills, bosses, at: now.toISOString(), ...p } }));
+      await db.send(new PutCommand({ TableName: TABLE, Item: { id, name, character, time, level, kills, bosses, at: now.toISOString(), ...(weapons.length ? { weapons } : {}), ...(top ? { top } : {}), ...p } }));
       const ranks = {};
       for (const k of Object.keys(p)) ranks[k] = await rank(k, p[k], time);
       return json(200, { ok: true, ranks });

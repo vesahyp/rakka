@@ -28,6 +28,9 @@ export interface RunSummary {
   passives: string[];
   damageDealt: number;
   cones: number;
+  /** damage per weapon id, sorted, for the records API and the beacon */
+  damageBy: Record<string, number>;
+  topWeapon: string | null;
 }
 
 interface Hud {
@@ -177,7 +180,21 @@ export function Game({ character, seed, meta, onEnd, onQuit, onRestart }: { char
         deathAcc += dt;
         if (deathAcc > 1.6 && !endedRef.current) {
           endedRef.current = true;
-          track('run_end', { character: character.id, time: Math.round(s.time), level: s.player.level, kills: s.run.kills });
+          // Per-weapon damage rides in one value: "puukko:12345,kokko:999".
+          // The tracker truncates values past 200 characters, so only the
+          // weapons go, sorted by damage, and taiat and pickups stay out.
+          const weaponIds = new Set(s.weapons.map((w) => w.id));
+          const byWeapon = Object.entries(s.run.damageBy)
+            .filter(([k]) => weaponIds.has(k))
+            .sort((a, b) => b[1] - a[1]);
+          track('run_end', {
+            character: character.id,
+            time: Math.round(s.time),
+            level: s.player.level,
+            kills: s.run.kills,
+            w: byWeapon.map(([k, v]) => `${k}:${Math.round(v)}`).join(','),
+            top: byWeapon[0]?.[0] ?? '',
+          });
           onEnd({
             character,
             time: s.time,
@@ -189,6 +206,8 @@ export function Game({ character, seed, meta, onEnd, onQuit, onRestart }: { char
             passives: s.passives.map((p) => p.id),
             damageDealt: s.run.damageDealt,
             cones: s.run.cones,
+            damageBy: Object.fromEntries(byWeapon),
+            topWeapon: byWeapon[0]?.[0] ?? null,
           });
         }
       }

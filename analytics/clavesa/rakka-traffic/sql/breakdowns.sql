@@ -32,8 +32,22 @@ tagged AS (
     END AS key
   FROM human
 ),
+-- Weapon damage per run end: q['w'] is "puukko:12345,kokko:999". One row
+-- per weapon with the damage as weight, so events = total damage; and one
+-- with weight 1, so events = runs that had the weapon.
+weapons AS (
+  SELECT day, site, sid, split_part(kv, ':', 1) AS weapon, TRY_CAST(split_part(kv, ':', 2) AS BIGINT) AS dmg
+  FROM (SELECT day, site, sid, explode(split(q['w'], ',')) AS kv FROM human WHERE e = 'run_end' AND q['w'] IS NOT NULL AND q['w'] <> '')
+  WHERE kv <> ''
+),
 other AS (
-  SELECT day, site, 'path' AS dim, path AS key, sid
+  SELECT day, site, 'weapon_damage' AS dim, weapon AS key, sid, dmg AS w FROM weapons WHERE dmg IS NOT NULL
+  UNION ALL
+  SELECT day, site, 'weapon_runs' AS dim, weapon AS key, sid, 1 AS w FROM weapons
+  UNION ALL
+  SELECT day, site, 'top_weapon' AS dim, q['top'] AS key, sid, 1 AS w FROM human WHERE e = 'run_end' AND q['top'] IS NOT NULL AND q['top'] <> ''
+  UNION ALL
+  SELECT day, site, 'path' AS dim, path AS key, sid, 1 AS w
   FROM human WHERE e = 'session_start' AND path IS NOT NULL AND path <> ''
   UNION ALL
   -- Where the visit came from, one row per session_start, so the dim sums to
@@ -53,7 +67,7 @@ other AS (
            WHEN ref_host LIKE '%.amazoncognito.com' THEN 'direct'
            ELSE ref_host
          END AS key,
-         sid
+         sid, 1 AS w
   FROM (
     SELECT day, site, sid,
            parse_url(q['ref'], 'HOST') AS ref_host,
@@ -62,16 +76,16 @@ other AS (
   ) AS refs
   UNION ALL
   -- The three-letter airport code, not the individual edge server.
-  SELECT day, site, 'edge' AS dim, substr(edge, 1, 3) AS key, sid
+  SELECT day, site, 'edge' AS dim, substr(edge, 1, 3) AS key, sid, 1 AS w
   FROM human WHERE edge IS NOT NULL AND edge <> '-'
   UNION ALL
-  SELECT day, site, 'hour' AS dim, CAST(hour AS STRING) AS key, sid
+  SELECT day, site, 'hour' AS dim, CAST(hour AS STRING) AS key, sid, 1 AS w
   FROM human WHERE hour IS NOT NULL
 )
-SELECT day, site, dim, key, COUNT(*) AS events, COUNT(DISTINCT sid) AS sessions
+SELECT day, site, dim, key, SUM(w) AS events, COUNT(DISTINCT sid) AS sessions
 FROM (
-  SELECT day, site, dim, key, sid FROM tagged WHERE dim IS NOT NULL
-  UNION ALL SELECT day, site, dim, key, sid FROM other
+  SELECT day, site, dim, key, sid, 1 AS w FROM tagged WHERE dim IS NOT NULL
+  UNION ALL SELECT day, site, dim, key, sid, w FROM other
 )
 WHERE key IS NOT NULL AND key <> ''
 GROUP BY day, site, dim, key
