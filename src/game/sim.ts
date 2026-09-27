@@ -213,6 +213,7 @@ export function spawnEnemy(s: SimState, def: EnemyDef, x: number, y: number, opt
     contact: 0,
     facing: 1,
     wobble: s.rng.next() * Math.PI * 2,
+    lastSource: '',
   };
   s.enemies.push(e);
   return e;
@@ -638,10 +639,13 @@ function reap(s: SimState): void {
 
 /** Taiat that fire on a kill: Kalman kosketus, Tulikaste, Elonkorjuu. */
 function onKill(s: SimState, e: Enemy): void {
+  // No chain: a creature killed by a blast does not blast. The blast is a
+  // share of the creature's own base HP at this minute, so an elite's nine
+  // times HP does not clear the screen.
   const boom = powerLevel(s, 'kalmankosketus');
-  if (boom > 0 && !e.boss) {
-    const r = 34 + e.def.radius * e.scale;
-    const dmg = e.maxHp * 0.12 * boom;
+  if (boom > 0 && !e.boss && e.lastSource !== 'kalmankosketus') {
+    const r = 26 + e.def.radius * e.scale;
+    const dmg = e.def.hp * enemyHpScale(s.minute, s.stats.curse) * 0.08 * boom;
     s.grid.query(e.x, e.y, r, (o) => {
       if (o === e || o.hp <= 0) return;
       const dx = o.x - e.x;

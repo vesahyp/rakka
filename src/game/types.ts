@@ -63,6 +63,8 @@ export interface Enemy {
   contact: number;
   facing: number; // -1 or 1
   wobble: number;
+  /** what hit it last, so a kill by a blast does not blast again */
+  lastSource: string;
 }
 
 export type ProjectileKind =

@@ -23,7 +23,7 @@ export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number,
   let crit = false;
   if (dmg < 9999) {
     dmg *= damageMultiplier(s);
-    if (e.def.behaviour === 'swarm') dmg *= 1 + 0.4 * powerLevel(s, 'rakkatuuli');
+    if (e.def.behaviour === 'swarm') dmg *= 1 + 0.25 * powerLevel(s, 'rakkatuuli');
     const cc = 0.1 * powerLevel(s, 'noidansilma');
     if (cc > 0 && s.rng.chance(cc)) {
       dmg *= 2;
@@ -33,6 +33,7 @@ export function hurt(s: SimState, e: Enemy, dmg: number, kx: number, ky: number,
     if (slow > 0) slowEnemy(s, e, slow, 1);
   }
   const d = Math.max(1, Math.round(dmg));
+  e.lastSource = source;
   e.hp -= d;
   e.flash = 0.08;
   sound(s, 'hit');

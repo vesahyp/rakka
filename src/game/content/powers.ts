@@ -21,7 +21,7 @@ export interface PowerDef {
 
 export const POWERS: Record<string, PowerDef> = {
   noidansilma: { id: 'noidansilma', name: 'Noidan silmä', desc: 'Näet heikon kohdan. Osuma tekee joskus kaksinkertaisen vahingon.', maxLevel: 3, levelText: '+10 % kriittinen', rarity: 90, icon: 'noidansilma' },
-  kalmankosketus: { id: 'kalmankosketus', name: 'Kalman kosketus', desc: 'Kuollut vihollinen räjähtää ja vahingoittaa ympärillään olevia.', maxLevel: 3, levelText: '+12 % räjähdysvahinko', rarity: 80, icon: 'kalmankosketus' },
+  kalmankosketus: { id: 'kalmankosketus', name: 'Kalman kosketus', desc: 'Kuollut vihollinen räjähtää ja vahingoittaa ympärillään olevia. Räjähdys ei ketjuunnu.', maxLevel: 3, levelText: '+8 % räjähdysvahinko', rarity: 80, icon: 'kalmankosketus' },
   ukonsuosio: { id: 'ukonsuosio', name: 'Ukon suosio', desc: 'Salama iskee siihen, joka puree sinua.', maxLevel: 2, levelText: '+ salaman vahinko', rarity: 70, icon: 'ukonsuosio' },
   nakinlahja: { id: 'nakinlahja', name: 'Näkin lahja', desc: 'Jokainen marja parantaa vähän.', maxLevel: 2, levelText: '+0.6 elinvoimaa marjasta', rarity: 80, icon: 'nakinlahja' },
   karhunraivo: { id: 'karhunraivo', name: 'Karhun raivo', desc: 'Haavoittuneena lyöt lujempaa. Alle 35 % elinvoimalla vahinko kasvaa.', maxLevel: 2, levelText: '+30 % vahinko haavoittuneena', rarity: 80, icon: 'karhunraivo' },
@@ -35,7 +35,7 @@ export const POWERS: Record<string, PowerDef> = {
   arpakivi: { id: 'arpakivi', name: 'Arpakivi', desc: 'Voit heittää kortit uudelleen. Kaksi heittoa per taso.', maxLevel: 2, levelText: '+2 uudelleenheittoa', rarity: 60, icon: 'arpakivi', stats: { reroll: 2 } },
   tapionsuoja: { id: 'tapionsuoja', name: 'Tapion suoja', desc: 'Pomot ja eliitit tekevät sinulle vähemmän vahinkoa.', maxLevel: 2, levelText: '-25 % pomovahinko', rarity: 60, icon: 'tapionsuoja' },
   sielunsyoja: { id: 'sielunsyoja', name: 'Sielunsyöjä', desc: 'Jokainen kaato kasvattaa vahinkoa hitusen, tuhanteen kaatoon asti.', maxLevel: 2, levelText: '+20 % vahinko tuhannesta kaadosta', rarity: 60, icon: 'sielunsyoja' },
-  rakkatuuli: { id: 'rakkatuuli', name: 'Räkkätuuli', desc: 'Parvet kärsivät. Hyttyset, mäkärät ja muut pienet ottavat enemmän vahinkoa.', maxLevel: 2, levelText: '+40 % vahinko parville', rarity: 80, icon: 'rakkatuuli' },
+  rakkatuuli: { id: 'rakkatuuli', name: 'Räkkätuuli', desc: 'Parvet kärsivät. Hyttyset, mäkärät ja muut pienet ottavat enemmän vahinkoa.', maxLevel: 2, levelText: '+25 % vahinko parville', rarity: 80, icon: 'rakkatuuli' },
   peikonveri: { id: 'peikonveri', name: 'Peikon veri', desc: 'Paksu ja hidas. Paljon elinvoimaa, vähemmän vauhtia.', maxLevel: 2, levelText: '+80 elinvoima, -8 % nopeus', rarity: 70, icon: 'peikonveri', stats: { maxHp: 80, moveSpeed: -0.08 } },
   jaatavakosketus: { id: 'jaatavakosketus', name: 'Jäätävä kosketus', desc: 'Jokainen osuma hidastaa hetken.', maxLevel: 2, levelText: '+15 % hidastus', rarity: 70, icon: 'jaatavakosketus' },
   kotkankatse: { id: 'kotkankatse', name: 'Kotkan katse', desc: 'Korkeimman tason aseesi saa yhden ammuksen lisää.', maxLevel: 2, levelText: '+1 ammus pääaseelle', rarity: 60, icon: 'kotkankatse' },
