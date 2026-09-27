@@ -57,6 +57,7 @@ function Screens() {
           character={screen.character}
           seed={screen.seed}
           meta={metaStats(meta)}
+          altar={meta.ranks}
           onQuit={() => setScreen({ kind: 'select' })}
           onRestart={() => start(screen.character)}
           onEnd={(r) => {

@@ -51,7 +51,7 @@ interface Hud {
 
 type Overlay = { kind: 'none' } | { kind: 'levelup'; offers: Offer[] } | { kind: 'chest'; result: ChestResult } | { kind: 'pause' };
 
-export function Game({ character, seed, meta, onEnd, onQuit, onRestart }: { character: CharacterDef; seed: number; meta: StatDelta; onEnd: (r: RunSummary) => void; onQuit: () => void; onRestart: () => void }) {
+export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }: { character: CharacterDef; seed: number; meta: StatDelta; altar: Record<string, number>; onEnd: (r: RunSummary) => void; onQuit: () => void; onRestart: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const simRef = useRef<SimState | null>(null);
@@ -187,6 +187,10 @@ export function Game({ character, seed, meta, onEnd, onQuit, onRestart }: { char
           const byWeapon = Object.entries(s.run.damageBy)
             .filter(([k]) => weaponIds.has(k))
             .sort((a, b) => b[1] - a[1]);
+          // Everything that multiplied the damage rides along, each as its
+          // own value under the 200-character cap: weapon levels, passives,
+          // taiat, altar ranks and the derived multipliers.
+          const st = s.stats;
           track('run_end', {
             character: character.id,
             time: Math.round(s.time),
@@ -194,6 +198,14 @@ export function Game({ character, seed, meta, onEnd, onQuit, onRestart }: { char
             kills: s.run.kills,
             w: byWeapon.map(([k, v]) => `${k}:${Math.round(v)}`).join(','),
             top: byWeapon[0]?.[0] ?? '',
+            wl: s.weapons.map((w) => `${w.id}:${w.level}`).join(','),
+            pas: s.passives.map((p) => `${p.id}:${p.level}`).join(','),
+            tai: s.powers.map((p) => `${p.id}:${p.level}`).join(','),
+            alt: Object.entries(altar)
+              .filter(([, v]) => v > 0)
+              .map(([k, v]) => `${k}:${v}`)
+              .join(','),
+            st: `might:${st.might.toFixed(2)},area:${st.area.toFixed(2)},cd:${st.cooldown.toFixed(2)},amt:${st.amount},spd:${st.speed.toFixed(2)},dur:${st.duration.toFixed(2)},luck:${st.luck.toFixed(2)},curse:${st.curse.toFixed(2)},growth:${st.growth.toFixed(2)},hp:${st.maxHp},armor:${st.armor},regen:${st.regen.toFixed(1)}`,
           });
           onEnd({
             character,

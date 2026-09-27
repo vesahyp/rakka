@@ -40,7 +40,34 @@ weapons AS (
   FROM (SELECT day, site, sid, explode(split(q['w'], ',')) AS kv FROM human WHERE e = 'run_end' AND q['w'] IS NOT NULL AND q['w'] <> '')
   WHERE kv <> ''
 ),
+-- The rest of the build at run end, one "id:level" list per field. The
+-- dim is the field, the key the id; events = sum of levels (or ranks),
+-- sessions = runs that had it at all.
+build AS (
+  SELECT day, site, sid, field, split_part(kv, ':', 1) AS id, TRY_CAST(split_part(kv, ':', 2) AS BIGINT) AS lvl
+  FROM (
+    SELECT day, site, sid, 'weapon_level' AS field, explode(split(q['wl'], ',')) AS kv FROM human WHERE e = 'run_end' AND q['wl'] IS NOT NULL AND q['wl'] <> ''
+    UNION ALL
+    SELECT day, site, sid, 'passive' AS field, explode(split(q['pas'], ',')) AS kv FROM human WHERE e = 'run_end' AND q['pas'] IS NOT NULL AND q['pas'] <> ''
+    UNION ALL
+    SELECT day, site, sid, 'taika' AS field, explode(split(q['tai'], ',')) AS kv FROM human WHERE e = 'run_end' AND q['tai'] IS NOT NULL AND q['tai'] <> ''
+    UNION ALL
+    SELECT day, site, sid, 'altar' AS field, explode(split(q['alt'], ',')) AS kv FROM human WHERE e = 'run_end' AND q['alt'] IS NOT NULL AND q['alt'] <> ''
+  )
+  WHERE kv <> ''
+),
+-- The derived multipliers, bucketed, so the board shows how strong the
+-- builds that end are: might rounded to a tenth, and so on.
+mods AS (
+  SELECT day, site, sid, split_part(kv, ':', 1) AS id, TRY_CAST(split_part(kv, ':', 2) AS DOUBLE) AS v
+  FROM (SELECT day, site, sid, explode(split(q['st'], ',')) AS kv FROM human WHERE e = 'run_end' AND q['st'] IS NOT NULL AND q['st'] <> '')
+  WHERE kv <> ''
+),
 other AS (
+  SELECT day, site, field AS dim, id AS key, sid, COALESCE(lvl, 1) AS w FROM build
+  UNION ALL
+  SELECT day, site, concat('mod_', id) AS dim, CAST(ROUND(v, 1) AS STRING) AS key, sid, 1 AS w FROM mods WHERE v IS NOT NULL AND id IN ('might', 'area', 'cd', 'amt', 'curse')
+  UNION ALL
   SELECT day, site, 'weapon_damage' AS dim, weapon AS key, sid, dmg AS w FROM weapons WHERE dmg IS NOT NULL
   UNION ALL
   SELECT day, site, 'weapon_runs' AS dim, weapon AS key, sid, 1 AS w FROM weapons

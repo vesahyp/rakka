@@ -23,7 +23,10 @@ string intact, which is all a pipeline reads.
 
 `track(event, data)` in `src/records.ts` wraps `window.__clvtracker.track`.
 Wired events: `run_start` (character, seed), `pick` (upgrade id, level,
-kind), `chest` (size, items), `run_end` (character, time, level, kills).
+kind), `chest` (size, items), `run_end` (character, time, level, kills, and
+the whole damage context: `w` damage per weapon, `top`, `wl` weapon levels,
+`pas` passives, `tai` taiat, `alt` altar ranks, `st` the derived
+multipliers). Each value stays under the tracker's 200-character cap.
 
 ## Standing it up
 

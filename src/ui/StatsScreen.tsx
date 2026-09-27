@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { WEAPONS } from '../game/content/weapons';
 import { CHARACTERS } from '../game/content/characters';
+import { PASSIVES } from '../game/content/passives';
+import { POWERS } from '../game/content/powers';
+import { ALTAR } from '../meta';
 
 /**
  * The traffic board (jeeves practices/web-tracking.md). Reads the nightly
@@ -66,6 +69,12 @@ export function StatsScreen({ onBack }: { onBack: () => void }) {
       weaponDamage: sumMaps(last30, 'by', 'weapon_damage').map(([k, v]): [string, number] => [WEAPONS[k]?.name ?? k, v]),
       weaponRuns: sumMaps(last30, 'by', 'weapon_runs').map(([k, v]): [string, number] => [WEAPONS[k]?.name ?? k, v]),
       topWeapon: sumMaps(last30, 'by', 'top_weapon').map(([k, v]): [string, number] => [WEAPONS[k]?.name ?? k, v]),
+      // Runs that had the item (sessions), not summed levels.
+      passives: sumMaps(last30, 'bySessions', 'passive').map(([k, v]): [string, number] => [PASSIVES[k]?.name ?? k, v]),
+      taiat: sumMaps(last30, 'bySessions', 'taika').map(([k, v]): [string, number] => [POWERS[k]?.name ?? k, v]),
+      altar: sumMaps(last30, 'by', 'altar').map(([k, v]): [string, number] => [ALTAR.find((a) => a.id === k)?.name ?? k, v]),
+      altarRuns: sumMaps(last30, 'bySessions', 'altar').reduce((n, [, v]) => Math.max(n, v), 0),
+      might: sumMaps(last30, 'by', 'mod_might').sort((a, b) => Number(a[0]) - Number(b[0])),
       referrers: sumMaps(last30, 'bySessions', 'referrer')
         .map(([k, v]): [string, number] => [k === 'direct' ? 'Suoraan' : k, v])
         .slice(0, 8),
@@ -145,6 +154,24 @@ export function StatsScreen({ onBack }: { onBack: () => void }) {
           <section className="panel">
             <h3>Ase mukana, pelejä 30 pv</h3>
             <BarList items={view.weaponRuns} />
+          </section>
+          <section className="panel">
+            <h3>Vahinkokerroin päättyneissä peleissä, 30 pv</h3>
+            <p className="small">Might-kerroin pelin lopussa, kymmenyksen tarkkuudella. Kertoo kuinka paljon terva, taiat ja pöytä kertovat aseiden lukuja.</p>
+            <BarList items={view.might} />
+          </section>
+          <section className="panel">
+            <h3>Tapion pöytä: asteet päättyneissä peleissä, 30 pv</h3>
+            <p className="small">Summa asteista per esine. {view.altarRuns} pelissä oli pöydän asteita.</p>
+            <BarList items={view.altar} />
+          </section>
+          <section className="panel">
+            <h3>Esine mukana, pelejä 30 pv</h3>
+            <BarList items={view.passives} />
+          </section>
+          <section className="panel">
+            <h3>Taika mukana, pelejä 30 pv</h3>
+            <BarList items={view.taiat} />
           </section>
           <section className="panel">
             <h3>Valinnat, 30 pv</h3>
