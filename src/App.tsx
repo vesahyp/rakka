@@ -8,7 +8,7 @@ import { loadMeta, metaStats, earnCones, conesForRun, type Meta } from './meta';
 import { loadRecords, saveRun, type Records } from './records';
 import { UpdateBanner } from './ui/Update';
 import { ErrorBoundary } from './ui/ErrorBoundary';
-import { BUILD } from './version';
+import { BUILD, BUILD_NAME } from './version';
 
 type Screen = { kind: 'title' } | { kind: 'select' } | { kind: 'records' } | { kind: 'stats' } | { kind: 'altar' } | { kind: 'run'; character: CharacterDef; seed: number } | { kind: 'dead'; r: RunSummary; rank: number; charBest: boolean; cones: number };
 
@@ -87,7 +87,11 @@ function Screens() {
     <>
       {body}
       {screen.kind !== 'run' && <UpdateBanner />}
-      {screen.kind === 'title' && <div className="build">{BUILD}</div>}
+      {screen.kind === 'title' && (
+        <div className="build">
+          {BUILD_NAME} · {BUILD}
+        </div>
+      )}
     </>
   );
 }

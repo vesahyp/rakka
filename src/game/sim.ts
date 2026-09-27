@@ -531,7 +531,6 @@ function updateEnemies(s: SimState, dt: number): void {
     e.y += (my * speed + e.ky) * dt;
     e.kx *= Math.pow(0.02, dt);
     e.ky *= Math.pow(0.02, dt);
-    if (e.t2 < 3 && e.def.behaviour !== 'phase' && !e.boss && e.def.id !== 'tuoni') collideTrees(e, e.def.radius * e.scale * 0.7);
     if (Math.abs(mx) > 0.1) e.facing = mx > 0 ? 1 : -1;
 
     // Contact damage

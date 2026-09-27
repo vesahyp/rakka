@@ -2,7 +2,7 @@ import type { SimState } from '../game/state';
 import { hash2 } from '../game/rng';
 import { sprite, setSpriteResolution, characterSprite } from './sprites';
 import { WEAPONS } from '../game/content/weapons';
-import { featureAt, cellKey, CELL, CANOPY_R, TREE_R } from '../game/forest';
+import { featuresInCell, cellKey, CELL, CANOPY_R, TREE_R } from '../game/forest';
 
 /**
  * Canvas 2D renderer. The camera sits on the player. World units are chosen
@@ -136,19 +136,19 @@ export class Renderer {
     const trees: { x: number; y: number }[] = [];
     for (let cy = cy0; cy <= cy1; cy++) {
       for (let cx = cx0; cx <= cx1; cx++) {
-        const f = featureAt(cx, cy);
-        if (!f) continue;
-        if (f.kind === 'tree') {
-          trees.push(f);
-          ctx.fillStyle = 'rgba(0,0,0,0.3)';
-          ctx.beginPath();
-          ctx.ellipse(f.x + 4, f.y + 6, TREE_R + 4, TREE_R * 0.6, 0, 0, Math.PI * 2);
-          ctx.fill();
-          this.blit('trunk', f.x, f.y, 1, 1, 0);
-          continue;
+        for (const f of featuresInCell(cx, cy)) {
+          if (f.kind === 'tree') {
+            trees.push(f);
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(f.x + 4, f.y + 6, TREE_R + 4, TREE_R * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            this.blit('trunk', f.x, f.y, 1, 1, 0);
+            continue;
+          }
+          if (f.kind === 'mushroom' && s.eaten.has(cellKey(cx, cy))) continue;
+          this.blit(f.kind, f.x, f.y, 1, 1, 0);
         }
-        if (f.kind === 'mushroom' && s.eaten.has(cellKey(cx, cy))) continue;
-        this.blit(f.kind, f.x, f.y, 1, 1, 0);
       }
     }
 
@@ -231,7 +231,7 @@ export class Renderer {
     for (const t of trees) {
       const under = Math.hypot(t.x - p.x, t.y - p.y) < CANOPY_R + 10;
       ctx.globalAlpha = under ? 0.45 : 0.92;
-      this.blit('canopy', t.x, t.y - 22, 1, 1, 0);
+      this.blit('canopy', t.x, t.y - 22, 0.8, 1, 0);
     }
     ctx.globalAlpha = 1;
 

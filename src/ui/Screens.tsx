@@ -16,6 +16,7 @@ export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: 
   const [muted, setMuted] = useState(audio.muted);
   return (
     <div className="screen">
+      <img className="titleicon" src={`${import.meta.env.BASE_URL}icon-512.png`} alt="" width={128} height={128} />
       <h1 className="logo">RÄKKÄ</h1>
       <p className="tagline">Metsä ei lopu. Räkkä ei lopu.</p>
       <button

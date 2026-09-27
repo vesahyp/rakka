@@ -7,10 +7,16 @@
  * force-closed.
  */
 import { useEffect, useState } from 'react';
+import { versionName } from './versionName.js';
 
 export const BUILD = typeof __BUILD__ === 'string' ? __BUILD__ : 'dev';
+export const BUILD_NAME = versionName(BUILD);
 
 let available = false;
+let newerName = '';
+export function newerVersionName(): string {
+  return newerName;
+}
 const listeners = new Set<() => void>();
 function notify() {
   for (const l of listeners) l();
@@ -21,8 +27,9 @@ async function check(): Promise<void> {
   try {
     const r = await fetch(`${import.meta.env.BASE_URL}version.json?t=${Date.now()}`, { cache: 'no-store' });
     if (!r.ok) return;
-    const j = (await r.json()) as { build?: string };
+    const j = (await r.json()) as { build?: string; name?: string };
     if (j.build && j.build !== BUILD) {
+      newerName = j.name ?? versionName(j.build);
       available = true;
       notify();
     }
@@ -37,6 +44,7 @@ function start(): void {
   started = true;
   if (import.meta.env.DEV && new URLSearchParams(location.search).get('update') === '1') {
     available = true;
+    newerName = versionName('example');
     setTimeout(notify, 0);
   }
   void check();

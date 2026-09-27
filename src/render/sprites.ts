@@ -568,7 +568,8 @@ const cache = new Map<string, Sprite>();
 let RES = 2;
 
 export function setSpriteResolution(res: number): void {
-  const r = Math.min(4, Math.max(1, res));
+  // The game never asks for more than 4; the icon script renders at 24.
+  const r = Math.min(32, Math.max(1, res));
   if (r !== RES) {
     RES = r;
     cache.clear();

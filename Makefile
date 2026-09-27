@@ -5,6 +5,7 @@
 #   make check      # typecheck + build + sim-check, what CI needs green
 #   make balance    # bot runs, one line per run (MIN=20 RUNS=2 CHAR=)
 #   make shots      # phone screenshots into shots/ (needs make shots-setup)
+#   make icon       # re-render the app icon from the game sprites (dev server up)
 #   make plan/apply # Terraform for the analytics pixel host (infra/)
 #   make deploy-pixel  # upload t.gif with no-store to the pixel bucket
 #   make analytics  # run the traffic rollup now (the 08:30 cron does it nightly)
@@ -61,3 +62,6 @@ deploy-pixel:
 
 analytics:
 	analytics/run-analytics.sh && tail -3 analytics/logs/analytics.log
+
+icon:
+	node scripts/icon.mjs

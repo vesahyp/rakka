@@ -23,8 +23,9 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
   Arpakivi antaa heittää kortit uudelleen.
 - **Arkut** putoavat eliiteistä (kultainen rengas) ja pomoista. Arkku antaa
   yhden, kolme tai viisi päivitystä.
-- **Puut** ovat tiellä. Niiden läpi ei kävele, eivätkä viholliset
-  myöskään, ja piirin kanssa puu voi olla loukku.
+- **Puut** ovat tiellä. Niiden läpi ei kävele. Metsässä on seiniä, joissa
+  on yksi aukko, ja taskuja, jotka ovat auki vain yhdeltä sivulta. Viholliset
+  tulevat puiden läpi, joten tasku on loukku eikä suoja.
 - **Kärpässieni** kannattaa kiertää. Jos siihen astuu, metsä huojuu, värit
   uivat, jalat kulkevat vähän omia teitään ja viholliset näyttävät joltakin
   muulta. Yhdeksän sekuntia.
