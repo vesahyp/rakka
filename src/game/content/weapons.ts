@@ -86,7 +86,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   kokko: {
     id: 'kokko', name: 'Kokko', desc: 'Sytytät kokon jalkoihisi. Se palaa hetken ja polttaa ohikulkijat.', pattern: 'zoneAtPlayer',
-    base: base({ damage: 5, amount: 1, area: 42, duration: 2.6, cooldown: 3.4, interval: 0.5 }),
+    base: base({ damage: 4, amount: 1, area: 40, duration: 2.6, cooldown: 3.6, interval: 0.5 }),
     levels: [area(20), dmg(3), dur(20), amt(), area(20), dmg(4), cd(0.6)],
     evolvesWith: 'kynttila', evolvesTo: 'juhannuskokko', rarity: 90, icon: 'kokko', tint: '#ff8a3d',
   },
@@ -98,13 +98,13 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   ukonvasara: {
     id: 'ukonvasara', name: 'Ukonvasara', desc: 'Ukko, saamelaisten Horagalles, iskee salamalla satunnaisiin vihollisiin.', pattern: 'strike',
-    base: base({ damage: 22, amount: 1, area: 26, cooldown: 3.0, interval: 0.12, knockback: 30 }),
+    base: base({ damage: 18, amount: 1, area: 26, cooldown: 3.2, interval: 0.12, knockback: 30 }),
     levels: [amt(), dmg(8), amt(), area(25), dmg(10), amt(), cd(0.6)],
     evolvesWith: 'kompassi', evolvesTo: 'ukonilma', rarity: 80, icon: 'ukonvasara', tint: '#9fd3ff',
   },
   kierukka: {
     id: 'kierukka', name: 'Hyttyskierukka', desc: 'Savuava kierukka. Vahingoittaa kaikkea ympärilläsi.', pattern: 'aura',
-    base: base({ damage: 3, amount: 1, area: 52, cooldown: 0.9, knockback: 8 }),
+    base: base({ damage: 3, amount: 1, area: 48, cooldown: 1.0, knockback: 8 }),
     levels: [area(15), dmg(2), cd(0.1), area(15), dmg(2), cd(0.1), dmg(3)],
     evolvesWith: 'hunaja', evolvesTo: 'savusauna', rarity: 90, icon: 'kierukka', tint: '#b8e0c8',
   },
@@ -128,7 +128,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   kiuas: {
     id: 'kiuas', name: 'Kiuaskivi', desc: 'Heität kuuman kiven. Se hajoaa löylyksi osuessaan.', pattern: 'lobExplode',
-    base: base({ damage: 14, amount: 1, area: 40, speed: 240, cooldown: 2.2, interval: 0.16, knockback: 30 }),
+    base: base({ damage: 11, amount: 1, area: 38, speed: 240, cooldown: 2.4, interval: 0.16, knockback: 30 }),
     levels: [area(20), dmg(6), amt(), area(20), dmg(8), amt(), cd(0.4)],
     evolvesWith: 'kahvipannu', evolvesTo: 'saunanhenki', rarity: 80, icon: 'kiuas', tint: '#ff6b5b',
   },

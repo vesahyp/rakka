@@ -21,7 +21,7 @@ export function enemyHpScale(minute: number, curse: number): number {
   // part, and the director also spawns more (see direct()).
   const linear = 1 + minute * 0.18;
   const late = minute > 12 ? Math.pow(1.25, minute - 12) : 1;
-  return linear * late * (0.7 + 0.3 * curse);
+  return 1.4 * linear * late * (0.7 + 0.3 * curse);
 }
 /** Enemies speed up after twenty so a kiting build is caught by thirty. */
 export function enemySpeedScale(minute: number): number {
@@ -29,7 +29,7 @@ export function enemySpeedScale(minute: number): number {
 }
 export function enemyDamageScale(minute: number): number {
   const late = minute > 15 ? Math.pow(1.07, minute - 15) : 1;
-  return (1 + minute * 0.035) * late;
+  return 1.4 * (1 + minute * 0.035) * late;
 }
 
 export function initRun(s: SimState): void {
@@ -246,6 +246,16 @@ function direct(s: SimState, dt: number): void {
       const pool: EnemyId[] = ['hyttynen', 'makara', 'muurahainen', 'hirvikarpanen', 'liekkio', 'ampiainen'];
       swarm(s, k % 2 === 0 ? 'ring' : 'column', ENEMIES[pool[k % pool.length]], Math.round((120 + k * 20) * curse));
     }
+  }
+
+  // A cone falls from a tree every two minutes, near but not under the
+  // player, so it has to be walked to. Tapion pöytä (src/meta.ts) is paid
+  // in these; nothing else makes them.
+  s.coneTimer -= dt;
+  if (s.coneTimer <= 0) {
+    s.coneTimer = 120;
+    const a = s.rng.next() * Math.PI * 2;
+    drop(s, 'kapy', s.player.x + Math.cos(a) * 140, s.player.y + Math.sin(a) * 140);
   }
 
   // Tuoni: one at 28, one more every minute from 30.
@@ -520,7 +530,7 @@ function die(s: SimState): void {
 // ---------------------------------------------------------------- deaths and drops
 
 function drop(s: SimState, kind: PickupKind, x: number, y: number): void {
-  s.pickups.push({ kind, x, y, life: 90 });
+  s.pickups.push({ kind, x, y, life: kind === 'kapy' ? 1e9 : 90 });
 }
 
 function reap(s: SimState): void {
@@ -542,6 +552,8 @@ function reap(s: SimState): void {
       s.run.bosses++;
       drop(s, 'arkku', e.x, e.y);
       drop(s, 'kanttarelli', e.x + 30, e.y);
+      drop(s, 'kapy', e.x - 30, e.y);
+      drop(s, 'kapy', e.x - 30, e.y + 24);
       // A boss pays in a spray of berries.
       for (let k = 0; k < 12; k++) addGem(s, e.x + (s.rng.next() - 0.5) * 80, e.y + (s.rng.next() - 0.5) * 80, Math.ceil(e.def.xp / 12));
       s.banner = { text: `${e.def.name} kaatui`, sub: 'Arkku putosi', life: 2.5 };
@@ -555,9 +567,10 @@ function reap(s: SimState): void {
     }
     addGem(s, e.x, e.y, e.def.xp);
     const r = s.rng.next();
-    if (r < 0.006 * luck) drop(s, 'kanttarelli', e.x, e.y);
-    else if (r < 0.0085 * luck) drop(s, 'lakka', e.x, e.y);
-    else if (r < 0.0097 * luck) drop(s, 'kekale', e.x, e.y);
+    if (r < 1 / 400) drop(s, 'kapy', e.x, e.y);
+    else if (r < 1 / 400 + 0.006 * luck) drop(s, 'kanttarelli', e.x, e.y);
+    else if (r < 1 / 400 + 0.0085 * luck) drop(s, 'lakka', e.x, e.y);
+    else if (r < 1 / 400 + 0.0097 * luck) drop(s, 'kekale', e.x, e.y);
   }
 }
 
@@ -680,6 +693,11 @@ function collect(s: SimState, kind: PickupKind, x: number, y: number): void {
       break;
     case 'arkku':
       s.pendingChests++;
+      break;
+    case 'kapy':
+      s.run.cones++;
+      addText(s, x, y, '+1 käpy', '#c9a46c', true);
+      sound(s, 'pickup');
       break;
     case 'kahvi':
       break;

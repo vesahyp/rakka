@@ -443,6 +443,19 @@ const DEFS: Record<string, Def> = {
       c.fill();
     },
   },
+  kapy: {
+    hw: 7,
+    hh: 9,
+    draw: (c) => {
+      ell(c, 0, 1, 4.5, 6.5, '#7a4a22');
+      for (let r = -4; r <= 4; r += 2.2) {
+        for (let k = -1; k <= 1; k++) {
+          ell(c, k * 2.4, r, 1.5, 1.1, '#a0683a', '#4a2a10', 0.5);
+        }
+      }
+      line(c, 0, -6, 0, -8.5, '#4a7a30', 1.2);
+    },
+  },
   arkku: {
     hw: 12,
     hh: 10,

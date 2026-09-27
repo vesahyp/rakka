@@ -4,12 +4,19 @@ import { WEAPONS, weaponNumbers, type WeaponDef, type WeaponNumbers } from './co
 import { hurt, healPlayer, nearestEnemy, onScreen, slowEnemy } from './combat';
 import { powerLevel } from './upgrades';
 
+/**
+ * One knob for the whole damage economy. 2026-09-27: real players stood
+ * still through the middle game, so weapons deal 85 percent and enemies
+ * (sim.ts) have 40 percent more HP and bite 40 percent harder.
+ */
+export const DAMAGE_SCALE = 0.85;
+
 /** Numbers after player stats. */
 export function effective(s: SimState, ws: WeaponState): { def: WeaponDef; n: WeaponNumbers } {
   const def = WEAPONS[ws.id];
   const n = weaponNumbers(def, ws.level);
   const st = s.stats;
-  n.damage *= st.might;
+  n.damage *= st.might * DAMAGE_SCALE;
   n.area *= st.area;
   n.speed *= st.speed;
   n.duration *= st.duration;

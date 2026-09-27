@@ -39,8 +39,9 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 
 ## Tapion pöytä
 
-Jokainen peli tuo käpyjä: yhden kahdesta minuutista, yhden 400 kaadosta ja
-kaksi pomosta. Pöytä täyttyy kuukausissa, ei päivässä. Kävyt jätetään Tapion pöydälle alkuruudusta, ja niistä
+Kävyt putoavat metsässä: yksi puusta kahden minuutin välein lähellesi, harva
+kaadosta, kaksi pomosta. Ne pitää hakea. Pöytä täyttyy kuukausissa, ei
+päivässä. Kävyt jätetään Tapion pöydälle alkuruudusta, ja niistä
 saa pieniä pysyviä asteita elinvoimaan, vahinkoon, palautumiseen ja muihin.
 Asteet ovat pieniä ja hinnat nousevat, joten pöytä helpottaa alkua eikä
 riko peliä. Kaiken saa takaisin yhdellä napilla.

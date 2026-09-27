@@ -78,6 +78,8 @@ export interface SimState {
   shake: number;
   /** how many Tuoni have been sent */
   tuoni: number;
+  /** seconds until a cone falls from a tree */
+  coneTimer: number;
 }
 
 export function xpForLevel(level: number): number {
@@ -140,12 +142,13 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     pendingLevelUps: 0,
     pendingChests: 0,
     banner: null,
-    run: { kills: 0, damageDealt: 0, damageTaken: 0, chests: 0, bosses: 0, maxLevel: 1 },
+    run: { kills: 0, damageDealt: 0, damageTaken: 0, chests: 0, bosses: 0, maxLevel: 1, cones: 0 },
     gameOver: false,
     tier: 0,
     sounds: [],
     shake: 0,
     tuoni: 0,
+    coneTimer: 120,
   };
   return s;
 }

@@ -134,7 +134,7 @@ export interface Zone {
   tint: string;
 }
 
-export type PickupKind = 'kanttarelli' | 'lakka' | 'kekale' | 'arkku' | 'kahvi';
+export type PickupKind = 'kanttarelli' | 'lakka' | 'kekale' | 'arkku' | 'kahvi' | 'kapy';
 
 export interface Pickup {
   kind: PickupKind;
@@ -200,4 +200,5 @@ export interface RunStats {
   chests: number;
   bosses: number;
   maxLevel: number;
+  cones: number;
 }

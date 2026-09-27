@@ -151,8 +151,8 @@ export class Renderer {
     // Pickups
     for (const k of s.pickups) {
       const bob = Math.sin(this.t * 4 + k.x) * 2;
-      if (k.kind === 'arkku') {
-        ctx.fillStyle = 'rgba(255,220,120,0.25)';
+      if (k.kind === 'arkku' || k.kind === 'kapy') {
+        ctx.fillStyle = k.kind === 'kapy' ? 'rgba(200,160,90,0.22)' : 'rgba(255,220,120,0.25)';
         ctx.beginPath();
         ctx.arc(k.x, k.y, 16 + Math.sin(this.t * 5) * 2, 0, Math.PI * 2);
         ctx.fill();

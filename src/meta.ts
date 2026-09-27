@@ -59,11 +59,9 @@ function save(m: Meta): void {
   }
 }
 
-/** Cones a finished run pays. */
-export function conesForRun(r: { time: number; kills: number; bosses: number }): number {
-  // Slow on purpose: a twenty-minute run pays about thirty, the whole altar
-  // costs about three thousand, so filling it is months of play.
-  return Math.floor(r.time / 120) + Math.floor(r.kills / 400) + r.bosses * 2;
+/** Cones a finished run pays: the ones picked up in it, nothing else. */
+export function conesForRun(r: { cones: number }): number {
+  return r.cones;
 }
 
 export function earnCones(n: number): Meta {
