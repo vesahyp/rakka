@@ -16,7 +16,12 @@ export function Initials({ r, onDone }: { r: RunSummary; onDone: (ranks: Record<
   // scrolls the viewport, and every tap after that lands one element off
   // (2026-09-27). The keyboard opens when the boxes are tapped, and the
   // scroll is put back when the input loses focus.
-  useEffect(() => () => window.scrollTo(0, 0), []);
+  useEffect(
+    () => () => {
+      window.scrollTo(0, 0);
+    },
+    [],
+  );
 
   const clean = (v: string) => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
   const ok = name.length === 3;

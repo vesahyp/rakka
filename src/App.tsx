@@ -27,7 +27,9 @@ function Screens() {
   const [meta, setMeta] = useState<Meta>(() => loadMeta());
   // iOS can leave the fixed body scrolled after a keyboard; every screen
   // starts from the top.
-  useEffect(() => window.scrollTo(0, 0), [screen.kind]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [screen.kind]);
 
   const start = (character: CharacterDef) => setScreen({ kind: 'run', character, seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0 });
 
