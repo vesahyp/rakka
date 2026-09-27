@@ -20,11 +20,12 @@ export interface TopEntry {
 
 export const PERIOD_LABELS: Record<Period, string> = { day: 'Tänään', week: 'Viikko', month: 'Kuukausi', all: 'Kaikki' };
 
-export async function fetchTop(period: Period, limit = 20): Promise<TopEntry[]> {
+export async function fetchTop(period: Period, limit = 25): Promise<TopEntry[]> {
   const r = await fetch(`${RECORDS_API}/top?period=${period}&limit=${limit}`);
   if (!r.ok) throw new Error(`top ${r.status}`);
   const j = (await r.json()) as { top: TopEntry[] };
-  return j.top;
+  // The API orders by time; equal times go to the run with more kills.
+  return j.top.sort((a, b) => b.time - a.time || b.kills - a.kills || b.level - a.level);
 }
 
 export async function submitScore(s: { name: string; character: string; time: number; level: number; kills: number; bosses: number }): Promise<Record<Period, number>> {

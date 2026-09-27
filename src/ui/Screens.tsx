@@ -7,7 +7,7 @@ import { icon } from './icons';
 import { characterSprite, sprite } from '../render/sprites';
 import type { RunSummary } from './Game';
 import { Initials, RankLine } from './Initials';
-import { fetchTop, PERIOD_LABELS, type Period, type TopEntry } from '../api';
+import { fetchTop, loadInitials, PERIOD_LABELS, type Period, type TopEntry } from '../api';
 import { audio } from '../audio';
 import type { Meta } from '../meta';
 
@@ -192,6 +192,7 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
     };
   }, [tab, top]);
   const charName = (id: string) => CHARACTERS.find((c) => c.id === id)?.name ?? id;
+  const mine = loadInitials();
   const list = tab === 'mine' ? null : top[tab];
   return (
     <div className="screen" style={{ justifyContent: 'flex-start' }}>
@@ -207,7 +208,7 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
       {tab !== 'mine' && list === 'error' && <p className="small">Tulostaulua ei saatu haettua.</p>}
       {tab !== 'mine' && Array.isArray(list) && list.length === 0 && <p className="small">Ei vielä tuloksia. Ole ensimmäinen.</p>}
       {tab !== 'mine' && Array.isArray(list) && list.length > 0 && (
-        <table className="records">
+        <table className="records global">
           <thead>
             <tr>
               <th>#</th>
@@ -215,21 +216,26 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
               <th>Hahmo</th>
               <th>Aika</th>
               <th className="n">Taso</th>
+              <th className="n">Kaadot</th>
+              {tab === 'all' && <th className="n">Pvm</th>}
             </tr>
           </thead>
           <tbody>
             {list.map((e, i) => (
-              <tr key={i}>
+              <tr key={i} className={e.name === mine ? 'me' : ''} title={`${e.bosses} pomoa`}>
                 <td>{i + 1}</td>
                 <td className="name">{e.name}</td>
                 <td>{charName(e.character)}</td>
                 <td>{fmtTime(e.time)}</td>
                 <td className="n">{e.level}</td>
+                <td className="n">{e.kills.toLocaleString('fi')}</td>
+                {tab === 'all' && <td className="n small">{e.at.slice(5, 10).replace('-', '.')}</td>}
               </tr>
             ))}
           </tbody>
         </table>
       )}
+      {tab !== 'mine' && <p className="small">Järjestys: aika, sitten kaadot. Päivä vaihtuu keskiyöllä Suomen aikaa, viikko maanantaina.</p>}
       {tab === 'mine' && records.best.length === 0 && <p className="small">Ei vielä yhtään peliä.</p>}
       {tab === 'mine' && records.best.length > 0 && (
         <table className="records">
