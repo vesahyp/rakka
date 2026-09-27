@@ -1,6 +1,7 @@
 // Räkkä records API. One Lambda, two routes:
 //   POST /scores        {name, character, time, level, kills, bosses}
 //   GET  /top?period=day|week|month|all&limit=20
+//   GET  /rank?period=...&time=1234   the rank a time would hold now
 // Names are three characters, A-Z and 0-9, like a pinball machine. Periods
 // are counted in Europe/Helsinki. The table has one item per run and four
 // indexes keyed by period value and sorted by survival time, so a top list
@@ -85,6 +86,13 @@ export const handler = async (event) => {
       const period = INDEX[q.period] ? q.period : 'all';
       const limit = Math.min(50, Math.max(1, Number(q.limit) || 20));
       return json(200, { period, value: periods()[period], top: await top(period, limit) });
+    }
+    if (method === 'GET' && path.endsWith('/rank')) {
+      const q = event.queryStringParameters ?? {};
+      const period = INDEX[q.period] ? q.period : 'all';
+      const time = Math.floor(Number(q.time));
+      if (!(time >= 0 && time <= 4 * 3600)) return json(400, { error: 'time' });
+      return json(200, { period, rank: await rank(period, periods()[period], time) });
     }
     if (method === 'POST' && path.endsWith('/scores')) {
       let b;

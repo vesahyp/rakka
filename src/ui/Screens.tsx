@@ -7,7 +7,8 @@ import { icon } from './icons';
 import { characterSprite, sprite } from '../render/sprites';
 import type { RunSummary } from './Game';
 import { Initials, RankLine } from './Initials';
-import { fetchTop, loadInitials, PERIOD_LABELS, type Period, type TopEntry } from '../api';
+import { fetchTop, fetchRank, loadInitials, PERIOD_LABELS, type Period, type TopEntry } from '../api';
+import type { RunRecord } from '../records';
 import { audio } from '../audio';
 import type { Meta } from '../meta';
 
@@ -179,9 +180,37 @@ export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSum
 
 const TABS: (Period | 'mine')[] = ['day', 'week', 'month', 'all', 'mine'];
 
+/** The period key of a date on this device's clock: the same keys the API uses in Helsinki time. */
+function periodKey(period: Period, d: Date): string {
+  if (period === 'all') return 'ALL';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  if (period === 'day') return `${y}-${m}-${day}`;
+  if (period === 'month') return `${y}-${m}`;
+  const t = new Date(Date.UTC(y, d.getMonth(), d.getDate()));
+  const dow = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - dow);
+  const start = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((t.getTime() - start.getTime()) / 86400000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+/** My best local run inside the period, by this device's clock. */
+function myBestIn(period: Period, best: RunRecord[]): RunRecord | null {
+  const now = periodKey(period, new Date());
+  let top: RunRecord | null = null;
+  for (const r of best) {
+    if (periodKey(period, new Date(r.date)) !== now) continue;
+    if (!top || r.time > top.time) top = r;
+  }
+  return top;
+}
+
 export function RecordsScreen({ records, onBack }: { records: Records; onBack: () => void }) {
   const [tab, setTab] = useState<Period | 'mine'>('day');
   const [top, setTop] = useState<Record<string, TopEntry[] | 'error' | undefined>>({});
+  const [myRank, setMyRank] = useState<Record<string, number | undefined>>({});
   useEffect(() => {
     if (tab === 'mine' || top[tab]) return;
     let live = true;
@@ -195,6 +224,19 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
   const charName = (id: string) => CHARACTERS.find((c) => c.id === id)?.name ?? id;
   const mine = loadInitials();
   const list = tab === 'mine' ? null : top[tab];
+  const myBest = tab === 'mine' ? null : myBestIn(tab, records.best);
+  // Is my best already a row on the list? Same initials and time is close enough.
+  const myRow = myBest && Array.isArray(list) ? list.findIndex((e) => e.name === mine && Math.abs(e.time - Math.floor(myBest.time)) <= 1) : -1;
+  useEffect(() => {
+    if (tab === 'mine' || !myBest || myRow >= 0 || myRank[tab] !== undefined || !Array.isArray(list)) return;
+    let live = true;
+    fetchRank(tab, myBest.time)
+      .then((n) => live && setMyRank((o) => ({ ...o, [tab]: n })))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [tab, myBest, myRow, myRank, list]);
   return (
     <div className="screen" style={{ justifyContent: 'flex-start' }}>
       <h2>Tulostaulu</h2>
@@ -223,7 +265,7 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
           </thead>
           <tbody>
             {list.map((e, i) => (
-              <tr key={i} className={e.name === mine ? 'me' : ''} title={`${e.bosses} pomoa`}>
+              <tr key={i} className={i === myRow ? 'me best' : e.name === mine ? 'me' : ''} title={`${e.bosses} pomoa`}>
                 <td>{i + 1}</td>
                 <td className="name">{e.name}</td>
                 <td>
@@ -244,7 +286,22 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
           </tbody>
         </table>
       )}
-      {tab !== 'mine' && <p className="small">Järjestys: aika, sitten kaadot. Päivä vaihtuu keskiyöllä Suomen aikaa, viikko maanantaina.</p>}
+      {tab !== 'mine' && Array.isArray(list) && myBest && myRow < 0 && (
+        <table className="records global myrow">
+          <tbody>
+            <tr className="me best">
+              <td>{myRank[tab] ?? '…'}</td>
+              <td className="name">{mine || 'Sinä'}</td>
+              <td>{charName(myBest.character)}</td>
+              <td>{fmtTime(myBest.time)}</td>
+              <td className="n">{myBest.level}</td>
+              <td className="n">{myBest.kills.toLocaleString('fi')}</td>
+              {tab === 'all' && <td className="n small">oma paras</td>}
+            </tr>
+          </tbody>
+        </table>
+      )}
+      {tab !== 'mine' && <p className="small">Järjestys: aika, sitten kaadot. Päivä vaihtuu keskiyöllä Suomen aikaa, viikko maanantaina. Oma paras korostettu; listan ulkopuolella se näkyy sijoineen alla.</p>}
       {tab === 'mine' && records.best.length === 0 && <p className="small">Ei vielä yhtään peliä.</p>}
       {tab === 'mine' && records.best.length > 0 && (
         <table className="records">

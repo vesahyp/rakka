@@ -15,7 +15,7 @@ await p.evaluate(async () => {
   c.fillStyle = g; c.fillRect(0, 0, 512, 512);
   const put = (key, x, y, s) => { const sp = m.sprite(key); c.drawImage(sp.img, x - sp.ox * s, y - sp.oy * s, sp.w * s, sp.h * s); };
   put('tuft', 90, 420, 5); put('tuft', 420, 120, 4); put('gem1', 110, 130, 5); put('gem2', 400, 400, 5); put('mushroom', 90, 250, 5); put('bush', 430, 300, 4);
-  put('mosquito', 256, 256, 22);
+  put('blackfly', 256, 262, 30);
   document.body.innerHTML = ''; document.body.style.margin = '0'; document.body.appendChild(cv);
 });
 const el = p.locator('#icon');

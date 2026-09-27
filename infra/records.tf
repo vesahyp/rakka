@@ -136,6 +136,12 @@ resource "aws_apigatewayv2_route" "top" {
   target    = "integrations/${aws_apigatewayv2_integration.records.id}"
 }
 
+resource "aws_apigatewayv2_route" "rank" {
+  api_id    = aws_apigatewayv2_api.records.id
+  route_key = "GET /rank"
+  target    = "integrations/${aws_apigatewayv2_integration.records.id}"
+}
+
 resource "aws_apigatewayv2_route" "scores" {
   api_id    = aws_apigatewayv2_api.records.id
   route_key = "POST /scores"

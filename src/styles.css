@@ -131,6 +131,8 @@ table.records td.name { font-family: ui-monospace, Menlo, monospace; font-weight
 table.records.global { font-size: 12.5px; }
 table.records.global th, table.records.global td { padding: 5px 5px; }
 table.records tr.me td { background: rgba(240,184,48,0.12); }
+table.records tr.best td { background: rgba(240,184,48,0.28); font-weight: 800; }
+table.records.myrow { margin-top: -10px; border-top: 2px dashed rgba(255,255,255,0.2); }
 table.records td.small { color: var(--muted); }
 
 /* stats board */

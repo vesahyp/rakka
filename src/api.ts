@@ -31,6 +31,14 @@ export async function fetchTop(period: Period, limit = 25): Promise<TopEntry[]> 
   return j.top.sort((a, b) => b.time - a.time || b.kills - a.kills || b.level - a.level);
 }
 
+/** The rank a survival time would hold in a period right now. */
+export async function fetchRank(period: Period, time: number): Promise<number> {
+  const r = await fetch(`${RECORDS_API}/rank?period=${period}&time=${Math.floor(time)}`);
+  if (!r.ok) throw new Error(`rank ${r.status}`);
+  const j = (await r.json()) as { rank: number };
+  return j.rank;
+}
+
 export async function submitScore(s: { name: string; character: string; time: number; level: number; kills: number; bosses: number; weapons: string[]; top: string | null }): Promise<Record<Period, number>> {
   const r = await fetch(`${RECORDS_API}/scores`, {
     method: 'POST',
