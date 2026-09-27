@@ -23,6 +23,8 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
   Arpakivi antaa heittää kortit uudelleen.
 - **Arkut** putoavat eliiteistä (kultainen rengas) ja pomoista. Arkku antaa
   yhden, kolme tai viisi päivitystä.
+- **Piiri**: välillä rengas sitkeitä vihollisia sulkeutuu ympärillesi. Se ei
+  jahtaa, se kiristyy. Lyö aukko ja kävele ulos.
 - **Pomo** saapuu viiden minuutin välein.
 - **Tuoni** saapuu 28. minuutilla, eikä sitä voi tappaa. Kolmenkymmenen
   jälkeen tulee joka minuutti yksi lisää. Metsä ei lopu, mutta peli loppuu.

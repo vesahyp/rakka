@@ -244,7 +244,9 @@ function direct(s: SimState, dt: number): void {
     if (k >= 1 && s.spawnAcc.__swarm !== k) {
       s.spawnAcc.__swarm = k;
       const pool: EnemyId[] = ['hyttynen', 'makara', 'muurahainen', 'hirvikarpanen', 'liekkio', 'ampiainen'];
-      swarm(s, k % 2 === 0 ? 'ring' : 'column', ENEMIES[pool[k % pool.length]], Math.round((120 + k * 20) * curse));
+      const circles: EnemyId[] = ['peikko', 'hiisi', 'kaarme', 'cahceravga'];
+      if (k % 3 === 2) swarm(s, 'circle', ENEMIES[circles[k % circles.length]], 40 + k * 2);
+      else swarm(s, k % 2 === 0 ? 'ring' : 'column', ENEMIES[pool[k % pool.length]], Math.round((120 + k * 20) * curse));
     }
   }
 
@@ -285,8 +287,29 @@ function direct(s: SimState, dt: number): void {
   }
 }
 
-function swarm(s: SimState, kind: 'ring' | 'column', def: EnemyDef, count: number): void {
+function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, count: number): void {
   const p = s.player;
+  if (kind === 'circle') {
+    // The trap: a closed ring of tough enemies that keeps formation and
+    // contracts on where the player stood. A gap has to be cut to get out.
+    // Members ignore knockback while in formation and hold twice the HP.
+    const r0 = Math.hypot(s.view.w, s.view.h) / 2 + 20;
+    const n = Math.max(count, Math.ceil((2 * Math.PI * 70) / (def.radius * def.scale * 2.2)));
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const e = spawnEnemy(s, def, p.x + Math.cos(a) * r0, p.y + Math.sin(a) * r0);
+      e.t2 = 4;
+      e.t1 = a;
+      e.vx = p.x;
+      e.vy = p.y;
+      e.hp *= 2;
+      e.maxHp = e.hp;
+    }
+    s.banner = { text: 'Piiri', sub: `${def.name} sulkee renkaan. Murra se.`, life: 3 };
+    sound(s, 'swarm');
+    s.shake = 0.6;
+    return;
+  }
   if (kind === 'ring') {
     const r = Math.hypot(s.view.w, s.view.h) / 2 + 40;
     for (let i = 0; i < count; i++) {
@@ -388,6 +411,7 @@ function updateEnemies(s: SimState, dt: number): void {
         break;
       }
       case 'stick': {
+        if (e.t2 === 4) break;
         if (e.t2 === 1) {
           // attached: ride along, bite faster
           e.x = p.x + e.vx;
@@ -427,7 +451,22 @@ function updateEnemies(s: SimState, dt: number): void {
         break;
     }
 
-    if (e.t2 === 3) {
+    if (e.t2 === 4) {
+      // Circle: contract on the stored centre, keeping the angle, until the
+      // ring is tight; then the members hunt like anyone else.
+      const cx = e.vx;
+      const cy = e.vy;
+      const r = Math.hypot(e.x - cx, e.y - cy);
+      const next = Math.max(0, r - 26 * dt);
+      e.x = cx + Math.cos(e.t1) * next;
+      e.y = cy + Math.sin(e.t1) * next;
+      e.kx = e.ky = 0;
+      e.facing = Math.cos(e.t1) < 0 ? 1 : -1;
+      if (next < 70) e.t2 = 0;
+      // Contact damage still applies below; skip the ordinary move.
+      speed = 0;
+      mx = my = 0;
+    } else if (e.t2 === 3) {
       // Wall: keep heading, faster than a chaser, then die quietly far away.
       mx = e.vx;
       my = e.vy;
@@ -436,7 +475,7 @@ function updateEnemies(s: SimState, dt: number): void {
     }
 
     // Separation: push apart from a few neighbours in the same cell.
-    if (e.def.behaviour !== 'phase' && e.t2 !== 1) {
+    if (e.def.behaviour !== 'phase' && e.t2 !== 1 && e.t2 !== 4) {
       const cell = s.grid.cellOf(e);
       if (cell) {
         let px = 0;

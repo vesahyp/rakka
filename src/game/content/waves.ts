@@ -52,7 +52,7 @@ export const WAVES: Wave[] = [
 /** Scripted swarms: a ring closing in, or a column marching across. */
 export interface SwarmEvent {
   atSeconds: number;
-  kind: 'ring' | 'column';
+  kind: 'ring' | 'column' | 'circle';
   type: EnemyId;
   count: number;
 }
@@ -62,16 +62,21 @@ export const SWARM_EVENTS: SwarmEvent[] = [
   { atSeconds: 110, kind: 'ring', type: 'hyttynen', count: 80 },
   { atSeconds: 210, kind: 'column', type: 'muurahainen', count: 50 },
   { atSeconds: 330, kind: 'ring', type: 'makara', count: 90 },
+  { atSeconds: 390, kind: 'circle', type: 'punkki', count: 36 },
   { atSeconds: 450, kind: 'column', type: 'muurahainen', count: 80 },
   { atSeconds: 570, kind: 'ring', type: 'hirvikarpanen', count: 70 },
   { atSeconds: 690, kind: 'ring', type: 'hyttynen', count: 120 },
+  { atSeconds: 750, kind: 'circle', type: 'menninkainen', count: 40 },
   { atSeconds: 810, kind: 'column', type: 'paarma', count: 40 },
   { atSeconds: 930, kind: 'ring', type: 'makara', count: 140 },
   { atSeconds: 1050, kind: 'column', type: 'muurahainen', count: 120 },
+  { atSeconds: 1110, kind: 'circle', type: 'hiisi', count: 44 },
   { atSeconds: 1170, kind: 'ring', type: 'liekkio', count: 30 },
   { atSeconds: 1290, kind: 'ring', type: 'hyttynen', count: 180 },
   { atSeconds: 1410, kind: 'column', type: 'ampiainen', count: 60 },
+  { atSeconds: 1470, kind: 'circle', type: 'kaarme', count: 48 },
   { atSeconds: 1530, kind: 'ring', type: 'hirvikarpanen', count: 120 },
+  { atSeconds: 1590, kind: 'circle', type: 'peikko', count: 40 },
   { atSeconds: 1650, kind: 'ring', type: 'makara', count: 200 },
 ];
 
