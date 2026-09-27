@@ -9,6 +9,7 @@ import { step, DT } from '../src/game/sim';
 import { rollOffers, applyOffer, openChest, type Offer } from '../src/game/upgrades';
 import { WEAPONS } from '../src/game/content/weapons';
 import { Rng } from '../src/game/rng';
+import { featuresNear, TREE_R } from '../src/game/forest';
 
 export interface BotOptions {
   /** how strongly it prefers weapons over passives, 0..1 */
@@ -77,6 +78,17 @@ export function botInput(s: SimState, rng: Rng, t: number): { dx: number; dy: nu
     dx += ((gx - p.x) / bd) * pull;
     dy += ((gy - p.y) / bd) * pull;
   }
+  // Trees: steer around a trunk ahead instead of leaning on it.
+  featuresNear(p.x, p.y, 60, (f) => {
+    if (f.kind !== 'tree') return;
+    const ox = p.x - f.x;
+    const oy = p.y - f.y;
+    const d = Math.hypot(ox, oy) || 1;
+    if (d > TREE_R + 40) return;
+    const w = (TREE_R + 40 - d) / 20;
+    dx += (ox / d) * w;
+    dy += (oy / d) * w;
+  });
   if (dx === 0 && dy === 0) {
     const a = t * 0.3 + rng.next() * 0.1;
     return { dx: Math.cos(a), dy: Math.sin(a) };

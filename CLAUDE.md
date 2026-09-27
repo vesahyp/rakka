@@ -37,6 +37,7 @@ src/
     combat.ts         hurt(), heal, slow, nearest enemy
     upgrades.ts       derived stats, level-up offers, chests, evolutions
     grid.ts           uniform grid over enemies, rebuilt every step
+    forest.ts         deterministic features per cell: trees that block, mushrooms
     types.ts          Enemy, Projectile, Zone, Stats and friends
     content/
       characters.ts   who you play and their starting traits

@@ -467,6 +467,43 @@ const DEFS: Record<string, Def> = {
     },
   },
   // decorations
+  trunk: {
+    hw: 16,
+    hh: 18,
+    draw: (c) => {
+      poly(c, [-9, 14, 9, 14, 7, -14, -7, -14], '#5a3a22');
+      line(c, -3, 12, -4, -10, '#3a2412', 1.2);
+      line(c, 4, 12, 3, -8, '#7a5a3a', 1);
+      for (let i = -1; i <= 1; i++) line(c, -8 + i * 2, 14, -12 + i * 6, 17, '#4a2e1a', 2);
+    },
+  },
+  canopy: {
+    hw: 38,
+    hh: 34,
+    draw: (c) => {
+      const g = c.createRadialGradient(-6, -8, 4, 0, 0, 36);
+      g.addColorStop(0, '#3f7a3a');
+      g.addColorStop(0.7, '#2b5a2c');
+      g.addColorStop(1, '#1c3e20');
+      c.fillStyle = g;
+      for (const [x, y, r] of [[0, 0, 30], [-16, 6, 20], [16, 6, 20], [-8, -14, 18], [10, -14, 18], [0, 14, 18]]) {
+        c.beginPath();
+        c.arc(x, y, r, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.strokeStyle = 'rgba(10,30,14,0.6)';
+      c.lineWidth = 1;
+      c.beginPath();
+      c.arc(0, 0, 33, 0, Math.PI * 2);
+      c.stroke();
+      c.fillStyle = 'rgba(120,200,110,0.35)';
+      for (const [x, y] of [[-12, -10], [8, -16], [18, 2], [-4, 8], [-20, 10]]) {
+        c.beginPath();
+        c.arc(x, y, 4, 0, Math.PI * 2);
+        c.fill();
+      }
+    },
+  },
   stump: {
     hw: 12,
     hh: 10,

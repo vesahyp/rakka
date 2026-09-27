@@ -80,6 +80,10 @@ export interface SimState {
   tuoni: number;
   /** seconds until a cone falls from a tree */
   coneTimer: number;
+  /** mushrooms eaten, by cell key, so the renderer leaves them out */
+  eaten: Set<number>;
+  /** seconds of hallucination left */
+  trip: number;
 }
 
 export function xpForLevel(level: number): number {
@@ -149,6 +153,8 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     shake: 0,
     tuoni: 0,
     coneTimer: 240,
+    eaten: new Set(),
+    trip: 0,
   };
   return s;
 }

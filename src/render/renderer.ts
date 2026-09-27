@@ -2,6 +2,7 @@ import type { SimState } from '../game/state';
 import { hash2 } from '../game/rng';
 import { sprite, setSpriteResolution, characterSprite } from './sprites';
 import { WEAPONS } from '../game/content/weapons';
+import { featureAt, cellKey, CELL, CANOPY_R, TREE_R } from '../game/forest';
 
 /**
  * Canvas 2D renderer. The camera sits on the player. World units are chosen
@@ -102,8 +103,13 @@ export class Renderer {
     const sc = this.scale;
     const p = s.player;
     const shake = s.shake > 0 ? Math.min(1, s.shake) * 6 : 0;
-    const camX = p.x + (shake ? (Math.random() - 0.5) * shake : 0);
-    const camY = p.y + (shake ? (Math.random() - 0.5) * shake : 0);
+    // Kärpässieni: the world sways and the colours swim.
+    const trip = s.trip > 0 ? Math.min(1, s.trip / 2) : 0;
+    const swayX = trip ? Math.sin(this.t * 2.1) * 18 * trip : 0;
+    const swayY = trip ? Math.cos(this.t * 1.6) * 12 * trip : 0;
+    this.canvas.style.filter = trip ? `hue-rotate(${Math.round(Math.sin(this.t * 1.3) * 90 * trip)}deg) saturate(${1 + trip}) contrast(${1 + 0.15 * trip})` : '';
+    const camX = p.x + (shake ? (Math.random() - 0.5) * shake : 0) + swayX;
+    const camY = p.y + (shake ? (Math.random() - 0.5) * shake : 0) + swayY;
     const viewW = W / sc;
     const viewH = H / sc;
     const left = camX - viewW / 2;
@@ -122,21 +128,27 @@ export class Renderer {
       for (let x = tx0; x < left + viewW; x += ts) ctx.drawImage(tile, x, y, ts, ts);
     }
 
-    // Decorations: one per 96-unit cell, deterministic.
-    const cell = 96;
-    const cx0 = Math.floor(left / cell) - 1;
-    const cx1 = Math.floor((left + viewW) / cell) + 1;
-    const cy0 = Math.floor(top / cell) - 1;
-    const cy1 = Math.floor((top + viewH) / cell) + 1;
-    const decos = ['tuft', 'tuft', 'tuft', 'stone', 'bush', 'mushroom', 'stump', 'log', 'tuft', 'bush'];
+    // The forest: ground features and trunks now, canopies after the actors.
+    const cx0 = Math.floor(left / CELL) - 1;
+    const cx1 = Math.floor((left + viewW) / CELL) + 1;
+    const cy0 = Math.floor(top / CELL) - 1;
+    const cy1 = Math.floor((top + viewH) / CELL) + 1;
+    const trees: { x: number; y: number }[] = [];
     for (let cy = cy0; cy <= cy1; cy++) {
       for (let cx = cx0; cx <= cx1; cx++) {
-        const r = hash2(cx, cy, 77);
-        if (r < 0.35) continue;
-        const key = decos[Math.floor(hash2(cx, cy, 78) * decos.length)];
-        const x = cx * cell + hash2(cx, cy, 79) * cell;
-        const y = cy * cell + hash2(cx, cy, 80) * cell;
-        this.blit(key, x, y, 1, 1, 0);
+        const f = featureAt(cx, cy);
+        if (!f) continue;
+        if (f.kind === 'tree') {
+          trees.push(f);
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.beginPath();
+          ctx.ellipse(f.x + 4, f.y + 6, TREE_R + 4, TREE_R * 0.6, 0, 0, Math.PI * 2);
+          ctx.fill();
+          this.blit('trunk', f.x, f.y, 1, 1, 0);
+          continue;
+        }
+        if (f.kind === 'mushroom' && s.eaten.has(cellKey(cx, cy))) continue;
+        this.blit(f.kind, f.x, f.y, 1, 1, 0);
       }
     }
 
@@ -178,7 +190,9 @@ export class Renderer {
       }
       const bob = e.def.behaviour === 'swarm' || e.def.behaviour === 'phase' ? Math.sin(e.wobble) * 2.5 : Math.abs(Math.sin(e.wobble * 0.8)) * 1.2;
       const slowTint = e.slow > 0;
-      this.blit(e.def.sprite, e.x, e.y - bob, e.scale, e.facing, 0, e.flash > 0);
+      // On a trip every creature looks like another one.
+      const spriteKey = trip ? TRIP_SPRITES[e.id % TRIP_SPRITES.length] : e.def.sprite;
+      this.blit(spriteKey, e.x, e.y - bob, e.scale, e.facing, 0, e.flash > 0);
       if (slowTint) {
         ctx.fillStyle = 'rgba(150,220,255,0.35)';
         ctx.beginPath();
@@ -212,6 +226,14 @@ export class Renderer {
 
     // Projectiles
     for (const pr of s.projectiles) this.drawProjectile(pr.kind, pr.x, pr.y, pr.radius, pr.rot, pr.tint, pr.life, pr.maxLife, pr.orbitRadius, pr.vx, pr.vy);
+
+    // Canopies over everything on the ground; thin where the player stands.
+    for (const t of trees) {
+      const under = Math.hypot(t.x - p.x, t.y - p.y) < CANOPY_R + 10;
+      ctx.globalAlpha = under ? 0.45 : 0.92;
+      this.blit('canopy', t.x, t.y - 22, 1, 1, 0);
+    }
+    ctx.globalAlpha = 1;
 
     // Effects
     for (const e of s.effects) {
@@ -547,6 +569,8 @@ export class Renderer {
     ctx.restore();
   }
 }
+
+const TRIP_SPRITES = ['bear', 'gnome', 'mushroom', 'kanttarelli', 'troll', 'wisp', 'bush', 'kapy', 'nakki', 'viper', 'lakka', 'stump'];
 
 export function weaponTint(id: string): string {
   return WEAPONS[id]?.tint ?? '#fff';

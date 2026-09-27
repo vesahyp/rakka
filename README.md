@@ -23,6 +23,11 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
   Arpakivi antaa heittää kortit uudelleen.
 - **Arkut** putoavat eliiteistä (kultainen rengas) ja pomoista. Arkku antaa
   yhden, kolme tai viisi päivitystä.
+- **Puut** ovat tiellä. Niiden läpi ei kävele, eivätkä viholliset
+  myöskään, ja piirin kanssa puu voi olla loukku.
+- **Kärpässieni** kannattaa kiertää. Jos siihen astuu, metsä huojuu, värit
+  uivat, jalat kulkevat vähän omia teitään ja viholliset näyttävät joltakin
+  muulta. Yhdeksän sekuntia.
 - **Piiri**: välillä rengas sitkeitä vihollisia sulkeutuu ympärillesi. Se ei
   jahtaa, se kiristyy. Lyö aukko ja kävele ulos.
 - **Pomo** saapuu viiden minuutin välein.

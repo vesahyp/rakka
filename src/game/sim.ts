@@ -6,6 +6,7 @@ import { WAVES, SWARM_EVENTS, BOSS_MINUTES, type SpawnEntry } from './content/wa
 import { updateWeapons, updateProjectiles, updateZones } from './weapons';
 import { addText, healPlayer, hurt, onScreen, sound } from './combat';
 import { computeStats, powerLevel } from './upgrades';
+import { collideTrees, featuresNear, cellKey } from './forest';
 
 export const DT = 1 / 60;
 const PLAYER_SPEED = 95;
@@ -56,11 +57,21 @@ export function step(s: SimState, input: Input, dt: number): void {
   const rooted = kanto > 0 && p.still >= 1;
   const regen = s.stats.regen + (rooted ? 1 * kanto : 0);
   if (regen > 0 && p.hp < s.stats.maxHp) p.hp = Math.min(s.stats.maxHp, p.hp + regen * dt);
+  s.trip = Math.max(0, s.trip - dt);
   const len = Math.hypot(input.dx, input.dy);
   if (len > 0.05) {
     const m = Math.min(1, len);
-    const nx = input.dx / len;
-    const ny = input.dy / len;
+    let nx = input.dx / len;
+    let ny = input.dy / len;
+    if (s.trip > 0) {
+      // Kärpässieni: the legs go where they want, a slow swing of the
+      // heading, up to forty degrees either way.
+      const a = Math.sin(s.time * 1.7) * 0.7;
+      const rx = nx * Math.cos(a) - ny * Math.sin(a);
+      const ry = nx * Math.sin(a) + ny * Math.cos(a);
+      nx = rx;
+      ny = ry;
+    }
     p.x += nx * m * PLAYER_SPEED * s.stats.moveSpeed * dt;
     p.y += ny * m * PLAYER_SPEED * s.stats.moveSpeed * dt;
     p.dirX = nx;
@@ -72,6 +83,18 @@ export function step(s: SimState, input: Input, dt: number): void {
     p.moving = false;
     p.still += dt;
   }
+  collideTrees(p, PLAYER_RADIUS);
+  // Red mushrooms are eaten by walking on them.
+  featuresNear(p.x, p.y, 14, (f) => {
+    if (f.kind !== 'mushroom') return;
+    const key = cellKey(f.cx, f.cy);
+    if (s.eaten.has(key)) return;
+    if (Math.hypot(f.x - p.x, f.y - p.y) > PLAYER_RADIUS + 7) return;
+    s.eaten.add(key);
+    s.trip = 9;
+    addText(s, p.x, p.y - 18, 'Kärpässieni! Metsä huojuu', '#ff6a6a', true);
+    sound(s, 'swarm');
+  });
 
   direct(s, dt);
 
@@ -507,6 +530,7 @@ function updateEnemies(s: SimState, dt: number): void {
     e.y += (my * speed + e.ky) * dt;
     e.kx *= Math.pow(0.02, dt);
     e.ky *= Math.pow(0.02, dt);
+    if (e.t2 < 3 && e.def.behaviour !== 'phase' && !e.boss && e.def.id !== 'tuoni') collideTrees(e, e.def.radius * e.scale * 0.7);
     if (Math.abs(mx) > 0.1) e.facing = mx > 0 ? 1 : -1;
 
     // Contact damage
