@@ -8,5 +8,8 @@
   "orientation": "portrait",
   "background_color": "#0b1a10",
   "theme_color": "#0b1a10",
-  "icons": [{ "src": "/rakka/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "icons": [
+    { "src": "/rakka/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/rakka/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }
