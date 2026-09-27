@@ -248,12 +248,12 @@ function direct(s: SimState, dt: number): void {
     }
   }
 
-  // A cone falls from a tree every two minutes, near but not under the
+  // A cone falls from a tree every four minutes, near but not under the
   // player, so it has to be walked to. Tapion pöytä (src/meta.ts) is paid
   // in these; nothing else makes them.
   s.coneTimer -= dt;
   if (s.coneTimer <= 0) {
-    s.coneTimer = 120;
+    s.coneTimer = 240;
     const a = s.rng.next() * Math.PI * 2;
     drop(s, 'kapy', s.player.x + Math.cos(a) * 140, s.player.y + Math.sin(a) * 140);
   }
@@ -553,7 +553,6 @@ function reap(s: SimState): void {
       drop(s, 'arkku', e.x, e.y);
       drop(s, 'kanttarelli', e.x + 30, e.y);
       drop(s, 'kapy', e.x - 30, e.y);
-      drop(s, 'kapy', e.x - 30, e.y + 24);
       // A boss pays in a spray of berries.
       for (let k = 0; k < 12; k++) addGem(s, e.x + (s.rng.next() - 0.5) * 80, e.y + (s.rng.next() - 0.5) * 80, Math.ceil(e.def.xp / 12));
       s.banner = { text: `${e.def.name} kaatui`, sub: 'Arkku putosi', life: 2.5 };
@@ -567,10 +566,10 @@ function reap(s: SimState): void {
     }
     addGem(s, e.x, e.y, e.def.xp);
     const r = s.rng.next();
-    if (r < 1 / 400) drop(s, 'kapy', e.x, e.y);
-    else if (r < 1 / 400 + 0.006 * luck) drop(s, 'kanttarelli', e.x, e.y);
-    else if (r < 1 / 400 + 0.0085 * luck) drop(s, 'lakka', e.x, e.y);
-    else if (r < 1 / 400 + 0.0097 * luck) drop(s, 'kekale', e.x, e.y);
+    if (r < 1 / 1500) drop(s, 'kapy', e.x, e.y);
+    else if (r < 1 / 1500 + 0.006 * luck) drop(s, 'kanttarelli', e.x, e.y);
+    else if (r < 1 / 1500 + 0.0085 * luck) drop(s, 'lakka', e.x, e.y);
+    else if (r < 1 / 1500 + 0.0097 * luck) drop(s, 'kekale', e.x, e.y);
   }
 }
 

@@ -148,7 +148,7 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     sounds: [],
     shake: 0,
     tuoni: 0,
-    coneTimer: 120,
+    coneTimer: 240,
   };
   return s;
 }

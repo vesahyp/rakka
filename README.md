@@ -39,8 +39,8 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 
 ## Tapion pöytä
 
-Kävyt putoavat metsässä: yksi puusta kahden minuutin välein lähellesi, harva
-kaadosta, kaksi pomosta. Ne pitää hakea. Pöytä täyttyy kuukausissa, ei
+Kävyt putoavat metsässä: yksi puusta neljän minuutin välein lähellesi, hyvin
+harva kaadosta, yksi pomosta. Ne pitää hakea. Pöytä täyttyy kuukausissa, ei
 päivässä. Kävyt jätetään Tapion pöydälle alkuruudusta, ja niistä
 saa pieniä pysyviä asteita elinvoimaan, vahinkoon, palautumiseen ja muihin.
 Asteet ovat pieniä ja hinnat nousevat, joten pöytä helpottaa alkua eikä
