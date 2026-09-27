@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CharacterDef } from './game/content/characters';
 import { Game, type RunSummary } from './ui/Game';
 import { Title, Select, Death, RecordsScreen } from './ui/Screens';
@@ -25,6 +25,9 @@ function Screens() {
   const [screen, setScreen] = useState<Screen>(() => (new URLSearchParams(location.search).has('stats') ? { kind: 'stats' } : { kind: 'title' }));
   const [records, setRecords] = useState<Records>(() => loadRecords());
   const [meta, setMeta] = useState<Meta>(() => loadMeta());
+  // iOS can leave the fixed body scrolled after a keyboard; every screen
+  // starts from the top.
+  useEffect(() => window.scrollTo(0, 0), [screen.kind]);
 
   const start = (character: CharacterDef) => setScreen({ kind: 'run', character, seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0 });
 

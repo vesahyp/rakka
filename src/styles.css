@@ -108,13 +108,14 @@ table.records td.n { text-align: right; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
 /* update banner and build id */
-.update { position: absolute; left: 50%; bottom: calc(var(--sab) + 16px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: 14px; background: var(--panel); border: 1px solid var(--accent); box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 5; white-space: nowrap; font-weight: 700; }
+.update { position: absolute; left: 50%; top: calc(var(--sat) + 12px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: 14px; background: var(--panel); border: 1px solid var(--accent); box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 5; white-space: nowrap; font-weight: 700; }
 .update .btn { min-width: 0; padding: 10px 16px; margin: 0; font-size: 16px; }
 .overlay .update { position: static; transform: none; margin-bottom: 10px; }
 .build { position: absolute; right: calc(var(--sar) + 10px); bottom: calc(var(--sab) + 6px); font-size: 11px; color: rgba(255,255,255,0.3); font-family: ui-monospace, Menlo, monospace; }
 
 /* initials and global tables */
-.initials { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 8px 0 16px; }
+.initials { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 8px 0 16px; position: relative; }
+.initials-input { position: absolute; left: 50%; top: 30px; transform: translateX(-50%); width: 188px; height: 68px; opacity: 0; font-size: 16px; }
 .boxes { display: flex; gap: 10px; }
 .box { width: 56px; height: 68px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.45); font-size: 40px; font-weight: 900; color: var(--accent); display: flex; align-items: center; justify-content: center; font-family: ui-monospace, Menlo, monospace; }
 .box.active { border-color: var(--accent); box-shadow: 0 0 12px rgba(240,184,48,0.5); animation: blink 1s steps(2) infinite; }

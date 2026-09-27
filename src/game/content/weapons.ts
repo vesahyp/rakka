@@ -147,8 +147,8 @@ export const WEAPONS: Record<string, WeaponDef> = {
 
   rumpu: {
     id: 'rumpu', name: 'Noaidin rumpu', desc: 'Lyöt rumpua. Saivon eläimet lähtevät etsimään vihollisia.', pattern: 'spirit',
-    base: base({ damage: 16, amount: 1, area: 8, speed: 210, duration: 2.4, cooldown: 1.5, pierce: 3, knockback: 25, interval: 0.18 }),
-    levels: [amt(), dmg(6), pierce(1), spd(20), amt(), dmg(8), dur(30)],
+    base: base({ damage: 9, amount: 1, area: 8, speed: 200, duration: 2.2, cooldown: 1.9, pierce: 2, knockback: 25, interval: 0.18 }),
+    levels: [amt(), dmg(4), pierce(1), spd(20), amt(), dmg(5), dur(30)],
     evolvesWith: 'ketunhanta', evolvesTo: 'saivo', rarity: 80, icon: 'rumpu', tint: '#e0a8ff',
   },
 
@@ -210,7 +210,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   saivo: {
     id: 'saivo', name: 'Saivo', desc: 'Toinen maailma aukeaa. Henkieläimiä virtaa lakkaamatta.', pattern: 'spirit', evolved: true,
-    base: base({ damage: 32, amount: 4, area: 10, speed: 280, duration: 3.5, cooldown: 0.9, pierce: 5, knockback: 40, interval: 0.1 }),
+    base: base({ damage: 20, amount: 3, area: 10, speed: 260, duration: 3.2, cooldown: 1.2, pierce: 4, knockback: 40, interval: 0.1 }),
     levels: [], rarity: 0, icon: 'rumpu', tint: '#f0d0ff',
   },
   vetehisensyli: {

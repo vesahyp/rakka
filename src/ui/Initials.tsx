@@ -12,9 +12,11 @@ export function Initials({ r, onDone }: { r: RunSummary; onDone: (ranks: Record<
   const [error, setError] = useState('');
   const input = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    input.current?.focus();
-  }, []);
+  // No focus on mount: on iOS, focusing an input inside the fixed body
+  // scrolls the viewport, and every tap after that lands one element off
+  // (2026-09-27). The keyboard opens when the boxes are tapped, and the
+  // scroll is put back when the input loses focus.
+  useEffect(() => () => window.scrollTo(0, 0), []);
 
   const clean = (v: string) => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
   const ok = name.length === 3;
@@ -35,6 +37,7 @@ export function Initials({ r, onDone }: { r: RunSummary; onDone: (ranks: Record<
 
   return (
     <div className="initials" data-ui onClick={() => input.current?.focus()}>
+      {name.length < 3 && <div className="small">Napauta laatikoita ja kirjoita</div>}
       <div className="small">Nimikirjaimet tulostaululle</div>
       <div className="boxes">
         {[0, 1, 2].map((i) => (
@@ -50,13 +53,14 @@ export function Initials({ r, onDone }: { r: RunSummary; onDone: (ranks: Record<
         onKeyDown={(e) => {
           if (e.key === 'Enter') void send();
         }}
+        onBlur={() => window.scrollTo(0, 0)}
         maxLength={3}
         autoCapitalize="characters"
         autoCorrect="off"
         spellCheck={false}
         inputMode="text"
         aria-label="Nimikirjaimet"
-        style={{ position: 'absolute', opacity: 0, height: 1, width: 1, left: -9999 }}
+        className="initials-input"
       />
       {error && <div className="small" style={{ color: 'var(--danger)' }}>{error}</div>}
       <div className="row">
