@@ -7,8 +7,10 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 
 ## Miten pelataan
 
-- **Liiku peukalolla.** Paina mihin tahansa ja vedä. Näppäimistöllä WASD tai
-  nuolet.
+- **Liiku peukalolla.** Paina mihin tahansa ja vedä: ohjain syntyy siihen
+  mihin peukalo laskeutuu ja pysyy siinä kunnes nostat sormen. Tauko-valikosta
+  ohjaimen saa myös kiinteäksi, jolloin se on aina samassa kohdassa ruudun
+  alalaidassa. Näppäimistöllä WASD tai nuolet.
 - **Aseet ampuvat itse.** Sinä päätät vain minne kävelet.
 - **Kerää marjat.** Kaadetut viholliset pudottavat mustikoita, puolukoita ja
   lakkoja. Niistä saa tasoja.

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createState, type SimState } from '../game/state';
 import { step, DT, initRun } from '../game/sim';
 import { Renderer } from '../render/renderer';
-import { InputController } from '../input/input';
+import { InputController, loadStickMode, saveStickMode, type StickMode } from '../input/input';
 import { rollOffers, applyOffer, openChest, type Offer, type ChestResult } from '../game/upgrades';
 import type { CharacterDef } from '../game/content/characters';
 import type { StatDelta } from '../game/stats';
@@ -58,7 +58,9 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
   const overlayRef = useRef<Overlay>({ kind: 'none' });
   const [overlay, setOverlayState] = useState<Overlay>({ kind: 'none' });
   const [hud, setHud] = useState<Hud | null>(null);
-  const [stick, setStick] = useState<{ cx: number; cy: number; x: number; y: number } | null>(null);
+  const stickRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<InputController | null>(null);
+  const [stickMode, setStickModeState] = useState<StickMode>(loadStickMode);
   const [muted, setMuted] = useState(audio.muted);
   const endedRef = useRef(false);
 
@@ -78,6 +80,7 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
     s.view = renderer.view();
     const input = new InputController();
     input.attach(root);
+    inputRef.current = input;
     track('run_start', { character: character.id, seed });
     audio.unlock();
     audio.startMusic();
@@ -89,6 +92,7 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
     const onResize = () => {
       renderer.resize();
       s.view = renderer.view();
+      input.layout();
     };
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
@@ -235,6 +239,7 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
         audio.setSwarm(near);
       } else audio.setSwarm(0);
       renderer.render(s, dt);
+      drawStick(stickRef.current, input, 0);
       const ms = performance.now() - t0;
       perf.frames++;
       perf.ms += ms;
@@ -243,7 +248,6 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
       if (hudAcc > 0.1) {
         hudAcc = 0;
         publishHud();
-        setStick(input.stick.active ? { cx: input.stick.cx, cy: input.stick.cy, x: input.stick.x, y: input.stick.y } : null);
       }
     };
     raf = requestAnimationFrame(frame);
@@ -276,6 +280,14 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const setStickMode = (m: StickMode) => {
+    const input = inputRef.current;
+    if (input) input.mode = m;
+    saveStickMode(m);
+    setStickModeState(m);
+    audio.play('tap');
+  };
 
   const pick = (o: Offer) => {
     const s = simRef.current!;
@@ -366,11 +378,9 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
           )}
         </>
       )}
-      {stick && (
-        <div className="stick" style={{ left: stick.cx, top: stick.cy }}>
-          <div style={{ transform: `translate(calc(-50% + ${stick.x - stick.cx}px), calc(-50% + ${stick.y - stick.cy}px))` }} />
-        </div>
-      )}
+      <div className="stick" ref={stickRef} style={{ display: 'none' }}>
+        <div />
+      </div>
 
       {overlay.kind === 'levelup' && (
         <div className="overlay" data-ui>
@@ -472,6 +482,9 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
             <button className="btn primary" onClick={() => setOverlay({ kind: 'none' })}>
               Jatka
             </button>
+            <button className="btn ghost" onClick={() => setStickMode(stickMode === 'float' ? 'fixed' : 'float')}>
+              {stickMode === 'float' ? '🕹️ Ohjain: kelluva' : '🕹️ Ohjain: kiinteä'}
+            </button>
             <button className="btn ghost" onClick={onRestart}>
               Aloita alusta
             </button>
@@ -483,4 +496,38 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
       )}
     </div>
   );
+}
+
+/**
+ * Draw one player's stick straight into the DOM, every frame. Going through
+ * React state at ten hertz made the knob lag the thumb by up to a tenth of
+ * a second, which read as sluggish control.
+ */
+export function drawStick(el: HTMLDivElement | null, input: InputController, i: number): void {
+  if (!el) return;
+  const st = input.sticks[i];
+  const idleFixed = !st.active && input.mode === 'fixed';
+  if (!st.active && !idleFixed) {
+    el.style.display = 'none';
+    return;
+  }
+  const cx = st.active ? st.cx : st.baseX;
+  const cy = st.active ? st.cy : st.baseY;
+  el.style.display = 'block';
+  el.style.left = cx + 'px';
+  el.style.top = cy + 'px';
+  el.style.opacity = st.active ? '1' : '0.45';
+  const knob = el.firstElementChild as HTMLElement | null;
+  if (!knob) return;
+  if (!st.active) {
+    knob.style.transform = 'translate(-50%, -50%)';
+    return;
+  }
+  // The knob follows the thumb inside the ring and stops at its edge.
+  const dx = st.x - cx;
+  const dy = st.y - cy;
+  const d = Math.hypot(dx, dy);
+  const r = input.radius;
+  const k = d > r ? r / d : 1;
+  knob.style.transform = `translate(calc(-50% + ${dx * k}px), calc(-50% + ${dy * k}px))`;
 }
