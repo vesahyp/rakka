@@ -30,7 +30,7 @@ export interface Feature {
 
 type Pattern = 'open' | 'wallH' | 'wallV' | 'pocketN' | 'pocketS' | 'pocketE' | 'pocketW';
 const PATTERNS: Pattern[] = ['open', 'open', 'open', 'open', 'wallH', 'wallV', 'pocketN', 'pocketS', 'pocketE', 'pocketW', 'open', 'pocketN', 'pocketW'];
-const SCATTER: FeatureKind[] = ['tuft', 'tuft', 'stone', 'bush', 'mushroom', 'stump', 'log', 'tuft', 'mushroom', 'tree', 'bush', 'tuft'];
+const SCATTER: FeatureKind[] = ['tuft', 'tuft', 'stone', 'bush', 'mushroom', 'stump', 'log', 'tuft', 'stone', 'tree', 'bush', 'tuft'];
 
 function pattern(chx: number, chy: number): { p: Pattern; gap: number } {
   if (chx === 0 && chy === 0) return { p: 'open', gap: 0 };
@@ -89,6 +89,10 @@ export function featuresInCell(cx: number, cy: number): Feature[] {
     const x = x0 + 16 + hash2(cx, cy, 79) * (CELL - 32);
     const y = y0 + 16 + hash2(cx, cy, 80) * (CELL - 32);
     if (kind === 'tree' && inClearing(x, y)) kind = 'tuft';
+    // Fly agarics were a minefield at one in six scatter cells, about four
+    // on screen at once (2026-09-29). One slot and a further roll keeps it
+    // to about one in view: a thing to walk around, not a carpet.
+    if (kind === 'mushroom' && hash2(cx, cy, 81) >= 0.4) kind = 'tuft';
     out.push({ kind, x, y, cx, cy });
   }
   const result = out.filter((f) => f.kind !== 'tree' || !inClearing(f.x, f.y));
