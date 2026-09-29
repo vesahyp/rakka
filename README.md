@@ -53,8 +53,13 @@ Kävyt putoavat metsässä: yksi puusta neljän minuutin välein lähellesi, hyv
 harva kaadosta, yksi pomosta. Ne pitää hakea. Pöytä täyttyy kuukausissa, ei
 päivässä. Kävyt jätetään Tapion pöydälle alkuruudusta, ja niistä
 saa pieniä pysyviä asteita elinvoimaan, vahinkoon, palautumiseen ja muihin.
-Asteet ovat pieniä ja hinnat nousevat, joten pöytä helpottaa alkua eikä
-riko peliä. Kaiken saa takaisin yhdellä napilla.
+Asteet ovat pieniä ja hinnat nousevat: jokainen aste maksaa enemmän kuin
+edellinen, ja mitä täydempi pöytä, sitä kalliimpi seuraava. Pöytä helpottaa
+alkua eikä riko peliä. Kaiken saa takaisin, ja palautus kysyy varmistuksen.
+
+Pöytä on tallessa siinä selaimessa, jossa pelaat. Safari ja kotinäytölle
+lisätty sovellus ovat eri tallennus, joten pöytä näyttää tyhjältä kun
+vaihdat. **Pöydän koodi** siirtää sen: kopioi koodi vanhassa, liitä uudessa.
 
 ## Hahmot
 

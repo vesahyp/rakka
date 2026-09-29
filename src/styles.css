@@ -158,3 +158,5 @@ table.records td.small { color: var(--muted); }
 .card .btn.ghost { min-width: 74px; padding: 10px 12px; font-size: 15px; margin: 0; flex: none; }
 .card .btn.ghost:disabled { opacity: 0.4; cursor: default; }
 .earned { color: var(--accent-2); font-weight: 800; margin: 4px 0; }
+.code { font-family: ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; margin: 6px 0 8px; word-break: break-all; -webkit-user-select: text; user-select: text; }
+.codein { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: var(--ink); font: inherit; font-family: ui-monospace, Menlo, monospace; text-transform: uppercase; -webkit-user-select: text; user-select: text; }
