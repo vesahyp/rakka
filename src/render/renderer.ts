@@ -4,8 +4,11 @@ import { sprite, setSpriteResolution, characterSprite } from './sprites';
 import { WEAPONS } from '../game/content/weapons';
 import { featuresInCell, cellKey, CELL, CANOPY_R, TREE_R } from '../game/forest';
 
+/** Ring colours under the heroes in co-op: player one, player two. */
+export const HERO_COLORS = ['#6ab0ff', '#ffb347'];
+
 /**
- * Canvas 2D renderer. The camera sits on the player. World units are chosen
+ * Canvas 2D renderer. The camera sits on the heroes' midpoint. World units are chosen
  * so the visible area is about 420 by 800 units in portrait; the scale is
  * derived from the canvas size so the same amount of forest is visible on a
  * phone and a laptop (see ADR 0001).
@@ -101,15 +104,15 @@ export class Renderer {
     const W = this.canvas.width;
     const H = this.canvas.height;
     const sc = this.scale;
-    const p = s.player;
+    const coop = s.heroes.length > 1;
     const shake = s.shake > 0 ? Math.min(1, s.shake) * 6 : 0;
     // Kärpässieni: the world sways and the colours swim.
     const trip = s.trip > 0 ? Math.min(1, s.trip / 2) : 0;
     const swayX = trip ? Math.sin(this.t * 2.1) * 18 * trip : 0;
     const swayY = trip ? Math.cos(this.t * 1.6) * 12 * trip : 0;
     this.canvas.style.filter = trip ? `hue-rotate(${Math.round(Math.sin(this.t * 1.3) * 90 * trip)}deg) saturate(${1 + trip}) contrast(${1 + 0.15 * trip})` : '';
-    const camX = p.x + (shake ? (Math.random() - 0.5) * shake : 0) + swayX;
-    const camY = p.y + (shake ? (Math.random() - 0.5) * shake : 0) + swayY;
+    const camX = s.cam.x + (shake ? (Math.random() - 0.5) * shake : 0) + swayX;
+    const camY = s.cam.y + (shake ? (Math.random() - 0.5) * shake : 0) + swayY;
     const viewW = W / sc;
     const viewH = H / sc;
     const left = camX - viewW / 2;
@@ -202,35 +205,62 @@ export class Renderer {
       }
     }
 
-    // Player
-    if (p.alive || s.gameOver) {
-      const cs = s.character;
+    // Heroes. A fallen one lies where they fell, grey, with the revive
+    // arc filling around them while the partner stands by.
+    for (const h of s.heroes) {
+      const p = h.player;
+      const cs = h.character;
       const key = 'char:' + cs.id;
       characterSprite(key, cs.colors);
       const bob = p.moving ? Math.abs(Math.sin(this.t * 14)) * 2 : 0;
-      const blink = p.invuln > 0 && Math.floor(this.t * 12) % 2 === 0;
+      const blink = p.alive && p.invuln > 0 && Math.floor(this.t * 12) % 2 === 0;
+      if (coop) {
+        ctx.strokeStyle = HERO_COLORS[h.index] ?? '#fff';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = p.alive ? 0.85 : 0.4;
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y + 12, 13, 5.5, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath();
       ctx.ellipse(p.x, p.y + 12, 9, 3.5, 0, 0, Math.PI * 2);
       ctx.fill();
       if (!blink) {
-        if (s.gameOver) {
+        if (!p.alive) {
           ctx.save();
           ctx.translate(p.x, p.y + 6);
           ctx.rotate(Math.min(Math.PI / 2, p.deadTime * 3));
           ctx.translate(-p.x, -p.y - 6);
+          if (!s.gameOver) ctx.globalAlpha = 0.6;
         }
         this.blit(key, p.x, p.y - bob, 1, p.facing, 0, p.hurtFlash > 0);
-        if (s.gameOver) ctx.restore();
+        if (!p.alive) ctx.restore();
+        ctx.globalAlpha = 1;
+      }
+      if (!p.alive && !s.gameOver) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 22, 0, Math.PI * 2);
+        ctx.stroke();
+        if (h.revive > 0) {
+          ctx.strokeStyle = '#7bf07b';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 22, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * h.revive) / 3);
+          ctx.stroke();
+        }
       }
     }
 
     // Projectiles
     for (const pr of s.projectiles) this.drawProjectile(pr.kind, pr.x, pr.y, pr.radius, pr.rot, pr.tint, pr.life, pr.maxLife, pr.orbitRadius, pr.vx, pr.vy);
 
-    // Canopies over everything on the ground; thin where the player stands.
+    // Canopies over everything on the ground; thin where a hero stands.
     for (const t of trees) {
-      const under = Math.hypot(t.x - p.x, t.y - p.y) < CANOPY_R + 10;
+      let under = false;
+      for (const h of s.heroes) if (Math.hypot(t.x - h.player.x, t.y - h.player.y) < CANOPY_R + 10) under = true;
       ctx.globalAlpha = under ? 0.45 : 0.92;
       this.blit('canopy', t.x, t.y - 22, 0.8, 1, 0);
     }
@@ -299,16 +329,44 @@ export class Renderer {
     }
     ctx.globalAlpha = 1;
 
-    // Screen-space: hurt vignette
+    // Screen-space: a marker at the edge for a fallen hero out of view.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (p.hurtFlash > 0) {
+    for (const h of s.heroes) {
+      const p = h.player;
+      if (p.alive || s.gameOver) continue;
+      const sx = (p.x - left) * sc;
+      const sy = (p.y - top) * sc;
+      if (sx >= 0 && sx <= W && sy >= 0 && sy <= H) continue;
+      const mx = Math.max(24 * sc, Math.min(W - 24 * sc, sx));
+      const my = Math.max(24 * sc, Math.min(H - 24 * sc, sy));
+      const a = Math.atan2(sy - my, sx - mx);
+      ctx.save();
+      ctx.translate(mx, my);
+      ctx.rotate(a);
+      ctx.fillStyle = HERO_COLORS[h.index] ?? '#fff';
+      ctx.beginPath();
+      ctx.moveTo(14 * sc, 0);
+      ctx.lineTo(-8 * sc, -9 * sc);
+      ctx.lineTo(-8 * sc, 9 * sc);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    // Hurt vignette: the hardest recent hit among the heroes.
+    let hurtFlash = 0;
+    let lowest = 1;
+    for (const h of s.heroes) {
+      if (h.player.hurtFlash > hurtFlash) hurtFlash = h.player.hurtFlash;
+      if (h.player.alive) lowest = Math.min(lowest, h.player.hp / h.stats.maxHp);
+    }
+    if (hurtFlash > 0) {
       const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
       g.addColorStop(0, 'rgba(180,0,0,0)');
-      g.addColorStop(1, `rgba(180,0,0,${Math.min(0.6, p.hurtFlash * 4)})`);
+      g.addColorStop(1, `rgba(180,0,0,${Math.min(0.6, hurtFlash * 4)})`);
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
     }
-    if (p.hp < s.stats.maxHp * 0.3 && p.alive) {
+    if (lowest < 0.3) {
       const a = 0.12 + Math.sin(this.t * 5) * 0.08;
       const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.8);
       g.addColorStop(0, 'rgba(160,0,0,0)');

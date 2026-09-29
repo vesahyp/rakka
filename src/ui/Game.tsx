@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { createState, type SimState } from '../game/state';
+import { createState, type SimState, type Hero } from '../game/state';
 import { step, DT, initRun } from '../game/sim';
-import { Renderer } from '../render/renderer';
+import { Renderer, HERO_COLORS } from '../render/renderer';
 import { InputController, loadStickMode, saveStickMode, type StickMode } from '../input/input';
 import { rollOffers, applyOffer, openChest, type Offer, type ChestResult } from '../game/upgrades';
 import type { CharacterDef } from '../game/content/characters';
@@ -18,9 +18,13 @@ import { audio } from '../audio';
 import { UpdateBanner } from './Update';
 
 export interface RunSummary {
+  /** the first hero, for records and the board; `characters` has everyone */
   character: CharacterDef;
+  characters: CharacterDef[];
   time: number;
+  /** the highest level reached; `levels` has each hero's */
   level: number;
+  levels: number[];
   kills: number;
   bosses: number;
   chests: number;
@@ -33,37 +37,53 @@ export interface RunSummary {
   topWeapon: string | null;
 }
 
-interface Hud {
-  time: number;
+interface HeroHud {
+  name: string;
   hp: number;
   maxHp: number;
   level: number;
   xp: number;
   xpNext: number;
-  kills: number;
-  cones: number;
-  keys: number;
+  alive: boolean;
   weapons: { id: string; level: number; evolved: boolean }[];
   passives: { id: string; level: number }[];
   powers: { id: string; level: number }[];
+}
+
+interface Hud {
+  time: number;
+  kills: number;
+  cones: number;
+  keys: number;
+  heroes: HeroHud[];
   boss: { name: string; hp: number; max: number } | null;
   banner: { text: string; sub: string } | null;
 }
 
-type Overlay = { kind: 'none' } | { kind: 'levelup'; offers: Offer[] } | { kind: 'chest'; result: ChestResult } | { kind: 'pause' };
+type Overlay = { kind: 'none' } | { kind: 'levelup'; hero: number; offers: Offer[] } | { kind: 'chest'; hero: number; result: ChestResult } | { kind: 'pause' };
 
-export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }: { character: CharacterDef; seed: number; meta: StatDelta; altar: Record<string, number>; onEnd: (r: RunSummary) => void; onQuit: () => void; onRestart: () => void }) {
+/** "Pelaaja 1 · Väinö", coloured, above a card set in co-op. */
+function HeroTag({ h }: { h: Hero }) {
+  return (
+    <div className="herotag" style={{ color: HERO_COLORS[h.index] }}>
+      Pelaaja {h.index + 1} · {h.character.name}
+    </div>
+  );
+}
+
+export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }: { characters: CharacterDef[]; seed: number; meta: StatDelta; altar: Record<string, number>; onEnd: (r: RunSummary) => void; onQuit: () => void; onRestart: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const simRef = useRef<SimState | null>(null);
   const overlayRef = useRef<Overlay>({ kind: 'none' });
   const [overlay, setOverlayState] = useState<Overlay>({ kind: 'none' });
   const [hud, setHud] = useState<Hud | null>(null);
-  const stickRef = useRef<HTMLDivElement>(null);
+  const stickRefs = useRef<(HTMLDivElement | null)[]>([]);
   const inputRef = useRef<InputController | null>(null);
   const [stickMode, setStickModeState] = useState<StickMode>(loadStickMode);
   const [muted, setMuted] = useState(audio.muted);
   const endedRef = useRef(false);
+  const coop = characters.length > 1;
 
   const setOverlay = (o: Overlay) => {
     overlayRef.current = o;
@@ -73,16 +93,16 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
   useEffect(() => {
     const canvas = canvasRef.current!;
     const root = rootRef.current!;
-    const s = createState(seed, character, meta);
+    const s = createState(seed, characters, meta);
     initRun(s);
     simRef.current = s;
     if (import.meta.env.DEV) (window as unknown as { __sim: SimState }).__sim = s;
     const renderer = new Renderer(canvas);
     s.view = renderer.view();
-    const input = new InputController();
+    const input = new InputController(characters.length);
     input.attach(root);
     inputRef.current = input;
-    track('run_start', { character: character.id, seed });
+    track('run_start', { character: characters.map((c) => c.id).join('+'), players: characters.length, seed });
     audio.unlock();
     audio.startMusic();
 
@@ -120,20 +140,48 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
       const boss = s.enemies.find((e) => e.boss);
       setHud({
         time: s.time,
-        hp: s.player.hp,
-        maxHp: s.stats.maxHp,
-        level: s.player.level,
-        xp: s.player.xp,
-        xpNext: s.player.xpNext,
         kills: s.run.kills,
         cones: s.run.cones,
         keys: s.run.keys,
-        weapons: s.weapons.map((w) => ({ id: w.id, level: w.level, evolved: !!WEAPONS[w.id].evolved })),
-        passives: s.passives.map((p) => ({ id: p.id, level: p.level })),
-        powers: s.powers.map((p) => ({ id: p.id, level: p.level })),
+        heroes: s.heroes.map((h) => ({
+          name: h.character.name,
+          hp: h.player.hp,
+          maxHp: h.stats.maxHp,
+          level: h.player.level,
+          xp: h.player.xp,
+          xpNext: h.player.xpNext,
+          alive: h.player.alive,
+          weapons: h.weapons.map((w) => ({ id: w.id, level: w.level, evolved: !!WEAPONS[w.id].evolved })),
+          passives: h.passives.map((p) => ({ id: p.id, level: p.level })),
+          powers: h.powers.map((p) => ({ id: p.id, level: p.level })),
+        })),
         boss: boss ? { name: boss.def.name, hp: boss.hp, max: boss.maxHp } : null,
         banner: s.banner ? { text: s.banner.text, sub: s.banner.sub } : null,
       });
+    };
+
+    /** A chest or a level-up waiting after a step: open the overlay, or let the bot pick. Returns true when the loop should stop for this frame. */
+    const pending = (): boolean => {
+      if (s.pendingChests.length > 0) {
+        const h = s.heroes[s.pendingChests.shift()!];
+        const result = openChest(s, h);
+        track('chest', { size: result.size, items: result.items.map((i) => i.id).join(',') });
+        audio.play(result.items.some((i) => i.kind === 'evolve') ? 'evolve' : result.size > 1 ? 'chestbig' : 'chest');
+        if (bot) return false;
+        setOverlay({ kind: 'chest', hero: h.index, result });
+        return true;
+      }
+      for (const h of s.heroes) {
+        if (h.pendingLevelUps <= 0) continue;
+        h.pendingLevelUps--;
+        if (bot) {
+          applyOffer(s, h, botPick(h, rollOffers(s, h), botRng, { weaponBias: 0.6 }));
+          return false;
+        }
+        setOverlay({ kind: 'levelup', hero: h.index, offers: rollOffers(s, h) });
+        return true;
+      }
+      return false;
     };
 
     const frame = (now: number) => {
@@ -158,27 +206,14 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
         acc += dt * speed;
         let n = 0;
         while (acc >= DT && n < 4 * speed) {
-          step(s, bot ? botInput(s, botRng, s.time) : input.read(), DT);
+          step(
+            s,
+            s.heroes.map((h) => (bot ? botInput(s, h, botRng, s.time) : input.read(h.index))),
+            DT,
+          );
           acc -= DT;
           n++;
-          if (s.pendingChests > 0) {
-            s.pendingChests--;
-            const result = openChest(s);
-            track('chest', { size: result.size, items: result.items.map((i) => i.id).join(',') });
-            audio.play(result.items.some((i) => i.kind === 'evolve') ? 'evolve' : result.size > 1 ? 'chestbig' : 'chest');
-            if (bot) continue;
-            setOverlay({ kind: 'chest', result });
-            break;
-          }
-          if (s.pendingLevelUps > 0) {
-            s.pendingLevelUps--;
-            if (bot) {
-              applyOffer(s, botPick(s, rollOffers(s), botRng, { weaponBias: 0.6 }));
-              continue;
-            }
-            setOverlay({ kind: 'levelup', offers: rollOffers(s) });
-            break;
-          }
+          if (pending()) break;
         }
         if (acc > DT * 4 * speed) acc = 0;
       } else if (s.gameOver) {
@@ -189,24 +224,28 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
           // Per-weapon damage rides in one value: "puukko:12345,kokko:999".
           // The tracker truncates values past 200 characters, so only the
           // weapons go, sorted by damage, and taiat and pickups stay out.
-          const weaponIds = new Set(s.weapons.map((w) => w.id));
+          const weaponIds = new Set(s.heroes.flatMap((h) => h.weapons.map((w) => w.id)));
           const byWeapon = Object.entries(s.run.damageBy)
             .filter(([k]) => weaponIds.has(k))
             .sort((a, b) => b[1] - a[1]);
           // Everything that multiplied the damage rides along, each as its
           // own value under the 200-character cap: weapon levels, passives,
-          // taiat, altar ranks and the derived multipliers.
-          const st = s.stats;
+          // taiat, altar ranks and the derived multipliers. The first hero's
+          // build; a co-op run is marked by players=2.
+          const h0 = s.heroes[0];
+          const st = h0.stats;
+          const level = Math.max(...s.heroes.map((h) => h.player.level));
           track('run_end', {
-            character: character.id,
+            character: characters.map((c) => c.id).join('+'),
+            players: characters.length,
             time: Math.round(s.time),
-            level: s.player.level,
+            level,
             kills: s.run.kills,
             w: byWeapon.map(([k, v]) => `${k}:${Math.round(v)}`).join(','),
             top: byWeapon[0]?.[0] ?? '',
-            wl: s.weapons.map((w) => `${w.id}:${w.level}`).join(','),
-            pas: s.passives.map((p) => `${p.id}:${p.level}`).join(','),
-            tai: s.powers.map((p) => `${p.id}:${p.level}`).join(','),
+            wl: h0.weapons.map((w) => `${w.id}:${w.level}`).join(','),
+            pas: h0.passives.map((p) => `${p.id}:${p.level}`).join(','),
+            tai: h0.powers.map((p) => `${p.id}:${p.level}`).join(','),
             alt: Object.entries(altar)
               .filter(([, v]) => v > 0)
               .map(([k, v]) => `${k}:${v}`)
@@ -214,14 +253,16 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
             st: `might:${st.might.toFixed(2)},area:${st.area.toFixed(2)},cd:${st.cooldown.toFixed(2)},amt:${st.amount},spd:${st.speed.toFixed(2)},dur:${st.duration.toFixed(2)},luck:${st.luck.toFixed(2)},curse:${st.curse.toFixed(2)},growth:${st.growth.toFixed(2)},hp:${st.maxHp},armor:${st.armor},regen:${st.regen.toFixed(1)}`,
           });
           onEnd({
-            character,
+            character: characters[0],
+            characters,
             time: s.time,
-            level: s.player.level,
+            level,
+            levels: s.heroes.map((h) => h.player.level),
             kills: s.run.kills,
             bosses: s.run.bosses,
             chests: s.run.chests,
-            weapons: s.weapons.map((w) => w.id),
-            passives: s.passives.map((p) => p.id),
+            weapons: s.heroes.flatMap((h) => h.weapons.map((w) => w.id)),
+            passives: s.heroes.flatMap((h) => h.passives.map((p) => p.id)),
             damageDealt: s.run.damageDealt,
             cones: s.run.cones,
             damageBy: Object.fromEntries(byWeapon),
@@ -237,11 +278,11 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
       }
       if (ov.kind === 'none' && !s.gameOver) {
         let near = 0;
-        for (const e of s.enemies) if (e.def.behaviour === 'swarm' && Math.abs(e.x - s.player.x) < 220 && Math.abs(e.y - s.player.y) < 220) near++;
+        for (const e of s.enemies) if (e.def.behaviour === 'swarm' && Math.abs(e.x - s.cam.x) < 220 && Math.abs(e.y - s.cam.y) < 220) near++;
         audio.setSwarm(near);
       } else audio.setSwarm(0);
       renderer.render(s, dt);
-      drawStick(stickRef.current, input, 0);
+      for (let i = 0; i < s.heroes.length; i++) drawStick(stickRefs.current[i] ?? null, input, i);
       const ms = performance.now() - t0;
       perf.frames++;
       perf.ms += ms;
@@ -273,7 +314,7 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
       const ov = overlayRef.current;
       if (ov.kind === 'levelup') {
         const i = Number(e.key) - 1;
-        if (i >= 0 && i < ov.offers.length) pick(ov.offers[i]);
+        if (i >= 0 && i < ov.offers.length) pick(ov.hero, ov.offers[i]);
       } else if (ov.kind === 'chest' && (e.key === 'Enter' || e.key === ' ')) {
         setOverlay({ kind: 'none' });
       }
@@ -291,54 +332,67 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
     audio.play('tap');
   };
 
-  const pick = (o: Offer) => {
+  const pick = (heroIndex: number, o: Offer) => {
     const s = simRef.current!;
-    applyOffer(s, o);
+    applyOffer(s, s.heroes[heroIndex], o);
     audio.play('tap');
     track('pick', { id: o.id, level: o.level, kind: o.kind });
     setOverlay({ kind: 'none' });
   };
 
   const s = simRef.current;
+  const items = (h: HeroHud, right = false) => (
+    <div className={'items' + (right ? ' right' : '')}>
+      {h.weapons.map((w) => (
+        <div key={w.id} className={'it' + (w.evolved ? ' evo' : '')} title={WEAPONS[w.id].name}>
+          {icon(WEAPONS[w.id].icon)}
+          {!w.evolved && <b>{w.level}</b>}
+        </div>
+      ))}
+      {h.passives.length > 0 && <div className="gap" />}
+      {h.passives.map((p) => (
+        <div key={p.id} className="it" title={PASSIVES[p.id].name}>
+          {icon(PASSIVES[p.id].icon)}
+          <b>{p.level}</b>
+        </div>
+      ))}
+      {h.powers.length > 0 && <div className="gap" />}
+      {h.powers.map((p) => (
+        <div key={p.id} className="it power" title={POWERS[p.id].name}>
+          {icon(POWERS[p.id].icon)}
+          <b>{p.level}</b>
+        </div>
+      ))}
+    </div>
+  );
+  const xpbar = (h: HeroHud, i: number) => (
+    <div className="xpbar" key={i} style={coop ? { borderColor: HERO_COLORS[i] } : undefined}>
+      <div style={{ width: `${Math.min(100, (h.xp / h.xpNext) * 100)}%` }} />
+      <span>TASO {h.level}</span>
+    </div>
+  );
+  const hpbar = (h: HeroHud, i: number) => (
+    <div className={'hpbar' + (coop ? ` p${i}` : '')} key={i} style={coop ? { borderColor: HERO_COLORS[i] } : undefined}>
+      <div style={{ width: `${Math.max(0, (h.hp / h.maxHp) * 100)}%`, opacity: h.alive ? 1 : 0.3 }} />
+      <span>{h.alive ? `${Math.ceil(h.hp)} / ${h.maxHp}` : 'Kaatunut'}</span>
+    </div>
+  );
   return (
     <div className="game" ref={rootRef}>
       <canvas ref={canvasRef} />
       {hud && (
         <>
           <div className="hud">
-            <div className="xpbar">
-              <div style={{ width: `${Math.min(100, (hud.xp / hud.xpNext) * 100)}%` }} />
-              <span>TASO {hud.level}</span>
-            </div>
+            {coop ? <div className="xprow">{hud.heroes.map(xpbar)}</div> : xpbar(hud.heroes[0], 0)}
             <div className="hudrow">
-              <div className="items">
-                {hud.weapons.map((w) => (
-                  <div key={w.id} className={'it' + (w.evolved ? ' evo' : '')} title={WEAPONS[w.id].name}>
-                    {icon(WEAPONS[w.id].icon)}
-                    {!w.evolved && <b>{w.level}</b>}
-                  </div>
-                ))}
-                {hud.passives.length > 0 && <div className="gap" />}
-                {hud.passives.map((p) => (
-                  <div key={p.id} className="it" title={PASSIVES[p.id].name}>
-                    {icon(PASSIVES[p.id].icon)}
-                    <b>{p.level}</b>
-                  </div>
-                ))}
-                {hud.powers.length > 0 && <div className="gap" />}
-                {hud.powers.map((p) => (
-                  <div key={p.id} className="it power" title={POWERS[p.id].name}>
-                    {icon(POWERS[p.id].icon)}
-                    <b>{p.level}</b>
-                  </div>
-                ))}
-              </div>
-              <div className="hudright">
+              {items(hud.heroes[0])}
+              <div className={'hudright' + (coop ? ' mid' : '')}>
                 <div className="timer">{fmtTime(hud.time)}</div>
                 <div className="kills">☠ {hud.kills}</div>
                 {hud.cones > 0 && <div className="kills">🌲 {hud.cones}</div>}
                 {hud.keys > 0 && <div className="kills">🔑 {hud.keys}</div>}
               </div>
+              {coop && items(hud.heroes[1], true)}
             </div>
           </div>
           {hud.boss && (
@@ -349,12 +403,7 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
               </div>
             </div>
           )}
-          <div className="hpbar">
-            <div style={{ width: `${Math.max(0, (hud.hp / hud.maxHp) * 100)}%` }} />
-            <span>
-              {Math.ceil(hud.hp)} / {hud.maxHp}
-            </span>
-          </div>
+          {hud.heroes.map(hpbar)}
           {hud.banner && overlay.kind === 'none' && (
             <div className="banner">
               <div className="t">{hud.banner.text}</div>
@@ -381,35 +430,47 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
           )}
         </>
       )}
-      <div className="stick" ref={stickRef} style={{ display: 'none' }}>
-        <div />
-      </div>
+      {characters.map((_, i) => (
+        <div
+          className="stick"
+          key={i}
+          ref={(el) => {
+            stickRefs.current[i] = el;
+          }}
+          style={{ display: 'none', borderColor: coop ? HERO_COLORS[i] : undefined }}
+        >
+          <div />
+        </div>
+      ))}
 
-      {overlay.kind === 'levelup' && (
+      {overlay.kind === 'levelup' && s && (
         <div className="overlay" data-ui>
-          <h2>Taso {s?.player.level}</h2>
+          {coop && <HeroTag h={s.heroes[overlay.hero]} />}
+          <h2>Taso {s.heroes[overlay.hero].player.level}</h2>
           <div className="cards">
             {overlay.offers.map((o, i) => (
-              <OfferCard key={o.id + i} o={o} index={i} onPick={pick} />
+              <OfferCard key={o.id + i} o={o} index={i} onPick={(o) => pick(overlay.hero, o)} />
             ))}
           </div>
-          {s && s.stats.reroll > 0 && (
+          {s.heroes[overlay.hero].stats.reroll > 0 && (
             <button
               className="btn ghost reroll"
               onClick={() => {
-                s.stats.reroll--;
+                const h = s.heroes[overlay.hero];
+                h.stats.reroll--;
                 audio.play('tap');
-                setOverlay({ kind: 'levelup', offers: rollOffers(s) });
+                setOverlay({ kind: 'levelup', hero: overlay.hero, offers: rollOffers(s, h) });
               }}
             >
-              🎲 Heitä uudelleen ({s.stats.reroll})
+              🎲 Heitä uudelleen ({s.heroes[overlay.hero].stats.reroll})
             </button>
           )}
         </div>
       )}
-      {overlay.kind === 'chest' && (
+      {overlay.kind === 'chest' && s && (
         <div className="overlay" data-ui onClick={() => setOverlay({ kind: 'none' })}>
           <div className="chest">🪵</div>
+          {coop && <HeroTag h={s.heroes[overlay.hero]} />}
           <h2>{overlay.result.size === 5 ? 'Tapion suuri lahja' : overlay.result.size === 3 ? 'Tapion lahja' : 'Arkku'}</h2>
           <div className="cards">
             {overlay.result.items.map((o, i) => (
@@ -423,63 +484,78 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
         <div className="overlay" data-ui>
           <UpdateBanner />
           <h2>Tauko</h2>
-          <div className="stats">
-            <span>Aika</span>
-            <b>{fmtTime(s.time)}</b>
-            <span>Taso</span>
-            <b>{s.player.level}</b>
-            <span>Kaadot</span>
-            <b>{s.run.kills}</b>
-            <span>Vahinko</span>
-            <b>{Math.round(s.stats.might * 100)} %</b>
-            <span>Alue</span>
-            <b>{Math.round(s.stats.area * 100)} %</b>
-            <span>Latausaika</span>
-            <b>{Math.round(s.stats.cooldown * 100)} %</b>
-            <span>Nopeus</span>
-            <b>{Math.round(s.stats.moveSpeed * 100)} %</b>
-            <span>Suoja</span>
-            <b>{s.stats.armor}</b>
-            <span>Palautuminen</span>
-            <b>{s.stats.regen.toFixed(1)} /s</b>
-            <span>Onni</span>
-            <b>{Math.round(s.stats.luck * 100)} %</b>
-            <span>Kirous</span>
-            <b>{Math.round(s.stats.curse * 100)} %</b>
-          </div>
+          {!coop && (
+            <div className="stats">
+              <span>Aika</span>
+              <b>{fmtTime(s.time)}</b>
+              <span>Taso</span>
+              <b>{s.heroes[0].player.level}</b>
+              <span>Kaadot</span>
+              <b>{s.run.kills}</b>
+              <span>Vahinko</span>
+              <b>{Math.round(s.heroes[0].stats.might * 100)} %</b>
+              <span>Alue</span>
+              <b>{Math.round(s.heroes[0].stats.area * 100)} %</b>
+              <span>Latausaika</span>
+              <b>{Math.round(s.heroes[0].stats.cooldown * 100)} %</b>
+              <span>Nopeus</span>
+              <b>{Math.round(s.heroes[0].stats.moveSpeed * 100)} %</b>
+              <span>Suoja</span>
+              <b>{s.heroes[0].stats.armor}</b>
+              <span>Palautuminen</span>
+              <b>{s.heroes[0].stats.regen.toFixed(1)} /s</b>
+              <span>Onni</span>
+              <b>{Math.round(s.heroes[0].stats.luck * 100)} %</b>
+              <span>Kirous</span>
+              <b>{Math.round(s.heroes[0].stats.curse * 100)} %</b>
+            </div>
+          )}
+          {coop && (
+            <div className="stats">
+              <span>Aika</span>
+              <b>{fmtTime(s.time)}</b>
+              <span>Kaadot</span>
+              <b>{s.run.kills}</b>
+            </div>
+          )}
           <div className="cards">
-            {s.powers.map((p) => (
-              <div className="card power" key={p.id} style={{ cursor: 'default' }}>
-                <div className="ic">{icon(POWERS[p.id].icon)}</div>
-                <div className="body">
-                  <div className="name">
-                    <span>{POWERS[p.id].name}</span>
-                    <span className="lvl">Taika {p.level}/{POWERS[p.id].maxLevel}</span>
+            {s.heroes.map((h) => (
+              <div key={h.index} className="cards">
+                {coop && <HeroTag h={h} />}
+                {h.powers.map((p) => (
+                  <div className="card power" key={p.id} style={{ cursor: 'default' }}>
+                    <div className="ic">{icon(POWERS[p.id].icon)}</div>
+                    <div className="body">
+                      <div className="name">
+                        <span>{POWERS[p.id].name}</span>
+                        <span className="lvl">Taika {p.level}/{POWERS[p.id].maxLevel}</span>
+                      </div>
+                      <div className="desc">{POWERS[p.id].desc}</div>
+                    </div>
                   </div>
-                  <div className="desc">{POWERS[p.id].desc}</div>
-                </div>
+                ))}
+                {h.weapons.map((w) => {
+                  const def = WEAPONS[w.id];
+                  const evo = def.evolvesWith ? PASSIVES[def.evolvesWith] : null;
+                  return (
+                    <div className="card" key={w.id} style={{ cursor: 'default' }}>
+                      <div className="ic">{icon(def.icon)}</div>
+                      <div className="body">
+                        <div className="name">
+                          <span>{def.name}</span>
+                          <span className="lvl">{def.evolved ? 'Kehittynyt' : `Taso ${w.level}/${def.levels.length + 1}`}</span>
+                        </div>
+                        {evo && !def.evolved && (
+                          <div className="desc">
+                            Kehittyy: taso {def.levels.length + 1} + {icon(evo.icon)} {evo.name}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ))}
-            {s.weapons.map((w) => {
-              const def = WEAPONS[w.id];
-              const evo = def.evolvesWith ? PASSIVES[def.evolvesWith] : null;
-              return (
-                <div className="card" key={w.id} style={{ cursor: 'default' }}>
-                  <div className="ic">{icon(def.icon)}</div>
-                  <div className="body">
-                    <div className="name">
-                      <span>{def.name}</span>
-                      <span className="lvl">{def.evolved ? 'Kehittynyt' : `Taso ${w.level}/${def.levels.length + 1}`}</span>
-                    </div>
-                    {evo && !def.evolved && (
-                      <div className="desc">
-                        Kehittyy: taso {def.levels.length + 1} + {icon(evo.icon)} {evo.name}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
           </div>
           <div className="row" style={{ marginTop: 16 }}>
             <button className="btn primary" onClick={() => setOverlay({ kind: 'none' })}>

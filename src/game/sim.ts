@@ -1,9 +1,9 @@
-import type { SimState } from './state';
-import { xpForLevel } from './state';
+import type { SimState, Hero } from './state';
+import { xpForLevel, nearestHero } from './state';
 import type { Enemy, EnemyDef, Input, PickupKind } from './types';
 import { ENEMIES, BOSS_ORDER, type EnemyId } from './content/enemies';
 import { WAVES, SWARM_EVENTS, BOSS_MINUTES, type SpawnEntry } from './content/waves';
-import { updateWeapons, updateProjectiles, updateZones } from './weapons';
+import { updateWeapons, updateProjectiles, updateZones, dropWeapons } from './weapons';
 import { addText, healPlayer, hurt, onScreen, sound } from './combat';
 import { computeStats, powerLevel } from './upgrades';
 import { collideTrees, featuresNear, cellKey } from './forest';
@@ -14,6 +14,9 @@ const PLAYER_RADIUS = 9;
 const BASE_MAGNET = 48;
 const MAX_GEMS = 400;
 const MAX_ENEMIES = 520;
+/** co-op: a living hero this close to a fallen one, for this long, raises them */
+const REVIVE_RANGE = 34;
+const REVIVE_TIME = 3;
 
 /** HP multiplier by minute. Linear early, exponential after twenty, endless. */
 export function enemyHpScale(minute: number, curse: number): number {
@@ -33,31 +36,106 @@ export function enemyDamageScale(minute: number): number {
   return 1.4 * (1 + minute * 0.035) * late;
 }
 
-export function initRun(s: SimState): void {
-  computeStats(s);
-  s.player.hp = s.stats.maxHp;
+/**
+ * Two heroes fire two builds, so the forest answers: enemies carry 65
+ * percent more HP and the director sends 40 percent more. The bot pair
+ * (`npm run balance 15 2 vaino+lemminkainen`) should die somewhere near
+ * where one bot does, a little later: two thumbs are more than one but the
+ * screen and the berries are shared.
+ */
+function coopHp(s: SimState): number {
+  return s.heroes.length > 1 ? 1.65 : 1;
+}
+function coopRate(s: SimState): number {
+  return s.heroes.length > 1 ? 1.4 : 1;
+}
+/** Each hero's share of a berry in co-op: together they get more than one would, not twice. */
+function coopXp(s: SimState): number {
+  return s.heroes.length > 1 ? 0.75 : 1;
 }
 
-export function step(s: SimState, input: Input, dt: number): void {
+export function initRun(s: SimState): void {
+  for (const h of s.heroes) {
+    computeStats(s, h);
+    h.player.hp = h.stats.maxHp;
+  }
+  updateCamera(s);
+}
+
+/** The camera sits on the living heroes' midpoint; the strongest curse among them drives the director. */
+function updateCamera(s: SimState): void {
+  let x = 0;
+  let y = 0;
+  let n = 0;
+  let curse = 0;
+  for (const h of s.heroes) {
+    if (!h.player.alive) continue;
+    x += h.player.x;
+    y += h.player.y;
+    n++;
+    curse = Math.max(curse, h.stats.curse);
+  }
+  if (n > 0) {
+    s.cam.x = x / n;
+    s.cam.y = y / n;
+    s.curse = curse;
+  }
+}
+
+export function step(s: SimState, input: Input | Input[], dt: number): void {
+  const inputs = Array.isArray(input) ? input : [input];
   if (s.gameOver) {
-    s.player.deadTime += dt;
+    for (const h of s.heroes) if (!h.player.alive) h.player.deadTime += dt;
     decay(s, dt);
+    return;
+  }
+  if (!s.heroes.some((h) => h.player.alive)) {
+    s.gameOver = true;
     return;
   }
   s.time += dt;
   s.minute = s.time / 60;
-  const p = s.player;
+  s.trip = Math.max(0, s.trip - dt);
 
-  // Player
+  for (const h of s.heroes) {
+    prev[h.index] = { x: h.player.x, y: h.player.y };
+    if (!h.player.alive) {
+      h.player.deadTime += dt;
+      continue;
+    }
+    movePlayer(s, h, inputs[h.index] ?? inputs[0] ?? { dx: 0, dy: 0 }, dt);
+  }
+  leash(s);
+  revive(s, dt);
+  updateCamera(s);
+
+  direct(s, dt);
+
+  // Grid
+  const g = s.grid;
+  g.clear();
+  for (let i = 0; i < s.enemies.length; i++) g.insert(s.enemies[i]);
+
+  updateEnemies(s, dt);
+  for (const h of s.heroes) if (h.player.alive) updateWeapons(s, h, dt);
+  updateProjectiles(s, dt);
+  updateZones(s, dt);
+  reap(s);
+  updateGems(s, dt);
+  updatePickups(s, dt);
+  decay(s, dt);
+}
+
+function movePlayer(s: SimState, h: Hero, input: Input, dt: number): void {
+  const p = h.player;
   p.invuln = Math.max(0, p.invuln - dt);
   p.hurtFlash = Math.max(0, p.hurtFlash - dt);
   p.hideCd = Math.max(0, p.hideCd - dt);
   // Kanto: a second of standing still turns the player into a stump.
-  const kanto = powerLevel(s, 'kanto');
+  const kanto = powerLevel(h, 'kanto');
   const rooted = kanto > 0 && p.still >= 1;
-  const regen = s.stats.regen + (rooted ? 1 * kanto : 0);
-  if (regen > 0 && p.hp < s.stats.maxHp) p.hp = Math.min(s.stats.maxHp, p.hp + regen * dt);
-  s.trip = Math.max(0, s.trip - dt);
+  const regen = h.stats.regen + (rooted ? 1 * kanto : 0);
+  if (regen > 0 && p.hp < h.stats.maxHp) p.hp = Math.min(h.stats.maxHp, p.hp + regen * dt);
   const len = Math.hypot(input.dx, input.dy);
   if (len > 0.05) {
     const m = Math.min(1, len);
@@ -72,8 +150,8 @@ export function step(s: SimState, input: Input, dt: number): void {
       nx = rx;
       ny = ry;
     }
-    p.x += nx * m * PLAYER_SPEED * s.stats.moveSpeed * dt;
-    p.y += ny * m * PLAYER_SPEED * s.stats.moveSpeed * dt;
+    p.x += nx * m * PLAYER_SPEED * h.stats.moveSpeed * dt;
+    p.y += ny * m * PLAYER_SPEED * h.stats.moveSpeed * dt;
     p.dirX = nx;
     p.dirY = ny;
     if (Math.abs(nx) > 0.2) p.facing = nx > 0 ? 1 : -1;
@@ -95,22 +173,59 @@ export function step(s: SimState, input: Input, dt: number): void {
     addText(s, p.x, p.y - 18, 'Kärpässieni! Metsä huojuu', '#ff6a6a', true);
     sound(s, 'swarm');
   });
+}
 
-  direct(s, dt);
+const prev: { x: number; y: number }[] = [];
 
-  // Grid
-  const g = s.grid;
-  g.clear();
-  for (let i = 0; i < s.enemies.length; i++) g.insert(s.enemies[i]);
+/**
+ * Co-op: nobody walks off the shared screen. A hero who would leave the
+ * other behind by more than the view stops at its edge. The limit is
+ * measured from where the partner stood before this step, so two heroes
+ * pushing apart both stop and neither drags the other along.
+ */
+function leash(s: SimState): void {
+  if (s.heroes.length < 2) return;
+  const lx = s.view.w - 70;
+  const ly = s.view.h - 70;
+  for (const h of s.heroes) {
+    if (!h.player.alive) continue;
+    for (const o of s.heroes) {
+      if (o === h || !o.player.alive) continue;
+      const p = h.player;
+      const q = prev[o.index];
+      if (p.x - q.x > lx) p.x = q.x + lx;
+      else if (q.x - p.x > lx) p.x = q.x - lx;
+      if (p.y - q.y > ly) p.y = q.y + ly;
+      else if (q.y - p.y > ly) p.y = q.y - ly;
+    }
+  }
+}
 
-  updateEnemies(s, dt);
-  updateWeapons(s, dt);
-  updateProjectiles(s, dt);
-  updateZones(s, dt);
-  reap(s);
-  updateGems(s, dt);
-  updatePickups(s, dt);
-  decay(s, dt);
+/** Co-op: a living hero standing by a fallen one for three seconds raises them at half health. */
+function revive(s: SimState, dt: number): void {
+  if (s.heroes.length < 2) return;
+  for (const h of s.heroes) {
+    if (h.player.alive) continue;
+    const near = s.heroes.some((o) => o.player.alive && Math.hypot(o.player.x - h.player.x, o.player.y - h.player.y) < REVIVE_RANGE);
+    if (!near) {
+      h.revive = Math.max(0, h.revive - dt * 2);
+      continue;
+    }
+    h.revive += dt;
+    if (h.revive < REVIVE_TIME) continue;
+    h.revive = 0;
+    const p = h.player;
+    p.alive = true;
+    p.hp = Math.ceil(h.stats.maxHp * 0.5);
+    p.invuln = 2;
+    p.deadTime = 0;
+    s.effects.push({ kind: 'revive', x: p.x, y: p.y, x2: 0, y2: 0, life: 0.8, maxLife: 0.8, color: '#ffffff', radius: 160 });
+    for (const e of s.enemies) {
+      if (!e.boss && Math.hypot(e.x - p.x, e.y - p.y) < 120) hurt(s, null, e, 9999, 0, 0, 0);
+    }
+    s.banner = { text: `${h.character.name} nousee`, sub: 'Toveri nosti', life: 2.5 };
+    sound(s, 'revive');
+  }
 }
 
 function decay(s: SimState, dt: number): void {
@@ -156,27 +271,28 @@ function currentWave(s: SimState): { entries: SpawnEntry[]; tier: number } {
   return { entries: cycle[idx].spawns, tier };
 }
 
+/** A point just outside the screen, around the camera. */
 function spawnPoint(s: SimState, out: { x: number; y: number }, margin = 30): void {
   const hw = s.view.w / 2 + margin;
   const hh = s.view.h / 2 + margin;
   const side = s.rng.int(0, 3);
-  const p = s.player;
+  const c = s.cam;
   switch (side) {
     case 0:
-      out.x = p.x + s.rng.range(-hw, hw);
-      out.y = p.y - hh;
+      out.x = c.x + s.rng.range(-hw, hw);
+      out.y = c.y - hh;
       break;
     case 1:
-      out.x = p.x + s.rng.range(-hw, hw);
-      out.y = p.y + hh;
+      out.x = c.x + s.rng.range(-hw, hw);
+      out.y = c.y + hh;
       break;
     case 2:
-      out.x = p.x - hw;
-      out.y = p.y + s.rng.range(-hh, hh);
+      out.x = c.x - hw;
+      out.y = c.y + s.rng.range(-hh, hh);
       break;
     default:
-      out.x = p.x + hw;
-      out.y = p.y + s.rng.range(-hh, hh);
+      out.x = c.x + hw;
+      out.y = c.y + s.rng.range(-hh, hh);
   }
 }
 
@@ -186,7 +302,7 @@ export function spawnEnemy(s: SimState, def: EnemyDef, x: number, y: number, opt
   const elite = !!opts.elite;
   const boss = !!opts.boss;
   const tier = opts.tier ?? s.tier;
-  const scale = enemyHpScale(s.minute, s.stats.curse);
+  const scale = enemyHpScale(s.minute, s.curse) * coopHp(s);
   // Bosses and elites ride a gentler curve: they are fights, not walls.
   let hp = def.hp * (boss || elite ? Math.pow(scale, 0.75) : scale) * (1 + tier * 0.35);
   if (elite) hp *= 9;
@@ -214,6 +330,8 @@ export function spawnEnemy(s: SimState, def: EnemyDef, x: number, y: number, opt
     facing: 1,
     wobble: s.rng.next() * Math.PI * 2,
     lastSource: '',
+    lastOwner: -1,
+    target: 0,
   };
   s.enemies.push(e);
   return e;
@@ -222,10 +340,10 @@ export function spawnEnemy(s: SimState, def: EnemyDef, x: number, y: number, opt
 function direct(s: SimState, dt: number): void {
   const { entries, tier } = currentWave(s);
   s.tier = tier;
-  const curse = s.stats.curse;
+  const curse = s.curse;
   const pressure = s.minute > 15 ? 1 + (s.minute - 15) * 0.14 : 1;
-  const rateMul = curse * (1 + tier * 0.3) * pressure;
-  const capMul = curse * (1 + tier * 0.25) * pressure;
+  const rateMul = curse * (1 + tier * 0.3) * pressure * coopRate(s);
+  const capMul = curse * (1 + tier * 0.25) * pressure * coopRate(s);
   if (s.enemies.length < MAX_ENEMIES) {
     // Alive counts per type, once.
     const alive: Record<string, number> = {};
@@ -275,13 +393,13 @@ function direct(s: SimState, dt: number): void {
   }
 
   // A cone falls from a tree every four minutes, near but not under the
-  // player, so it has to be walked to. Tapion pöytä (src/meta.ts) is paid
+  // players, so it has to be walked to. Tapion pöytä (src/meta.ts) is paid
   // in these; nothing else makes them.
   s.coneTimer -= dt;
   if (s.coneTimer <= 0) {
     s.coneTimer = 240;
     const a = s.rng.next() * Math.PI * 2;
-    drop(s, 'kapy', s.player.x + Math.cos(a) * 140, s.player.y + Math.sin(a) * 140);
+    drop(s, 'kapy', s.cam.x + Math.cos(a) * 140, s.cam.y + Math.sin(a) * 140);
   }
 
   // Käpyarkku: a locked chest set down off screen, its key off screen the
@@ -293,9 +411,9 @@ function direct(s: SimState, dt: number): void {
     s.chestTimer = 300;
     const a = s.rng.next() * Math.PI * 2;
     const far = Math.hypot(s.view.w, s.view.h) / 2 + 60;
-    drop(s, 'kapyarkku', s.player.x + Math.cos(a) * far, s.player.y + Math.sin(a) * far);
+    drop(s, 'kapyarkku', s.cam.x + Math.cos(a) * far, s.cam.y + Math.sin(a) * far);
     const b = a + Math.PI + (s.rng.next() - 0.5) * 1.6;
-    drop(s, 'avain', s.player.x + Math.cos(b) * far, s.player.y + Math.sin(b) * far);
+    drop(s, 'avain', s.cam.x + Math.cos(b) * far, s.cam.y + Math.sin(b) * far);
     s.banner = { text: 'Käpyarkku', sub: 'Lukossa. Avain on jossain metsässä', life: 3 };
     sound(s, 'chest');
   }
@@ -328,20 +446,20 @@ function direct(s: SimState, dt: number): void {
 }
 
 function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, count: number): void {
-  const p = s.player;
+  const c = s.cam;
   if (kind === 'circle') {
     // The trap: a closed ring of tough enemies that keeps formation and
-    // contracts on where the player stood. A gap has to be cut to get out.
+    // contracts on where the players stood. A gap has to be cut to get out.
     // Members ignore knockback while in formation and hold twice the HP.
     const r0 = Math.hypot(s.view.w, s.view.h) / 2 + 20;
     const n = Math.max(count, Math.ceil((2 * Math.PI * 70) / (def.radius * def.scale * 2.2)));
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2;
-      const e = spawnEnemy(s, def, p.x + Math.cos(a) * r0, p.y + Math.sin(a) * r0);
+      const e = spawnEnemy(s, def, c.x + Math.cos(a) * r0, c.y + Math.sin(a) * r0);
       e.t2 = 4;
       e.t1 = a;
-      e.vx = p.x;
-      e.vy = p.y;
+      e.vx = c.x;
+      e.vy = c.y;
       e.hp *= 2;
       e.maxHp = e.hp;
     }
@@ -354,7 +472,7 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
     const r = Math.hypot(s.view.w, s.view.h) / 2 + 40;
     for (let i = 0; i < count; i++) {
       const a = (i / count) * Math.PI * 2;
-      spawnEnemy(s, def, p.x + Math.cos(a) * r, p.y + Math.sin(a) * r);
+      spawnEnemy(s, def, c.x + Math.cos(a) * r, c.y + Math.sin(a) * r);
     }
     s.banner = { text: 'Räkkä', sub: `${def.name} joka suunnasta`, life: 2.5 };
     sound(s, 'swarm');
@@ -377,11 +495,11 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
         let x: number;
         let y: number;
         if (horizontal) {
-          x = p.x - dir * (hw + depth);
-          y = p.y + along * across;
+          x = c.x - dir * (hw + depth);
+          y = c.y + along * across;
         } else {
-          x = p.x + along * across;
-          y = p.y - dir * (hh + depth);
+          x = c.x + along * across;
+          y = c.y - dir * (hh + depth);
         }
         const e = spawnEnemy(s, def, x, y);
         e.t2 = 3; // marching: fixed heading, see updateEnemies
@@ -401,12 +519,12 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
 // ---------------------------------------------------------------- enemies
 
 function updateEnemies(s: SimState, dt: number): void {
-  const p = s.player;
   const es = s.enemies;
   const dmgScale = enemyDamageScale(s.minute);
   const speedScale = enemySpeedScale(s.minute);
   const farX = s.view.w / 2 + 160;
   const farY = s.view.h / 2 + 160;
+  const cam = s.cam;
   for (let i = 0; i < es.length; i++) {
     const e = es[i];
     if (e.hp <= 0) continue;
@@ -418,13 +536,22 @@ function updateEnemies(s: SimState, dt: number): void {
     e.wobble += dt * 6;
 
     // Relocate stragglers so the pressure stays on. Bosses and columns walk.
-    if (!e.boss && e.def.id !== 'tuoni' && e.t2 < 3 && (Math.abs(e.x - p.x) > farX || Math.abs(e.y - p.y) > farY)) {
+    if (!e.boss && e.def.id !== 'tuoni' && e.t2 < 3 && (Math.abs(e.x - cam.x) > farX || Math.abs(e.y - cam.y) > farY)) {
       spawnPoint(s, tmp);
       e.x = tmp.x;
       e.y = tmp.y;
       e.kx = e.ky = 0;
     }
 
+    // The hero it is after: the nearest one standing. An attached tick
+    // stays on the hero it bit.
+    let h: Hero;
+    if (e.t2 === 1 && e.def.behaviour === 'stick' && s.heroes[e.target].player.alive) h = s.heroes[e.target];
+    else {
+      h = nearestHero(s, e.x, e.y) ?? s.heroes[0];
+      e.target = h.index;
+    }
+    const p = h.player;
     const dx = p.x - e.x;
     const dy = p.y - e.y;
     const dist = Math.hypot(dx, dy) || 1;
@@ -511,7 +638,7 @@ function updateEnemies(s: SimState, dt: number): void {
       mx = e.vx;
       my = e.vy;
       speed = e.def.speed * 1.5 * (1 - e.slow);
-      if (Math.abs(e.x - p.x) > farX + 200 || Math.abs(e.y - p.y) > farY + 200) e.hp = -1;
+      if (Math.abs(e.x - cam.x) > farX + 200 || Math.abs(e.y - cam.y) > farY + 200) e.hp = -1;
     }
 
     // Separation: push apart from a few neighbours in the same cell.
@@ -549,36 +676,22 @@ function updateEnemies(s: SimState, dt: number): void {
     e.ky *= Math.pow(0.02, dt);
     if (Math.abs(mx) > 0.1) e.facing = mx > 0 ? 1 : -1;
 
-    // Contact damage
+    // Contact damage, on whichever standing hero is inside reach. Usually
+    // the target; the partner can walk into it too.
     const r = PLAYER_RADIUS + e.def.radius * e.scale;
-    if (dist < r && p.alive) {
+    let bit: Hero | null = null;
+    if (dist < r && p.alive) bit = h;
+    else if (s.heroes.length > 1) {
+      for (const o of s.heroes) {
+        if (o === h || !o.player.alive) continue;
+        if (Math.hypot(o.player.x - e.x, o.player.y - e.y) < r) bit = o;
+      }
+    }
+    if (bit) {
       e.contact -= dt;
       if (e.contact <= 0) {
         e.contact = e.def.behaviour === 'stick' ? 0.4 : e.boss ? 1.0 : 0.55;
-        if (p.invuln <= 0) {
-          const armor = s.stats.armor + (powerLevel(s, 'kanto') > 0 && p.still >= 1 ? 3 * powerLevel(s, 'kanto') : 0);
-          let raw = e.def.damage * dmgScale * (e.elite ? 1.5 : 1);
-          if (e.boss || e.elite) raw *= 1 - 0.25 * powerLevel(s, 'tapionsuoja');
-          const dmg = Math.max(1, Math.round(raw - armor));
-          p.hp -= dmg;
-          p.hurtFlash = 0.15;
-          s.run.damageTaken += dmg;
-          sound(s, 'hurt');
-          // Ukon suosio: the biter is struck.
-          const thorns = powerLevel(s, 'ukonsuosio');
-          if (thorns > 0) {
-            hurt(s, e, 20 * thorns * s.stats.might * (1 + s.minute * 0.15), 0, 0, 0, 'ukonsuosio');
-            s.effects.push({ kind: 'bolt', x: e.x, y: e.y - 200, x2: e.x, y2: e.y, life: 0.2, maxLife: 0.2, color: '#9fd3ff', radius: 12 });
-          }
-          // Piilopaikka: a hard hit hides the player for a moment.
-          const hide = powerLevel(s, 'piilopaikka');
-          if (hide > 0 && p.hideCd <= 0 && dmg >= s.stats.maxHp * 0.08) {
-            p.invuln = 0.8 * hide + 0.4;
-            p.hideCd = 15;
-            addText(s, p.x, p.y - 16, 'Piilossa', '#c8f0ff', true);
-          }
-          if (p.hp <= 0) die(s);
-        }
+        bite(s, bit, e, dmgScale);
       }
     } else {
       e.contact = Math.min(e.contact, 0.1);
@@ -586,15 +699,42 @@ function updateEnemies(s: SimState, dt: number): void {
   }
 }
 
-function die(s: SimState): void {
-  const p = s.player;
-  if (s.stats.revives > 0) {
-    s.stats.revives--;
-    p.hp = s.stats.maxHp;
+function bite(s: SimState, h: Hero, e: Enemy, dmgScale: number): void {
+  const p = h.player;
+  if (p.invuln > 0) return;
+  const armor = h.stats.armor + (powerLevel(h, 'kanto') > 0 && p.still >= 1 ? 3 * powerLevel(h, 'kanto') : 0);
+  let raw = e.def.damage * dmgScale * (e.elite ? 1.5 : 1);
+  if (e.boss || e.elite) raw *= 1 - 0.25 * powerLevel(h, 'tapionsuoja');
+  const dmg = Math.max(1, Math.round(raw - armor));
+  p.hp -= dmg;
+  p.hurtFlash = 0.15;
+  s.run.damageTaken += dmg;
+  sound(s, 'hurt');
+  // Ukon suosio: the biter is struck.
+  const thorns = powerLevel(h, 'ukonsuosio');
+  if (thorns > 0) {
+    hurt(s, h, e, 20 * thorns * h.stats.might * (1 + s.minute * 0.15), 0, 0, 0, 'ukonsuosio');
+    s.effects.push({ kind: 'bolt', x: e.x, y: e.y - 200, x2: e.x, y2: e.y, life: 0.2, maxLife: 0.2, color: '#9fd3ff', radius: 12 });
+  }
+  // Piilopaikka: a hard hit hides the player for a moment.
+  const hide = powerLevel(h, 'piilopaikka');
+  if (hide > 0 && p.hideCd <= 0 && dmg >= h.stats.maxHp * 0.08) {
+    p.invuln = 0.8 * hide + 0.4;
+    p.hideCd = 15;
+    addText(s, p.x, p.y - 16, 'Piilossa', '#c8f0ff', true);
+  }
+  if (p.hp <= 0) die(s, h);
+}
+
+function die(s: SimState, h: Hero): void {
+  const p = h.player;
+  if (h.stats.revives > 0) {
+    h.stats.revives--;
+    p.hp = h.stats.maxHp;
     p.invuln = 2.5;
     s.effects.push({ kind: 'revive', x: p.x, y: p.y, x2: 0, y2: 0, life: 0.8, maxLife: 0.8, color: '#ffffff', radius: 260 });
     for (const e of s.enemies) {
-      if (!e.boss && Math.hypot(e.x - p.x, e.y - p.y) < 260) hurt(s, e, 9999, 0, 0, 0);
+      if (!e.boss && Math.hypot(e.x - p.x, e.y - p.y) < 260) hurt(s, null, e, 9999, 0, 0, 0);
     }
     s.banner = { text: 'Lovi', sub: 'Palaat toisesta maailmasta', life: 2.5 };
     sound(s, 'revive');
@@ -602,7 +742,16 @@ function die(s: SimState): void {
   }
   p.hp = 0;
   p.alive = false;
-  s.gameOver = true;
+  p.deadTime = 0;
+  h.revive = 0;
+  dropWeapons(s, h);
+  if (s.heroes.every((o) => !o.player.alive)) {
+    s.gameOver = true;
+    sound(s, 'death');
+    return;
+  }
+  // Co-op: the partner has three seconds beside them to bring them back.
+  s.banner = { text: `${h.character.name} kaatui`, sub: 'Seiso vierellä, niin hän nousee', life: 3 };
   sound(s, 'death');
 }
 
@@ -614,7 +763,6 @@ function drop(s: SimState, kind: PickupKind, x: number, y: number): void {
 
 function reap(s: SimState): void {
   const es = s.enemies;
-  const luck = s.stats.luck;
   for (let i = es.length - 1; i >= 0; i--) {
     const e = es[i];
     if (e.hp > 0) continue;
@@ -624,7 +772,8 @@ function reap(s: SimState): void {
     if (e.def.id === 'tuoni') continue;
     s.run.kills++;
     sound(s, 'kill');
-    onKill(s, e);
+    const killer = e.lastOwner >= 0 ? s.heroes[e.lastOwner] : null;
+    if (killer) onKill(s, killer, e);
     if (s.effects.length < 60) s.effects.push({ kind: 'puff', x: e.x, y: e.y, x2: 0, y2: 0, life: 0.28, maxLife: 0.28, color: e.boss ? '#ffd166' : '#dfe8d8', radius: e.def.radius * e.scale * 1.6 });
     if (e.boss) {
       s.bossesAlive--;
@@ -646,6 +795,9 @@ function reap(s: SimState): void {
       continue;
     }
     addGem(s, e.x, e.y, e.def.xp);
+    // Luck of the hero who made the kill; the run's first hero when a
+    // pickup did.
+    const luck = (killer ?? s.heroes[0]).stats.luck;
     const r = s.rng.next();
     if (r < 1 / 1500) drop(s, 'kapy', e.x, e.y);
     else if (r < 1 / 1500 + 0.006 * luck) drop(s, 'kanttarelli', e.x, e.y);
@@ -655,34 +807,34 @@ function reap(s: SimState): void {
 }
 
 /** Taiat that fire on a kill: Kalman kosketus, Tulikaste, Elonkorjuu. */
-function onKill(s: SimState, e: Enemy): void {
+function onKill(s: SimState, h: Hero, e: Enemy): void {
   // No chain: a creature killed by a blast does not blast. The blast is a
   // share of the creature's own base HP at this minute, so an elite's nine
   // times HP does not clear the screen.
-  const boom = powerLevel(s, 'kalmankosketus');
+  const boom = powerLevel(h, 'kalmankosketus');
   if (boom > 0 && !e.boss && e.lastSource !== 'kalmankosketus') {
     const r = 26 + e.def.radius * e.scale;
-    const dmg = e.def.hp * enemyHpScale(s.minute, s.stats.curse) * 0.08 * boom;
+    const dmg = e.def.hp * enemyHpScale(s.minute, s.curse) * 0.08 * boom;
     s.grid.query(e.x, e.y, r, (o) => {
       if (o === e || o.hp <= 0) return;
       const dx = o.x - e.x;
       const dy = o.y - e.y;
       if (dx * dx + dy * dy > r * r) return;
       const d = Math.sqrt(dx * dx + dy * dy) || 1;
-      hurt(s, o, dmg, dx / d, dy / d, 10, 'kalmankosketus');
+      hurt(s, h, o, dmg, dx / d, dy / d, 10, 'kalmankosketus');
     });
     if (s.effects.length < 60) s.effects.push({ kind: 'burst', x: e.x, y: e.y, x2: 0, y2: 0, life: 0.25, maxLife: 0.25, color: '#b8a0ff', radius: r });
   }
-  const fire = powerLevel(s, 'tulikaste');
+  const fire = powerLevel(h, 'tulikaste');
   if (fire > 0 && s.rng.chance(0.06 * fire) && s.zones.length < 40) {
-    s.zones.push({ kind: 'fire', weapon: 'tulikaste', x: e.x, y: e.y, radius: 26, life: 2.2, maxLife: 2.2, damage: 4 * s.stats.might * (1 + s.minute * 0.15), tick: 0.5, timer: 0, followPlayer: false, slow: 0, knockback: 0, heal: 0, angle: 0, halfWidth: 0, hit: new Set(), tint: '#ff8a3d' });
+    s.zones.push({ kind: 'fire', weapon: 'tulikaste', owner: h.index, x: e.x, y: e.y, radius: 26, life: 2.2, maxLife: 2.2, damage: 4 * h.stats.might * (1 + s.minute * 0.15), tick: 0.5, timer: 0, followPlayer: false, slow: 0, knockback: 0, heal: 0, angle: 0, halfWidth: 0, hit: new Set(), tint: '#ff8a3d' });
   }
-  const harvest = powerLevel(s, 'elonkorjuu');
+  const harvest = powerLevel(h, 'elonkorjuu');
   if (harvest > 0) {
-    s.player.harvest++;
-    if (s.player.harvest >= (harvest >= 2 ? 100 : 150)) {
-      s.player.harvest = 0;
-      drop(s, 'kanttarelli', s.player.x + 20, s.player.y);
+    h.player.harvest++;
+    if (h.player.harvest >= (harvest >= 2 ? 100 : 150)) {
+      h.player.harvest = 0;
+      drop(s, 'kanttarelli', h.player.x + 20, h.player.y);
     }
   }
 }
@@ -698,31 +850,36 @@ function addGem(s: SimState, x: number, y: number, value: number): void {
 
 // ---------------------------------------------------------------- gems and pickups
 
+/** Berries feed every standing hero: one screen, one harvest. */
 function gainXp(s: SimState, v: number): void {
-  const p = s.player;
-  p.xp += v * s.stats.growth;
-  while (p.xp >= p.xpNext) {
-    p.xp -= p.xpNext;
-    p.level++;
-    p.xpNext = xpForLevel(p.level);
-    s.pendingLevelUps++;
-    sound(s, 'levelup');
-    s.effects.push({ kind: 'levelup', x: p.x, y: p.y, x2: 0, y2: 0, life: 0.6, maxLife: 0.6, color: '#f0b830', radius: 90 });
-    s.run.maxLevel = Math.max(s.run.maxLevel, p.level);
+  for (const h of s.heroes) {
+    if (!h.player.alive) continue;
+    const p = h.player;
+    p.xp += v * h.stats.growth * coopXp(s);
+    while (p.xp >= p.xpNext) {
+      p.xp -= p.xpNext;
+      p.level++;
+      p.xpNext = xpForLevel(p.level);
+      h.pendingLevelUps++;
+      sound(s, 'levelup');
+      s.effects.push({ kind: 'levelup', x: p.x, y: p.y, x2: 0, y2: 0, life: 0.6, maxLife: 0.6, color: '#f0b830', radius: 90 });
+      s.run.maxLevel = Math.max(s.run.maxLevel, p.level);
+    }
   }
 }
 
 function updateGems(s: SimState, dt: number): void {
-  const p = s.player;
   const gs = s.gems;
-  const mr = BASE_MAGNET * s.stats.magnet;
-  const mr2 = mr * mr;
   for (let i = gs.length - 1; i >= 0; i--) {
     const g = gs[i];
+    const h = nearestHero(s, g.x, g.y);
+    if (!h) return;
+    const p = h.player;
+    const mr = BASE_MAGNET * h.stats.magnet;
     const dx = p.x - g.x;
     const dy = p.y - g.y;
     const d2 = dx * dx + dy * dy;
-    if (!g.pull && d2 < mr2) g.pull = true;
+    if (!g.pull && d2 < mr * mr) g.pull = true;
     if (g.pull) {
       const d = Math.sqrt(d2) || 1;
       const sp = 380 + (mr - Math.min(d, mr)) * 3;
@@ -731,8 +888,8 @@ function updateGems(s: SimState, dt: number): void {
       if (d < 12) {
         gainXp(s, g.value);
         sound(s, 'gem');
-        const nl = powerLevel(s, 'nakinlahja');
-        if (nl > 0 && p.hp < s.stats.maxHp) p.hp = Math.min(s.stats.maxHp, p.hp + 0.6 * nl);
+        const nl = powerLevel(h, 'nakinlahja');
+        if (nl > 0 && p.hp < h.stats.maxHp) p.hp = Math.min(h.stats.maxHp, p.hp + 0.6 * nl);
         gs[i] = gs[gs.length - 1];
         gs.pop();
       }
@@ -741,14 +898,20 @@ function updateGems(s: SimState, dt: number): void {
 }
 
 function updatePickups(s: SimState, dt: number): void {
-  const p = s.player;
   const ps = s.pickups;
   for (let i = ps.length - 1; i >= 0; i--) {
     const k = ps[i];
     k.life -= dt;
-    const d = Math.hypot(p.x - k.x, p.y - k.y);
-    if (d < PLAYER_RADIUS + 14) {
-      if (!collect(s, k.kind, k.x, k.y)) continue;
+    let taker: Hero | null = null;
+    for (const h of s.heroes) {
+      if (!h.player.alive) continue;
+      if (Math.hypot(h.player.x - k.x, h.player.y - k.y) < PLAYER_RADIUS + 14) {
+        taker = h;
+        break;
+      }
+    }
+    if (taker) {
+      if (!collect(s, taker, k.kind, k.x, k.y)) continue;
       ps[i] = ps[ps.length - 1];
       ps.pop();
     } else if (k.life <= 0) {
@@ -758,11 +921,11 @@ function updatePickups(s: SimState, dt: number): void {
   }
 }
 
-/** Apply a pickup. Returns false when it stays on the ground (a locked chest). */
-function collect(s: SimState, kind: PickupKind, x: number, y: number): boolean {
+/** Apply a pickup to the hero who walked on it. Returns false when it stays on the ground (a locked chest). */
+function collect(s: SimState, h: Hero, kind: PickupKind, x: number, y: number): boolean {
   switch (kind) {
     case 'kanttarelli':
-      healPlayer(s, 30);
+      healPlayer(s, h, 30);
       sound(s, 'pickup');
       break;
     case 'lakka':
@@ -771,12 +934,12 @@ function collect(s: SimState, kind: PickupKind, x: number, y: number): boolean {
       sound(s, 'pickup');
       break;
     case 'kekale':
-      for (const e of s.enemies) if (!e.boss && e.def.id !== 'tuoni' && onScreen(s, e.x, e.y, 40)) hurt(s, e, 9999, 0, 0, 0, 'kekale');
+      for (const e of s.enemies) if (!e.boss && e.def.id !== 'tuoni' && onScreen(s, e.x, e.y, 40)) hurt(s, null, e, 9999, 0, 0, 0, 'kekale');
       s.effects.push({ kind: 'burst', x, y, x2: 0, y2: 0, life: 0.5, maxLife: 0.5, color: '#ff8a3d', radius: 400 });
       sound(s, 'ember');
       break;
     case 'arkku':
-      s.pendingChests++;
+      s.pendingChests.push(h.index);
       break;
     case 'kapy':
       s.run.cones++;
@@ -798,9 +961,9 @@ function collect(s: SimState, kind: PickupKind, x: number, y: number): boolean {
       }
       s.run.keys--;
       s.run.cones += 5;
-      s.pendingChests++;
+      s.pendingChests.push(h.index);
       addText(s, x, y, '+5 käpyä', '#c9a46c', true);
-      s.effects.push({ kind: 'chest', x, y, x2: 0, y2: 0, life: 0.6, maxLife: 0.6, color: '#e8c060', radius: 60 });
+      s.effects.push({ kind: 'burst', x, y, x2: 0, y2: 0, life: 0.6, maxLife: 0.6, color: '#e8c060', radius: 60 });
       sound(s, 'chestbig');
       break;
     case 'kahvi':

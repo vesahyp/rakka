@@ -50,6 +50,14 @@ h2 { margin: 0 0 12px; font-size: 26px; }
 .xpbar span { position: absolute; right: 8px; top: -1px; font-size: 11px; font-weight: 800; text-shadow: 0 1px 2px #000; }
 .hudrow { display: flex; align-items: flex-start; justify-content: space-between; margin-top: 6px; gap: 8px; font-weight: 800; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0,0,0,0.6); }
 .hudright { text-align: right; margin-right: 48px; flex: none; }
+/* co-op: two xp bars, two item rows, the clock between them, two hp bars */
+.xprow { display: flex; gap: 8px; }
+.xprow .xpbar { flex: 1; border-width: 2px; }
+.hudright.mid { text-align: center; margin: 0 8px; }
+.items.right { justify-content: flex-end; margin-right: 48px; }
+.hpbar.p0 { left: 25%; border-width: 2px; }
+.hpbar.p1 { left: 75%; border-width: 2px; }
+.herotag { font-weight: 900; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; margin: 6px 0 2px; text-shadow: 0 1px 3px #000; }
 .timer { font-size: 22px; letter-spacing: 0.05em; }
 .kills { font-size: 15px; }
 .items { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }

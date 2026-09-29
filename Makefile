@@ -3,7 +3,7 @@
 #
 #   make dev        # vite dev server, reachable on the LAN for a phone
 #   make check      # typecheck + build + sim-check, what CI needs green
-#   make balance    # bot runs, one line per run (MIN=20 RUNS=2 CHAR=)
+#   make balance    # bot runs, one line per run (MIN=20 RUNS=2 CHAR=; CHAR=vaino+aino is co-op)
 #   make shots      # phone screenshots into shots/ (needs make shots-setup)
 #   make icon       # re-render the app icon from the game sprites (dev server up)
 #   make plan/apply # Terraform for the analytics pixel host (infra/)

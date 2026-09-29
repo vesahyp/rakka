@@ -65,6 +65,10 @@ export interface Enemy {
   wobble: number;
   /** what hit it last, so a kill by a blast does not blast again */
   lastSource: string;
+  /** index of the hero behind the last hit, -1 for none */
+  lastOwner: number;
+  /** index of the hero it is after this step */
+  target: number;
 }
 
 export type ProjectileKind =
@@ -82,6 +86,8 @@ export type ProjectileKind =
 export interface Projectile {
   kind: ProjectileKind;
   weapon: string;
+  /** index of the hero who fired it */
+  owner: number;
   x: number;
   y: number;
   vx: number;
@@ -117,6 +123,8 @@ export type ZoneKind = 'fire' | 'aura' | 'steam' | 'net' | 'frost' | 'song' | 's
 export interface Zone {
   kind: ZoneKind;
   weapon: string;
+  /** index of the hero it belongs to, -1 for a taika fire from a kill */
+  owner: number;
   x: number;
   y: number;
   radius: number;

@@ -10,7 +10,7 @@ import { UpdateBanner } from './ui/Update';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { BUILD, BUILD_NAME } from './version';
 
-type Screen = { kind: 'title' } | { kind: 'select' } | { kind: 'records' } | { kind: 'stats' } | { kind: 'altar' } | { kind: 'run'; character: CharacterDef; seed: number } | { kind: 'dead'; r: RunSummary; rank: number; charBest: boolean; cones: number };
+type Screen = { kind: 'title' } | { kind: 'select'; players: 1 | 2 } | { kind: 'records' } | { kind: 'stats' } | { kind: 'altar' } | { kind: 'run'; characters: CharacterDef[]; seed: number } | { kind: 'dead'; r: RunSummary; rank: number; charBest: boolean; cones: number };
 
 export default function App() {
   return (
@@ -31,15 +31,15 @@ function Screens() {
     window.scrollTo(0, 0);
   }, [screen.kind]);
 
-  const start = (character: CharacterDef) => setScreen({ kind: 'run', character, seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0 });
+  const start = (characters: CharacterDef[]) => setScreen({ kind: 'run', characters, seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0 });
 
   let body;
   switch (screen.kind) {
     case 'title':
-      body = <Title records={records} meta={meta} onPlay={() => setScreen({ kind: 'select' })} onRecords={() => setScreen({ kind: 'records' })} onAltar={() => setScreen({ kind: 'altar' })} />;
+      body = <Title records={records} meta={meta} onPlay={(players) => setScreen({ kind: 'select', players })} onRecords={() => setScreen({ kind: 'records' })} onAltar={() => setScreen({ kind: 'altar' })} />;
       break;
     case 'select':
-      body = <Select records={records} onPick={start} onBack={() => setScreen({ kind: 'title' })} />;
+      body = <Select records={records} players={screen.players} onPick={start} onBack={() => setScreen({ kind: 'title' })} />;
       break;
     case 'records':
       body = <RecordsScreen records={records} onBack={() => setScreen({ kind: 'title' })} />;
@@ -54,13 +54,22 @@ function Screens() {
       body = (
         <Game
           key={screen.seed}
-          character={screen.character}
+          characters={screen.characters}
           seed={screen.seed}
           meta={metaStats(meta)}
           altar={meta.ranks}
-          onQuit={() => setScreen({ kind: 'select' })}
-          onRestart={() => start(screen.character)}
+          onQuit={() => setScreen({ kind: 'select', players: screen.characters.length > 1 ? 2 : 1 })}
+          onRestart={() => start(screen.characters)}
           onEnd={(r) => {
+            const cones = conesForRun(r);
+            setMeta(earnCones(cones));
+            // A co-op run earns cones but stays off the tables: the boards
+            // rank one hero's build, and two builds on one screen is
+            // another game.
+            if (r.characters.length > 1) {
+              setScreen({ kind: 'dead', r, rank: -1, charBest: false, cones });
+              return;
+            }
             const saved = saveRun({
               character: r.character.id,
               time: r.time,
@@ -72,15 +81,13 @@ function Screens() {
               weapons: r.weapons,
             });
             setRecords(saved.records);
-            const cones = conesForRun(r);
-            setMeta(earnCones(cones));
             setScreen({ kind: 'dead', r, rank: saved.rank, charBest: saved.charBest, cones });
           }}
         />
       );
       break;
     case 'dead':
-      body = <Death r={screen.r} rank={screen.rank} charBest={screen.charBest} cones={screen.cones} onAgain={() => start(screen.r.character)} onMenu={() => setScreen({ kind: 'select' })} />;
+      body = <Death r={screen.r} rank={screen.rank} charBest={screen.charBest} cones={screen.cones} onAgain={() => start(screen.r.characters)} onMenu={() => setScreen({ kind: 'select', players: screen.r.characters.length > 1 ? 2 : 1 })} />;
       break;
   }
   return (

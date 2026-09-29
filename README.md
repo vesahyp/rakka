@@ -39,6 +39,13 @@ selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 - **Äänet** saa pois nappulasta pelin aikana tai alkuruudusta. Valinta
   muistetaan.
 - **Pysty tai vaaka**, kumpi vain. Kääntäminen kesken pelin toimii.
+- **Kaksin** samalla puhelimella. Alkuruudun Kaksin-nappi, kumpikin valitsee
+  hahmonsa, puhelin vaakaan: vasen puoli ruudusta ohjaa ensimmäistä, oikea
+  toista. Näppäimistöllä WASD ja nuolet. Viholliset jahtaavat lähempää,
+  marjat ovat yhteiset ja kumpikin valitsee omat päivityksensä. Kaatuneen
+  nostaa seisomalla vieressä kolme sekuntia. Kumpikaan ei pääse ruudun
+  ulkopuolelle. Peli päättyy kun molemmat ovat maassa. Kaksinpeli tuo
+  käpyjä mutta ei mene tulostaululle.
 - **Uusi versio** ilmoittaa itsestään. Päivitä-nappi lataa pelin uudelleen,
   myös kotinäytön sovelluksessa. Tauko-valikosta voi aloittaa alusta.
 - **Peli ei pääty voittoon.** Se päättyy kun metsä ottaa omansa. Tulos on

@@ -39,6 +39,15 @@ try {
   for (const [m, name] of [[0.25, '03-run-start'], [4, '04-run-minute-4'], [10, '05-run-minute-10'], [16, '06-run-minute-16'], [24, '07-run-minute-24']]) {
     if (!(await at(m, name))) break;
   }
+  // Co-op, landscape: two heroes, two sticks' worth of HUD.
+  await page.setViewportSize({ width: 659, height: 393 });
+  await page.goto(`http://localhost:${port}/?bot=1&speed=8`);
+  await page.getByRole('button', { name: 'Kaksin' }).click();
+  await page.getByRole('button', { name: /Väinö/ }).click();
+  await page.getByRole('button', { name: /Aino/ }).click();
+  await page.waitForFunction(() => window.__sim && (window.__sim.time >= 180 || window.__sim.gameOver), null, { timeout: 300000 });
+  await page.waitForTimeout(200);
+  await shot('10-coop');
   const perf = await page.evaluate(() => window.__perf);
   console.log(`frames ${perf.frames}, avg ${(perf.ms / perf.frames).toFixed(2)} ms, worst ${perf.worst.toFixed(1)} ms (sim+render, headless)`);
 } finally {

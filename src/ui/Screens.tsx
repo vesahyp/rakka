@@ -5,6 +5,7 @@ import { PASSIVES } from '../game/content/passives';
 import { isUnlocked, fmtTime, type Records } from '../records';
 import { icon } from './icons';
 import { characterSprite, sprite } from '../render/sprites';
+import { HERO_COLORS } from '../render/renderer';
 import type { RunSummary } from './Game';
 import { Initials, RankLine } from './Initials';
 import { fetchTop, fetchRank, loadInitials, PERIOD_LABELS, type Period, type TopEntry } from '../api';
@@ -12,7 +13,7 @@ import type { RunRecord } from '../records';
 import { audio } from '../audio';
 import type { Meta } from '../meta';
 
-export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: Records; meta: Meta; onPlay: () => void; onRecords: () => void; onAltar: () => void }) {
+export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: Records; meta: Meta; onPlay: (players: 1 | 2) => void; onRecords: () => void; onAltar: () => void }) {
   const best = records.best[0];
   const [muted, setMuted] = useState(audio.muted);
   return (
@@ -24,11 +25,21 @@ export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: 
         className="btn primary"
         onClick={() => {
           audio.unlock();
-          onPlay();
+          onPlay(1);
         }}
         data-ui
       >
         Pelaa
+      </button>
+      <button
+        className="btn"
+        onClick={() => {
+          audio.unlock();
+          onPlay(2);
+        }}
+        data-ui
+      >
+        Kaksin
       </button>
       <div className="row">
         <button className="btn ghost" onClick={onRecords} data-ui>
@@ -76,10 +87,24 @@ function Portrait({ c }: { c: CharacterDef }) {
   return <canvas ref={ref} width={72} height={96} style={{ width: 36, height: 48 }} />;
 }
 
-export function Select({ records, onPick, onBack }: { records: Records; onPick: (c: CharacterDef) => void; onBack: () => void }) {
+export function Select({ records, players, onPick, onBack }: { records: Records; players: 1 | 2; onPick: (c: CharacterDef[]) => void; onBack: () => void }) {
+  // Co-op: player one picks, then player two; the same hero twice is fine.
+  const [first, setFirst] = useState<CharacterDef | null>(null);
+  const who = players === 2 ? (first ? 2 : 1) : 0;
   return (
     <div className="screen" style={{ justifyContent: 'flex-start' }}>
-      <h2>Kuka lähtee metsään?</h2>
+      {who > 0 && (
+        <div className="herotag" style={{ color: HERO_COLORS[who - 1] }}>
+          Pelaaja {who}
+          {first ? ` · ${first.name} lähtee jo` : ''}
+        </div>
+      )}
+      <h2>{who === 2 ? 'Kuka lähtee mukaan?' : 'Kuka lähtee metsään?'}</h2>
+      {players === 2 && (
+        <p className="small" style={{ maxWidth: 380, marginTop: 0 }}>
+          Yksi puhelin, kaksi peukaloa. Käännä puhelin vaakaan: vasen puoli ohjaa ensimmäistä, oikea toista. Näppäimistöllä WASD ja nuolet. Marjat ovat yhteiset, kaatuneen nostaa seisomalla vieressä.
+        </p>
+      )}
       <div className="chars">
         {CHARACTERS.map((c) => {
           const open = isUnlocked(c, records);
@@ -92,7 +117,8 @@ export function Select({ records, onPick, onBack }: { records: Records; onPick: 
               disabled={!open}
               onClick={() => {
                 audio.unlock();
-                onPick(c);
+                if (players === 2 && !first) setFirst(c);
+                else onPick(first ? [first, c] : [c]);
               }}
               data-ui
             >
@@ -109,7 +135,7 @@ export function Select({ records, onPick, onBack }: { records: Records; onPick: 
           );
         })}
       </div>
-      <button className="btn ghost" onClick={onBack} data-ui>
+      <button className="btn ghost" onClick={() => (first ? setFirst(null) : onBack())} data-ui>
         Takaisin
       </button>
     </div>
@@ -118,14 +144,16 @@ export function Select({ records, onPick, onBack }: { records: Records; onPick: 
 
 export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSummary; rank: number; charBest: boolean; cones: number; onAgain: () => void; onMenu: () => void }) {
   // Runs under a minute do not go on the table; the API refuses them too.
-  const [stage, setStage] = useState<'ask' | 'done'>(r.time >= 60 ? 'ask' : 'done');
+  const coop = r.characters.length > 1;
+  const [stage, setStage] = useState<'ask' | 'done'>(r.time >= 60 && !coop ? 'ask' : 'done');
   const [ranks, setRanks] = useState<Record<Period, number> | null>(null);
   return (
     <div className="screen">
       <h2 style={{ color: 'var(--danger)' }}>Metsä otti omansa</h2>
       <p className="small">
-        {r.character.name} selviytyi {fmtTime(r.time)}
+        {r.characters.map((c) => c.name).join(' ja ')} {coop ? 'selviytyivät' : 'selviytyi'} {fmtTime(r.time)}
       </p>
+      {coop && <p className="small">Kaksinpeli ei mene tulostaululle. Kävyt kyllä.</p>}
       {stage === 'ask' && (
         <Initials
           r={r}
@@ -142,7 +170,7 @@ export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSum
       {rank !== 0 && charBest && <div className="record">Hahmon paras aika</div>}
       <div className="stats">
         <span>Taso</span>
-        <b>{r.level}</b>
+        <b>{coop ? r.levels.join(' ja ') : r.level}</b>
         <span>Kaadot</span>
         <b>{r.kills}</b>
         <span>Pomot</span>

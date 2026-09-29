@@ -1,5 +1,6 @@
 /**
- * `npm run balance [minutes] [runs]`: play many bot runs and print a table.
+ * `npm run balance [minutes] [runs] [character|a+b]`: play many bot runs and
+ * print a table. `a+b` plays that pair in co-op.
  * The bot is weak on purpose (see autoplayer.ts), so read the numbers as a
  * floor: a run the bot survives for ten minutes is easy for a human.
  */
@@ -15,10 +16,12 @@ const runs = Number(process.argv[3] ?? 2);
 const only = process.argv[4];
 
 const reports: RunReport[] = [];
-for (const c of CHARACTERS) {
-  if (only && c.id !== only) continue;
+// "vaino+aino" plays the pair in co-op: two bots, one screen.
+const pair = only && only.includes('+') ? only.split('+').map((id) => CHARACTERS.find((c) => c.id === id)!) : null;
+for (const c of pair ? [pair] : CHARACTERS) {
+  if (!pair && only && (c as (typeof CHARACTERS)[number]).id !== only) continue;
   for (let i = 0; i < runs; i++) {
-    const s = createState(1000 + i * 7919 + c.id.length, c);
+    const s = createState(1000 + i * 7919 + (pair ? 3 : (c as (typeof CHARACTERS)[number]).id.length), c);
     initRun(s);
     reports.push(playRun(s, maxMinutes, { weaponBias: 0.5 + (i % 2) * 0.2 }));
   }

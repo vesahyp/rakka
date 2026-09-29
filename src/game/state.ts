@@ -29,6 +29,25 @@ export interface Player {
   harvest: number;
 }
 
+/**
+ * One hero: a character, a body in the forest and a build. A solo run has
+ * one; local co-op has two, sharing the enemies, the berries and the
+ * camera, each with their own weapons, items, taiat and level.
+ */
+export interface Hero {
+  /** 0 or 1: the input slot, the colour ring, the HUD side */
+  index: number;
+  character: CharacterDef;
+  player: Player;
+  stats: Stats;
+  weapons: WeaponState[];
+  passives: PassiveState[];
+  powers: PassiveState[];
+  pendingLevelUps: number;
+  /** co-op: seconds a living hero has stood beside this fallen one */
+  revive: number;
+}
+
 export interface Banner {
   text: string;
   sub: string;
@@ -40,14 +59,13 @@ export interface SimState {
   rng: Rng;
   time: number;
   minute: number;
-  character: CharacterDef;
+  heroes: Hero[];
   /** permanent bonuses from the altar, applied like character traits */
   meta: StatDelta;
-  player: Player;
-  stats: Stats;
-  weapons: WeaponState[];
-  passives: PassiveState[];
-  powers: PassiveState[];
+  /** the camera: the living heroes' midpoint. Spawns and "on screen" use it. */
+  cam: { x: number; y: number };
+  /** the strongest curse among living heroes, for the director */
+  curse: number;
   enemies: Enemy[];
   projectiles: Projectile[];
   zones: Zone[];
@@ -65,8 +83,8 @@ export interface SimState {
   nextBossMinute: number;
   bossesAlive: number;
   lastElite: number;
-  pendingLevelUps: number;
-  pendingChests: number;
+  /** chests waiting to be opened, as the index of the hero who picked each up */
+  pendingChests: number[];
   banner: Banner | null;
   run: RunStats;
   gameOver: boolean;
@@ -100,16 +118,13 @@ export function xpForLevel(level: number): number {
   return 2293 + 70 * (level - 79);
 }
 
-export function createState(seed: number, character: CharacterDef, meta: StatDelta = {}): SimState {
-  const s: SimState = {
-    seed,
-    rng: new Rng(seed),
-    time: 0,
-    minute: 0,
+function createHero(index: number, character: CharacterDef, count: number): Hero {
+  return {
+    index,
     character,
-    meta,
     player: {
-      x: 0,
+      // Two heroes start a step apart, side by side.
+      x: count > 1 ? (index === 0 ? -20 : 20) : 0,
       y: 0,
       hp: 100,
       dirX: 1,
@@ -131,6 +146,22 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     weapons: [{ id: character.weapon, level: 1, cooldown: 0.3, burst: 0, burstTimer: 0, side: 1, active: 0 }],
     passives: [],
     powers: [],
+    pendingLevelUps: 0,
+    revive: 0,
+  };
+}
+
+export function createState(seed: number, characters: CharacterDef | CharacterDef[], meta: StatDelta = {}): SimState {
+  const chars = Array.isArray(characters) ? characters : [characters];
+  const s: SimState = {
+    seed,
+    rng: new Rng(seed),
+    time: 0,
+    minute: 0,
+    heroes: chars.map((c, i) => createHero(i, c, chars.length)),
+    meta,
+    cam: { x: 0, y: 0 },
+    curse: 1,
     enemies: [],
     projectiles: [],
     zones: [],
@@ -147,8 +178,7 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     nextBossMinute: 5,
     bossesAlive: 0,
     lastElite: 0,
-    pendingLevelUps: 0,
-    pendingChests: 0,
+    pendingChests: [],
     banner: null,
     run: { kills: 0, damageDealt: 0, damageTaken: 0, chests: 0, bosses: 0, maxLevel: 1, cones: 0, keys: 0, damageBy: {} },
     gameOver: false,
@@ -163,4 +193,26 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     trip: 0,
   };
   return s;
+}
+
+/** Heroes still standing. */
+export function alive(s: SimState): Hero[] {
+  return s.heroes.filter((h) => h.player.alive);
+}
+
+/** The living hero nearest a point, or null when all are down. */
+export function nearestHero(s: SimState, x: number, y: number): Hero | null {
+  let best: Hero | null = null;
+  let bd = Infinity;
+  for (const h of s.heroes) {
+    if (!h.player.alive) continue;
+    const dx = h.player.x - x;
+    const dy = h.player.y - y;
+    const d = dx * dx + dy * dy;
+    if (d < bd) {
+      bd = d;
+      best = h;
+    }
+  }
+  return best;
 }

@@ -1,4 +1,4 @@
-import type { SimState } from './state';
+import type { SimState, Hero } from './state';
 import { BASE_STATS, applyDelta, type Stats } from './stats';
 import { PASSIVES, MAX_PASSIVES } from './content/passives';
 import { WEAPONS, BASE_WEAPON_IDS, MAX_WEAPONS, weaponMaxLevel } from './content/weapons';
@@ -17,44 +17,44 @@ export interface Offer {
   icon: string;
 }
 
-/** Rebuild derived stats from character and passives. Called after any change. */
-export function computeStats(s: SimState): void {
+/** Rebuild a hero's derived stats from character, altar and passives. Called after any change. */
+export function computeStats(s: SimState, h: Hero): void {
   const st: Stats = { ...BASE_STATS };
-  applyDelta(st, s.character.stats);
+  applyDelta(st, h.character.stats);
   applyDelta(st, s.meta);
-  for (const p of s.passives) {
+  for (const p of h.passives) {
     const def = PASSIVES[p.id];
     for (let i = 0; i < p.level; i++) applyDelta(st, def.perLevel);
   }
-  for (const p of s.powers) {
+  for (const p of h.powers) {
     const def = POWERS[p.id];
     if (def.stats) for (let i = 0; i < p.level; i++) applyDelta(st, def.stats);
   }
   st.maxHp = Math.max(20, st.maxHp);
   st.moveSpeed = Math.max(0.4, st.moveSpeed);
   st.cooldown = Math.max(0.2, st.cooldown);
-  const oldMax = s.stats.maxHp;
-  s.stats = st;
+  const oldMax = h.stats.maxHp;
+  h.stats = st;
   // Raising max HP raises current HP by the same amount, so a Pakuri pick is
   // felt at once. Lowering never kills.
-  if (st.maxHp > oldMax) s.player.hp = Math.min(st.maxHp, s.player.hp + (st.maxHp - oldMax));
-  s.player.hp = Math.min(s.player.hp, st.maxHp);
+  if (st.maxHp > oldMax) h.player.hp = Math.min(st.maxHp, h.player.hp + (st.maxHp - oldMax));
+  h.player.hp = Math.min(h.player.hp, st.maxHp);
 }
 
-export function ownedWeapon(s: SimState, id: string) {
-  return s.weapons.find((w) => w.id === id);
+export function ownedWeapon(h: Hero, id: string) {
+  return h.weapons.find((w) => w.id === id);
 }
-export function ownedPassive(s: SimState, id: string) {
-  return s.passives.find((p) => p.id === id);
+export function ownedPassive(h: Hero, id: string) {
+  return h.passives.find((p) => p.id === id);
 }
-export function powerLevel(s: SimState, id: string): number {
-  const p = s.powers.find((p) => p.id === id);
+export function powerLevel(h: Hero, id: string): number {
+  const p = h.powers.find((p) => p.id === id);
   return p ? p.level : 0;
 }
 
-function powerOffer(s: SimState, id: string): Offer {
+function powerOffer(h: Hero, id: string): Offer {
   const def = POWERS[id];
-  const lvl = powerLevel(s, id);
+  const lvl = powerLevel(h, id);
   return {
     kind: 'power',
     id,
@@ -68,9 +68,9 @@ function powerOffer(s: SimState, id: string): Offer {
   };
 }
 
-function weaponOffer(s: SimState, id: string): Offer {
+function weaponOffer(h: Hero, id: string): Offer {
   const def = WEAPONS[id];
-  const w = ownedWeapon(s, id);
+  const w = ownedWeapon(h, id);
   const level = w ? w.level + 1 : 1;
   return {
     kind: 'weapon',
@@ -85,9 +85,9 @@ function weaponOffer(s: SimState, id: string): Offer {
   };
 }
 
-function passiveOffer(s: SimState, id: string): Offer {
+function passiveOffer(h: Hero, id: string): Offer {
   const def = PASSIVES[id];
-  const p = ownedPassive(s, id);
+  const p = ownedPassive(h, id);
   return {
     kind: 'passive',
     id,
@@ -109,52 +109,52 @@ interface Candidate {
   weight: number;
 }
 
-function candidates(s: SimState): Candidate[] {
+function candidates(h: Hero): Candidate[] {
   const out: Candidate[] = [];
-  for (const w of s.weapons) {
+  for (const w of h.weapons) {
     const def = WEAPONS[w.id];
-    if (!def.evolved && w.level < weaponMaxLevel(def)) out.push({ offer: weaponOffer(s, w.id), weight: def.rarity * 1.3 });
+    if (!def.evolved && w.level < weaponMaxLevel(def)) out.push({ offer: weaponOffer(h, w.id), weight: def.rarity * 1.3 });
   }
-  if (s.weapons.length < MAX_WEAPONS) {
+  if (h.weapons.length < MAX_WEAPONS) {
     for (const id of BASE_WEAPON_IDS) {
-      if (!ownedWeapon(s, id)) out.push({ offer: weaponOffer(s, id), weight: WEAPONS[id].rarity * 0.8 });
+      if (!ownedWeapon(h, id)) out.push({ offer: weaponOffer(h, id), weight: WEAPONS[id].rarity * 0.8 });
     }
   }
-  for (const p of s.passives) {
+  for (const p of h.passives) {
     const def = PASSIVES[p.id];
-    if (p.level < def.maxLevel) out.push({ offer: passiveOffer(s, p.id), weight: def.rarity * 1.3 });
+    if (p.level < def.maxLevel) out.push({ offer: passiveOffer(h, p.id), weight: def.rarity * 1.3 });
   }
-  if (s.passives.length < MAX_PASSIVES) {
+  if (h.passives.length < MAX_PASSIVES) {
     for (const id of Object.keys(PASSIVES)) {
-      if (!ownedPassive(s, id)) {
+      if (!ownedPassive(h, id)) {
         // The passive that evolves an owned weapon is a little more likely,
         // so a build finds its evolution without knowing the table.
-        const pairs = s.weapons.some((w) => WEAPONS[w.id].evolvesWith === id) ? 1.5 : 1;
-        out.push({ offer: passiveOffer(s, id), weight: PASSIVES[id].rarity * 0.7 * pairs });
+        const pairs = h.weapons.some((w) => WEAPONS[w.id].evolvesWith === id) ? 1.5 : 1;
+        out.push({ offer: passiveOffer(h, id), weight: PASSIVES[id].rarity * 0.7 * pairs });
       }
     }
   }
   // Taiat: rare early, common once the slotted items have nothing left to
   // level, so the late cards are choices and not heals.
-  if (s.player.level >= POWER_FROM_LEVEL) {
+  if (h.player.level >= POWER_FROM_LEVEL) {
     const slotted = out.length;
     const boost = slotted === 0 ? 4 : slotted <= 3 ? 1.6 : 0.45;
     for (const id of POWER_IDS) {
-      const lvl = powerLevel(s, id);
+      const lvl = powerLevel(h, id);
       if (lvl >= POWERS[id].maxLevel) continue;
-      if (lvl === 0 && s.powers.length >= MAX_POWERS) continue;
-      out.push({ offer: powerOffer(s, id), weight: POWERS[id].rarity * boost * (lvl ? 1.2 : 1) });
+      if (lvl === 0 && h.powers.length >= MAX_POWERS) continue;
+      out.push({ offer: powerOffer(h, id), weight: POWERS[id].rarity * boost * (lvl ? 1.2 : 1) });
     }
   }
   return out;
 }
 
 /** Three cards, four with luck or Väinön viisaus. */
-export function rollOffers(s: SimState): Offer[] {
-  const pool = candidates(s);
+export function rollOffers(s: SimState, h: Hero): Offer[] {
+  const pool = candidates(h);
   // Rerolls refill to the Arpakivi total at every level-up.
-  s.stats.reroll = 2 * powerLevel(s, 'arpakivi');
-  const count = powerLevel(s, 'vainonviisaus') > 0 || s.rng.chance(Math.min(0.5, (s.stats.luck - 1) * 0.6)) ? 4 : 3;
+  h.stats.reroll = 2 * powerLevel(h, 'arpakivi');
+  const count = powerLevel(h, 'vainonviisaus') > 0 || s.rng.chance(Math.min(0.5, (h.stats.luck - 1) * 0.6)) ? 4 : 3;
   const picked: Offer[] = [];
   while (picked.length < count && pool.length > 0) {
     const c = s.rng.weighted(pool, (x) => x.weight);
@@ -165,33 +165,33 @@ export function rollOffers(s: SimState): Offer[] {
   return picked;
 }
 
-export function applyOffer(s: SimState, o: Offer): void {
+export function applyOffer(s: SimState, h: Hero, o: Offer): void {
   switch (o.kind) {
     case 'weapon': {
-      const w = ownedWeapon(s, o.id);
+      const w = ownedWeapon(h, o.id);
       if (w) w.level++;
-      else s.weapons.push({ id: o.id, level: 1, cooldown: 0.2, burst: 0, burstTimer: 0, side: 1, active: 0 });
+      else h.weapons.push({ id: o.id, level: 1, cooldown: 0.2, burst: 0, burstTimer: 0, side: 1, active: 0 });
       break;
     }
     case 'passive': {
-      const p = ownedPassive(s, o.id);
+      const p = ownedPassive(h, o.id);
       if (p) p.level++;
-      else s.passives.push({ id: o.id, level: 1 });
-      computeStats(s);
+      else h.passives.push({ id: o.id, level: 1 });
+      computeStats(s, h);
       break;
     }
     case 'power': {
-      const p = s.powers.find((p) => p.id === o.id);
+      const p = h.powers.find((p) => p.id === o.id);
       if (p) p.level++;
-      else s.powers.push({ id: o.id, level: 1 });
-      computeStats(s);
+      else h.powers.push({ id: o.id, level: 1 });
+      computeStats(s, h);
       break;
     }
     case 'heal':
-      s.player.hp = Math.min(s.stats.maxHp, s.player.hp + 30);
+      h.player.hp = Math.min(h.stats.maxHp, h.player.hp + 30);
       break;
     case 'gold':
-      s.player.xp += Math.round(s.player.xpNext * 0.4);
+      h.player.xp += Math.round(h.player.xpNext * 0.4);
       break;
     case 'evolve':
       break;
@@ -199,24 +199,24 @@ export function applyOffer(s: SimState, o: Offer): void {
 }
 
 /** The evolution an owned weapon is ready for, if any. */
-export function readyEvolution(s: SimState): { from: string; to: string } | null {
-  for (const w of s.weapons) {
+export function readyEvolution(h: Hero): { from: string; to: string } | null {
+  for (const w of h.weapons) {
     const def = WEAPONS[w.id];
     if (def.evolved || !def.evolvesTo || !def.evolvesWith) continue;
-    if (w.level >= weaponMaxLevel(def) && ownedPassive(s, def.evolvesWith)) return { from: w.id, to: def.evolvesTo };
+    if (w.level >= weaponMaxLevel(def) && ownedPassive(h, def.evolvesWith)) return { from: w.id, to: def.evolvesTo };
   }
   return null;
 }
 
-export function evolve(s: SimState, from: string, to: string): Offer {
-  const w = ownedWeapon(s, from)!;
+export function evolve(s: SimState, h: Hero, from: string, to: string): Offer {
+  const w = ownedWeapon(h, from)!;
   w.id = to;
   w.level = 1;
   w.cooldown = 0;
   w.burst = 0;
   w.active = 0;
   // Zones of the old weapon (an aura) would otherwise keep ticking with old numbers.
-  s.zones = s.zones.filter((z) => z.weapon !== from);
+  s.zones = s.zones.filter((z) => !(z.weapon === from && z.owner === h.index));
   const def = WEAPONS[to];
   return { kind: 'evolve', id: to, name: def.name, desc: def.desc, levelText: 'Kehittyi!', level: 1, maxLevel: 1, isNew: true, icon: def.icon };
 }
@@ -225,31 +225,33 @@ export interface ChestResult {
   items: Offer[];
   /** 1, 3 or 5 */
   size: number;
+  /** who opened it */
+  hero: number;
 }
 
 /**
- * Open a chest. An evolution comes first when one is ready. The rest are
- * level-ups on owned items. When nothing can level, the slot pays out as a
- * heal.
+ * Open a chest for a hero. An evolution comes first when one is ready. The
+ * rest are level-ups on owned items. When nothing can level, the slot pays
+ * out as a heal.
  */
-export function openChest(s: SimState): ChestResult {
-  const luck = s.stats.luck;
+export function openChest(s: SimState, h: Hero): ChestResult {
+  const luck = h.stats.luck;
   const roll = s.rng.next();
   const size = roll < 0.04 * luck ? 5 : roll < 0.2 * luck ? 3 : 1;
   const items: Offer[] = [];
-  const evo = readyEvolution(s);
-  if (evo) items.push(evolve(s, evo.from, evo.to));
+  const evo = readyEvolution(h);
+  if (evo) items.push(evolve(s, h, evo.from, evo.to));
   while (items.length < size) {
-    const pool = candidates(s).filter((c) => !c.offer.isNew && c.offer.kind !== 'power');
+    const pool = candidates(h).filter((c) => !c.offer.isNew && c.offer.kind !== 'power');
     if (pool.length === 0) {
       items.push(HEAL_OFFER);
-      applyOffer(s, HEAL_OFFER);
+      applyOffer(s, h, HEAL_OFFER);
       continue;
     }
     const c = s.rng.weighted(pool, (x) => x.weight);
-    applyOffer(s, c.offer);
+    applyOffer(s, h, c.offer);
     items.push(c.offer);
   }
   s.run.chests++;
-  return { items, size };
+  return { items, size, hero: h.index };
 }

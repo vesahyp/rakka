@@ -4,7 +4,7 @@
  * by `npm run balance` to see how long a run lasts and what kills it.
  * Not a good player. A human with a thumb does better; the bot gives a floor.
  */
-import type { SimState } from '../src/game/state';
+import type { SimState, Hero } from '../src/game/state';
 import { step, DT } from '../src/game/sim';
 import { rollOffers, applyOffer, openChest, type Offer } from '../src/game/upgrades';
 import { WEAPONS } from '../src/game/content/weapons';
@@ -18,8 +18,8 @@ export interface BotOptions {
   wants?: string[];
 }
 
-export function botInput(s: SimState, rng: Rng, t: number): { dx: number; dy: number } {
-  const p = s.player;
+export function botInput(s: SimState, h: Hero, rng: Rng, t: number): { dx: number; dy: number } {
+  const p = h.player;
   // Imminent threat: enemies close enough to bite within a second.
   let tx = 0;
   let ty = 0;
@@ -61,7 +61,7 @@ export function botInput(s: SimState, rng: Rng, t: number): { dx: number; dy: nu
       }
     }
   }
-  const low = p.hp < s.stats.maxHp * 0.4;
+  const low = p.hp < h.stats.maxHp * 0.4;
   let dx = 0;
   let dy = 0;
   if (threat > 0) {
@@ -78,6 +78,20 @@ export function botInput(s: SimState, rng: Rng, t: number): { dx: number; dy: nu
     const pull = threat > 8 ? 0.25 : 1;
     dx += ((gx - p.x) / bd) * pull;
     dy += ((gy - p.y) / bd) * pull;
+  }
+  // Co-op: a fallen partner is worth a walk; otherwise keep loosely together.
+  for (const o of s.heroes) {
+    if (o === h) continue;
+    const ox = o.player.x - p.x;
+    const oy = o.player.y - p.y;
+    const d = Math.hypot(ox, oy) || 1;
+    if (!o.player.alive && threat < 12) {
+      dx += (ox / d) * 1.5;
+      dy += (oy / d) * 1.5;
+    } else if (d > 200) {
+      dx += (ox / d) * 0.6;
+      dy += (oy / d) * 0.6;
+    }
   }
   // Trees: steer around a trunk ahead instead of leaning on it.
   featuresNear(p.x, p.y, 60, (f) => {
@@ -98,7 +112,7 @@ export function botInput(s: SimState, rng: Rng, t: number): { dx: number; dy: nu
   return { dx: dx / mm, dy: dy / mm };
 }
 
-export function botPick(s: SimState, offers: Offer[], rng: Rng, o: BotOptions): Offer {
+export function botPick(h: Hero, offers: Offer[], rng: Rng, o: BotOptions): Offer {
   if (o.wants) {
     for (const id of o.wants) {
       const f = offers.find((x) => x.id === id);
@@ -110,14 +124,14 @@ export function botPick(s: SimState, offers: Offer[], rng: Rng, o: BotOptions): 
     if (of.kind === 'weapon') {
       v += o.weaponBias * 2;
       if (!of.isNew) v += 1.5; // deepen before widening
-      if (of.isNew && s.weapons.length >= 4) v -= 2;
+      if (of.isNew && h.weapons.length >= 4) v -= 2;
     } else if (of.kind === 'power') {
       v += 1.5;
       if (!of.isNew) v += 0.5;
     } else if (of.kind === 'passive') {
       v += (1 - o.weaponBias) * 2;
       // the passive that evolves an owned weapon
-      if (s.weapons.some((w) => WEAPONS[w.id].evolvesWith === of.id)) v += 2;
+      if (h.weapons.some((w) => WEAPONS[w.id].evolvesWith === of.id)) v += 2;
       if (!of.isNew) v += 0.8;
       if (of.id === 'hiidenkirous') v -= 1.5;
     } else v -= 1;
@@ -149,19 +163,23 @@ export function playRun(s: SimState, maxMinutes: number, o: BotOptions): RunRepo
   let killer = '';
   const t0 = Date.now();
   while (!s.gameOver && s.time < maxMinutes * 60) {
-    step(s, botInput(s, rng, s.time), DT);
-    while (s.pendingLevelUps > 0) {
-      s.pendingLevelUps--;
-      applyOffer(s, botPick(s, rollOffers(s), rng, o));
+    step(
+      s,
+      s.heroes.map((h) => botInput(s, h, rng, s.time)),
+      DT,
+    );
+    for (const h of s.heroes) {
+      while (h.pendingLevelUps > 0) {
+        h.pendingLevelUps--;
+        applyOffer(s, h, botPick(h, rollOffers(s, h), rng, o));
+      }
     }
-    while (s.pendingChests > 0) {
-      s.pendingChests--;
-      openChest(s);
-    }
+    while (s.pendingChests.length > 0) openChest(s, s.heroes[s.pendingChests.shift()!]);
     if (s.enemies.length > maxEnemies) maxEnemies = s.enemies.length;
     if (s.gameOver) {
       const counts: Record<string, number> = {};
-      for (const e of s.enemies) if (Math.hypot(e.x - s.player.x, e.y - s.player.y) < 40) counts[e.def.name] = (counts[e.def.name] ?? 0) + 1;
+      const p = s.heroes[0].player;
+      for (const e of s.enemies) if (Math.hypot(e.x - p.x, e.y - p.y) < 40) counts[e.def.name] = (counts[e.def.name] ?? 0) + 1;
       killer = Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 2)
@@ -172,14 +190,14 @@ export function playRun(s: SimState, maxMinutes: number, o: BotOptions): RunRepo
   const ms = Date.now() - t0;
   return {
     seed: s.seed,
-    character: s.character.id,
+    character: s.heroes.map((h) => h.character.id).join('+'),
     time: s.time,
-    level: s.player.level,
+    level: Math.max(...s.heroes.map((h) => h.player.level)),
     kills: s.run.kills,
     chests: s.run.chests,
     bosses: s.run.bosses,
-    weapons: s.weapons.map((w) => `${w.id}${w.level}`).join(' '),
-    passives: s.passives.map((p) => `${p.id}${p.level}`).join(' '),
+    weapons: s.heroes.map((h) => h.weapons.map((w) => `${w.id}${w.level}`).join(' ')).join(' / '),
+    passives: s.heroes.map((h) => h.passives.map((p) => `${p.id}${p.level}`).join(' ')).join(' / '),
     dmgTaken: s.run.damageTaken,
     dmgDealt: s.run.damageDealt,
     maxEnemies,

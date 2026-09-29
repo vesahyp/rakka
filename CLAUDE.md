@@ -9,7 +9,8 @@ live here. `ROADMAP.md` is forward-looking only.
 **Räkkä** is a survivors game (the Vampire Survivors shape) for the browser,
 phones first, set in a Finnish forest with Finnish, Karelian and Sámi lore as
 the cast. One thumb moves the player. Weapons fire on their own. The player's
-decisions are where to walk and which upgrade to take.
+decisions are where to walk and which upgrade to take. Two can play on one
+phone: each half of the screen is a thumb, the camera follows the pair.
 
 Named after räkkä, the weeks of summer when the mosquito and black fly swarms
 in Lapland are at their worst.
@@ -31,8 +32,8 @@ in Lapland are at their worst.
 ```
 src/
   game/               the simulation, no DOM anywhere in here
-    state.ts          SimState and createState; the XP curve
-    sim.ts            step(): player, director, enemies, drops, berries
+    state.ts          SimState, Hero and createState; the XP curve
+    sim.ts            step(): heroes, leash and revive, director, enemies, drops, berries
     weapons.ts        firing patterns, projectile and zone updates
     combat.ts         hurt(), heal, slow, nearest enemy
     upgrades.ts       derived stats, level-up offers, chests, evolutions
@@ -49,7 +50,7 @@ src/
   render/
     renderer.ts       camera, ground, decorations, everything drawn
     sprites.ts        procedural sprite cache
-  input/input.ts      floating thumb stick and keyboard
+  input/input.ts      thumb sticks (float or fixed, one zone per player) and keyboard
   ui/                 React: Game (loop + HUD + overlays), Screens, Cards
   records.ts          localStorage records and unlocks
   meta.ts             Tapion pöytä: cones from runs buy small permanent stat ranks
@@ -84,6 +85,12 @@ tools/
    texts at 48. The phone is the budget.
 6. **Finnish in the game, English in the code.** UI strings and lore names
    are Finnish. Identifiers, comments and docs are English.
+7. **A hero, not the player.** Everything that belongs to one build (stats,
+   weapons, passives, taiat, level) hangs off a `Hero`; the sim holds a
+   list of them. What is shared (enemies, berries, pickups, cones, the
+   camera `s.cam`) is on `SimState`. A function that acts for one hero
+   takes the hero; projectiles and zones carry their `owner`. Spawning,
+   "on screen" and swarms use `s.cam`, never a hero's position.
 
 ## Workflow
 
