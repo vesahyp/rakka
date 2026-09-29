@@ -70,6 +70,8 @@ taso 30, pelaa viisi peliä.
 | Lakka | kaikki marjat lentävät luoksesi |
 | Kekäle | tuhoaa kaiken ruudulla, paitsi pomot |
 | Arkku | 1, 3 tai 5 päivitystä |
+| Avain | avaa käpyarkun. Löytyy metsästä, ja joka neljäs eliitti kantaa yhtä |
+| Käpyarkku | lukossa. Ilmestyy metsään kahden ja puolen minuutin kohdalla ja sitten viiden minuutin välein, avain jossain toisaalla. Avaimella se antaa viisi käpyä ja avaa kuin arkku |
 
 ## Kehittäjälle
 

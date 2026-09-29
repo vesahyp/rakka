@@ -163,10 +163,11 @@ export class Renderer {
     // Pickups
     for (const k of s.pickups) {
       const bob = Math.sin(this.t * 4 + k.x) * 2;
-      if (k.kind === 'arkku' || k.kind === 'kapy') {
-        ctx.fillStyle = k.kind === 'kapy' ? 'rgba(200,160,90,0.22)' : 'rgba(255,220,120,0.25)';
+      if (k.kind === 'arkku' || k.kind === 'kapy' || k.kind === 'avain' || k.kind === 'kapyarkku') {
+        const big = k.kind === 'kapyarkku';
+        ctx.fillStyle = k.kind === 'kapy' ? 'rgba(200,160,90,0.22)' : big ? 'rgba(255,200,80,0.28)' : 'rgba(255,220,120,0.25)';
         ctx.beginPath();
-        ctx.arc(k.x, k.y, 16 + Math.sin(this.t * 5) * 2, 0, Math.PI * 2);
+        ctx.arc(k.x, k.y, (big ? 24 : 16) + Math.sin(this.t * 5) * 2, 0, Math.PI * 2);
         ctx.fill();
       }
       this.blit(k.kind, k.x, k.y + bob, 1, 1, 0);

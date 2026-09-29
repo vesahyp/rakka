@@ -43,6 +43,7 @@ export function botInput(s: SimState, rng: Rng, t: number): { dx: number; dy: nu
   let gy = 0;
   let bd = Infinity;
   for (const k of s.pickups) {
+    if (k.kind === 'kapyarkku' && s.run.keys <= 0) continue; // locked: nothing to fetch yet
     const d = Math.hypot(k.x - p.x, k.y - p.y);
     if (d < bd) {
       bd = d;

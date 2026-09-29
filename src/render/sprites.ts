@@ -470,6 +470,41 @@ const DEFS: Record<string, Def> = {
       ell(c, 0, 1, 2, 2.4, '#e8c060');
     },
   },
+  avain: {
+    hw: 8,
+    hh: 8,
+    draw: (c) => {
+      c.save();
+      c.rotate(-0.6);
+      line(c, -1, 0, 7, 0, '#e8c060', 2.2);
+      line(c, 5, 0, 5, 3, '#e8c060', 1.8);
+      line(c, 7, 0, 7, 2.4, '#e8c060', 1.8);
+      ell(c, -4, 0, 3.2, 3.2, '#e8c060');
+      ell(c, -4, 0, 1.3, 1.3, '#4a3410', '');
+      c.restore();
+    },
+  },
+  kapyarkku: {
+    hw: 14,
+    hh: 12,
+    draw: (c) => {
+      poly(c, [-12, 10, 12, 10, 12, -2, -12, -2], '#4a3418');
+      poly(c, [-12, -2, 12, -2, 10, -9, -10, -9], '#6a4a26');
+      line(c, -12, 3, 12, 3, '#c9a040', 1.6);
+      line(c, -6, -9, -6, 10, '#c9a040', 1.2);
+      line(c, 6, -9, 6, 10, '#c9a040', 1.2);
+      // the padlock
+      poly(c, [-3, 0, 3, 0, 3, 6, -3, 6], '#e8c060');
+      c.beginPath();
+      c.arc(0, 0, 2.2, Math.PI, 0);
+      c.strokeStyle = '#e8c060';
+      c.lineWidth = 1.2;
+      c.stroke();
+      ell(c, 0, 3.2, 0.8, 1.1, '#4a3410', '');
+      // a cone on the lid
+      ell(c, 0, -6, 2, 2.6, '#7a4a22', '#4a2a10', 0.5);
+    },
+  },
   // decorations
   trunk: {
     hw: 16,

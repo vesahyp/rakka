@@ -110,6 +110,20 @@ function assertions() {
     const r = openChest(s);
     check('a chest evolves a maxed weapon with its passive', s.weapons[0].id === 'puukkosade', r.items[0].name);
   }
+  // Käpyarkku: locked without a key, five cones and a chest with one.
+  {
+    const s = createState(7, CHARACTERS[0]);
+    initRun(s);
+    s.chestTimer = 1e9;
+    s.pickups.push({ kind: 'kapyarkku', x: 40, y: 0, life: 1e9 });
+    for (let i = 0; i < 60; i++) step(s, walk, DT);
+    const locked = s.pickups.some((k) => k.kind === 'kapyarkku') && s.run.cones === 0;
+    s.pickups.push({ kind: 'avain', x: s.player.x + 20, y: s.player.y, life: 1e9 });
+    for (let i = 0; i < 30; i++) step(s, walk, DT);
+    s.pickups.push({ kind: 'kapyarkku', x: s.player.x + 20, y: s.player.y, life: 1e9 });
+    for (let i = 0; i < 30; i++) step(s, walk, DT);
+    check('a käpyarkku stays locked without a key and pays five cones with one', locked && s.run.cones === 5 && s.run.keys === 0 && s.pendingChests === 1, `cones ${s.run.cones} keys ${s.run.keys} chests ${s.pendingChests}`);
+  }
   // Boss arrives at minute 5.
   {
     const s = createState(7, CHARACTERS[0]);

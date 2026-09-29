@@ -42,6 +42,7 @@ interface Hud {
   xpNext: number;
   kills: number;
   cones: number;
+  keys: number;
   weapons: { id: string; level: number; evolved: boolean }[];
   passives: { id: string; level: number }[];
   powers: { id: string; level: number }[];
@@ -126,6 +127,7 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
         xpNext: s.player.xpNext,
         kills: s.run.kills,
         cones: s.run.cones,
+        keys: s.run.keys,
         weapons: s.weapons.map((w) => ({ id: w.id, level: w.level, evolved: !!WEAPONS[w.id].evolved })),
         passives: s.passives.map((p) => ({ id: p.id, level: p.level })),
         powers: s.powers.map((p) => ({ id: p.id, level: p.level })),
@@ -335,6 +337,7 @@ export function Game({ character, seed, meta, altar, onEnd, onQuit, onRestart }:
                 <div className="timer">{fmtTime(hud.time)}</div>
                 <div className="kills">☠ {hud.kills}</div>
                 {hud.cones > 0 && <div className="kills">🌲 {hud.cones}</div>}
+                {hud.keys > 0 && <div className="kills">🔑 {hud.keys}</div>}
               </div>
             </div>
           </div>

@@ -80,6 +80,10 @@ export interface SimState {
   tuoni: number;
   /** seconds until a cone falls from a tree */
   coneTimer: number;
+  /** seconds until the next locked käpyarkku is set down, with its key elsewhere */
+  chestTimer: number;
+  /** seconds until the locked chest may say again that it is locked */
+  lockHint: number;
   /** mushrooms eaten, by cell key, so the renderer leaves them out */
   eaten: Set<number>;
   /** seconds of hallucination left */
@@ -146,13 +150,15 @@ export function createState(seed: number, character: CharacterDef, meta: StatDel
     pendingLevelUps: 0,
     pendingChests: 0,
     banner: null,
-    run: { kills: 0, damageDealt: 0, damageTaken: 0, chests: 0, bosses: 0, maxLevel: 1, cones: 0, damageBy: {} },
+    run: { kills: 0, damageDealt: 0, damageTaken: 0, chests: 0, bosses: 0, maxLevel: 1, cones: 0, keys: 0, damageBy: {} },
     gameOver: false,
     tier: 0,
     sounds: [],
     shake: 0,
     tuoni: 0,
     coneTimer: 240,
+    chestTimer: 150,
+    lockHint: 0,
     eaten: new Set(),
     trip: 0,
   };

@@ -136,7 +136,7 @@ export interface Zone {
   tint: string;
 }
 
-export type PickupKind = 'kanttarelli' | 'lakka' | 'kekale' | 'arkku' | 'kahvi' | 'kapy';
+export type PickupKind = 'kanttarelli' | 'lakka' | 'kekale' | 'arkku' | 'kahvi' | 'kapy' | 'avain' | 'kapyarkku';
 
 export interface Pickup {
   kind: PickupKind;
@@ -203,6 +203,8 @@ export interface RunStats {
   bosses: number;
   maxLevel: number;
   cones: number;
+  /** keys held, for the locked käpyarkku */
+  keys: number;
   /** damage dealt per source: a weapon id, or a taika or pickup name */
   damageBy: Record<string, number>;
 }

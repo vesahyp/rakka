@@ -284,6 +284,22 @@ function direct(s: SimState, dt: number): void {
     drop(s, 'kapy', s.player.x + Math.cos(a) * 140, s.player.y + Math.sin(a) * 140);
   }
 
+  // Käpyarkku: a locked chest set down off screen, its key off screen the
+  // other way. Both have to be found; the chest pays five cones and opens
+  // like an ordinary chest. First at two and a half minutes, then every five.
+  s.chestTimer -= dt;
+  s.lockHint = Math.max(0, s.lockHint - dt);
+  if (s.chestTimer <= 0) {
+    s.chestTimer = 300;
+    const a = s.rng.next() * Math.PI * 2;
+    const far = Math.hypot(s.view.w, s.view.h) / 2 + 60;
+    drop(s, 'kapyarkku', s.player.x + Math.cos(a) * far, s.player.y + Math.sin(a) * far);
+    const b = a + Math.PI + (s.rng.next() - 0.5) * 1.6;
+    drop(s, 'avain', s.player.x + Math.cos(b) * far, s.player.y + Math.sin(b) * far);
+    s.banner = { text: 'Käpyarkku', sub: 'Lukossa. Avain on jossain metsässä', life: 3 };
+    sound(s, 'chest');
+  }
+
   // Tuoni: one at 28, one more every minute from 30.
   const due = s.minute >= 28 ? 1 + Math.max(0, Math.floor(s.minute - 29)) : 0;
   if (s.tuoni < due) {
@@ -593,7 +609,7 @@ function die(s: SimState): void {
 // ---------------------------------------------------------------- deaths and drops
 
 function drop(s: SimState, kind: PickupKind, x: number, y: number): void {
-  s.pickups.push({ kind, x, y, life: kind === 'kapy' ? 1e9 : 90 });
+  s.pickups.push({ kind, x, y, life: kind === 'kapy' || kind === 'avain' || kind === 'kapyarkku' ? 1e9 : 90 });
 }
 
 function reap(s: SimState): void {
@@ -624,6 +640,8 @@ function reap(s: SimState): void {
     }
     if (e.elite) {
       drop(s, 'arkku', e.x, e.y);
+      // One elite in four carries a key to the käpyarkku.
+      if (s.rng.chance(0.25)) drop(s, 'avain', e.x + 24, e.y + 10);
       addGem(s, e.x, e.y, e.def.xp * 3);
       continue;
     }
@@ -730,7 +748,7 @@ function updatePickups(s: SimState, dt: number): void {
     k.life -= dt;
     const d = Math.hypot(p.x - k.x, p.y - k.y);
     if (d < PLAYER_RADIUS + 14) {
-      collect(s, k.kind, k.x, k.y);
+      if (!collect(s, k.kind, k.x, k.y)) continue;
       ps[i] = ps[ps.length - 1];
       ps.pop();
     } else if (k.life <= 0) {
@@ -740,7 +758,8 @@ function updatePickups(s: SimState, dt: number): void {
   }
 }
 
-function collect(s: SimState, kind: PickupKind, x: number, y: number): void {
+/** Apply a pickup. Returns false when it stays on the ground (a locked chest). */
+function collect(s: SimState, kind: PickupKind, x: number, y: number): boolean {
   switch (kind) {
     case 'kanttarelli':
       healPlayer(s, 30);
@@ -764,7 +783,28 @@ function collect(s: SimState, kind: PickupKind, x: number, y: number): void {
       addText(s, x, y, '+1 käpy', '#c9a46c', true);
       sound(s, 'pickup');
       break;
+    case 'avain':
+      s.run.keys++;
+      addText(s, x, y, 'Avain! Etsi käpyarkku', '#e8c060', true);
+      sound(s, 'pickup');
+      break;
+    case 'kapyarkku':
+      if (s.run.keys <= 0) {
+        if (s.lockHint <= 0) {
+          s.lockHint = 2;
+          addText(s, x, y - 14, 'Lukossa. Etsi avain', '#e8c060', true);
+        }
+        return false;
+      }
+      s.run.keys--;
+      s.run.cones += 5;
+      s.pendingChests++;
+      addText(s, x, y, '+5 käpyä', '#c9a46c', true);
+      s.effects.push({ kind: 'chest', x, y, x2: 0, y2: 0, life: 0.6, maxLife: 0.6, color: '#e8c060', radius: 60 });
+      sound(s, 'chestbig');
+      break;
     case 'kahvi':
       break;
   }
+  return true;
 }
