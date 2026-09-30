@@ -5,6 +5,10 @@ Selviydy metsässä niin pitkään kuin pystyt. Räkkä ei lopu.
 **Pelaa: https://vesahyp.github.io/rakka/** — toimii puhelimessa ja
 selaimessa. Lisää kotinäytölle, niin se aukeaa koko ruudulle.
 
+Peli on suomeksi ja englanniksi. Kieli valitaan selaimen kielen mukaan, ja
+alkuvalikon painikkeesta sen voi vaihtaa. *In English: the game follows your
+browser's language; the button on the title screen switches it.*
+
 ## Miten pelataan
 
 - **Liiku peukalolla.** Paina mihin tahansa ja vedä: ohjain syntyy siihen

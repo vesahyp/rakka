@@ -1,3 +1,5 @@
+import type { Text } from '../i18n';
+
 /** Player-wide stats after character base and passives are applied. */
 export interface Stats {
   maxHp: number;
@@ -22,7 +24,7 @@ export type Behaviour = 'chase' | 'swarm' | 'dash' | 'stick' | 'phase' | 'boss';
 
 export interface EnemyDef {
   id: string;
-  name: string;
+  name: Text;
   hp: number;
   speed: number;
   damage: number;

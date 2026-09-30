@@ -5,7 +5,7 @@ import { ENEMIES, BOSS_ORDER, type EnemyId } from './content/enemies';
 import { WAVES, SWARM_EVENTS, BOSS_MINUTES, type SpawnEntry } from './content/waves';
 import { updateWeapons, updateProjectiles, updateZones, dropWeapons } from './weapons';
 import { addText, healPlayer, hurt, onScreen, sound } from './combat';
-import { tr } from '../i18n';
+import { t, tr } from '../i18n';
 import { computeStats, powerLevel } from './upgrades';
 import { collideTrees, featuresNear, cellKey } from './forest';
 
@@ -438,7 +438,7 @@ function direct(s: SimState, dt: number): void {
     b.t1 = 3;
     s.bossIndex++;
     s.bossesAlive++;
-    s.banner = { text: `${ENEMIES[id].name} ${tr('saapuu', 'arrives')}`, sub: tr('Pomo', 'Boss'), life: 3 };
+    s.banner = { text: `${t(ENEMIES[id].name)} ${tr('saapuu', 'arrives')}`, sub: tr('Pomo', 'Boss'), life: 3 };
     sound(s, 'boss');
     s.shake = 0.7;
     const i = BOSS_MINUTES.indexOf(s.nextBossMinute);
@@ -464,7 +464,7 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
       e.hp *= 2;
       e.maxHp = e.hp;
     }
-    s.banner = { text: tr('Piiri', 'The ring'), sub: `${def.name} ${tr('sulkee renkaan. Murra se.', 'close the ring. Break through.')}`, life: 3 };
+    s.banner = { text: tr('Piiri', 'The ring'), sub: tr(`${t(def.name)} sulkee renkaan. Murra se.`, `${t(def.name)} ring closing in. Break through.`), life: 3 };
     sound(s, 'swarm');
     s.shake = 0.6;
     return;
@@ -475,7 +475,7 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
       const a = (i / count) * Math.PI * 2;
       spawnEnemy(s, def, c.x + Math.cos(a) * r, c.y + Math.sin(a) * r);
     }
-    s.banner = { text: 'Räkkä', sub: `${def.name} ${tr('joka suunnasta', 'from every side')}`, life: 2.5 };
+    s.banner = { text: 'Räkkä', sub: tr(`${t(def.name)} joka suunnasta`, `${t(def.name)} swarm from every side`), life: 2.5 };
     sound(s, 'swarm');
     s.shake = 0.4;
   } else {
@@ -511,7 +511,7 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
         e.maxHp = e.hp;
       }
     }
-    s.banner = { text: tr('Vaellus', 'Migration'), sub: `${def.name} ${tr('tulee seinänä', 'come as a wall')}`, life: 2.5 };
+    s.banner = { text: tr('Vaellus', 'Migration'), sub: tr(`${t(def.name)} tulee seinänä`, `${t(def.name)} column marching in`), life: 2.5 };
     sound(s, 'swarm');
     s.shake = 0.9;
   }
@@ -784,7 +784,7 @@ function reap(s: SimState): void {
       drop(s, 'kapy', e.x - 30, e.y);
       // A boss pays in a spray of berries.
       for (let k = 0; k < 12; k++) addGem(s, e.x + (s.rng.next() - 0.5) * 80, e.y + (s.rng.next() - 0.5) * 80, Math.ceil(e.def.xp / 12));
-      s.banner = { text: `${e.def.name} ${tr('kaatui', 'is defeated')}`, sub: tr('Arkku putosi', 'A chest dropped'), life: 2.5 };
+      s.banner = { text: `${t(e.def.name)} ${tr('kaatui', 'is defeated')}`, sub: tr('Arkku putosi', 'A chest dropped'), life: 2.5 };
       sound(s, 'bosskill');
       continue;
     }

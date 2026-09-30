@@ -1,3 +1,5 @@
+import { L, type Text } from '../../i18n';
+
 export type Pattern =
   | 'throwFacing' // puukko: blades in the move direction
   | 'sweep' // vihta: melee arc alternating sides
@@ -32,12 +34,12 @@ export type Delta = Partial<WeaponNumbers>;
 
 export interface WeaponDef {
   id: string;
-  name: string;
-  desc: string;
+  name: Text;
+  desc: Text;
   pattern: Pattern;
   base: WeaponNumbers;
   /** levels 2..maxLevel, each a delta and its card text */
-  levels: { text: string; d: Delta }[];
+  levels: { text: Text; d: Delta }[];
   evolvesWith?: string;
   evolvesTo?: string;
   evolved?: boolean;
@@ -62,91 +64,91 @@ const base = (o: Partial<WeaponNumbers>): WeaponNumbers => ({
   ...o,
 });
 
-const dmg = (n: number) => ({ text: `+${n} vahinko`, d: { damage: n } });
-const amt = (n = 1) => ({ text: `+${n} ammus`, d: { amount: n } });
-const area = (pct: number) => ({ text: `+${pct} % alue`, d: { area: pct / 100 } });
-const cd = (s: number) => ({ text: `-${s} s latausaika`, d: { cooldown: -s } });
-const pierce = (n: number) => ({ text: `+${n} läpäisy`, d: { pierce: n } });
-const dur = (pct: number) => ({ text: `+${pct} % kesto`, d: { duration: pct / 100 } });
-const spd = (pct: number) => ({ text: `+${pct} % nopeus`, d: { speed: pct / 100 } });
-const kb = (n: number) => ({ text: 'Lisää tönäisyä', d: { knockback: n } });
+const dmg = (n: number) => ({ text: L(`+${n} vahinko`, `+${n} damage`), d: { damage: n } });
+const amt = (n = 1) => ({ text: L(`+${n} ammus`, `+${n} projectile${n === 1 ? '' : 's'}`), d: { amount: n } });
+const area = (pct: number) => ({ text: L(`+${pct} % alue`, `+${pct}% area`), d: { area: pct / 100 } });
+const cd = (s: number) => ({ text: L(`-${s} s latausaika`, `-${s} s cooldown`), d: { cooldown: -s } });
+const pierce = (n: number) => ({ text: L(`+${n} läpäisy`, `+${n} pierce`), d: { pierce: n } });
+const dur = (pct: number) => ({ text: L(`+${pct} % kesto`, `+${pct}% duration`), d: { duration: pct / 100 } });
+const spd = (pct: number) => ({ text: L(`+${pct} % nopeus`, `+${pct}% speed`), d: { speed: pct / 100 } });
+const kb = (n: number) => ({ text: L('Lisää tönäisyä', 'More knockback'), d: { knockback: n } });
 
 export const WEAPONS: Record<string, WeaponDef> = {
   puukko: {
-    id: 'puukko', name: 'Puukko', desc: 'Heität puukon kulkusuuntaan. Nopea ja tarkka.', pattern: 'throwFacing',
+    id: 'puukko', name: L('Puukko'), desc: L('Heität puukon kulkusuuntaan. Nopea ja tarkka.', 'You throw a puukko knife the way you move. Fast and precise.'), pattern: 'throwFacing',
     base: base({ damage: 10, amount: 1, speed: 420, cooldown: 0.8, pierce: 1, knockback: 20, area: 6, interval: 0.09 }),
     levels: [amt(), dmg(8), amt(), pierce(1), dmg(8), amt(), pierce(1)],
     evolvesWith: 'tuohikontti', evolvesTo: 'puukkosade', rarity: 100, icon: 'puukko', tint: '#d8d8e0',
   },
   vihta: {
-    id: 'vihta', name: 'Vihta', desc: 'Huiskit koivunoksilla eteen ja taakse vuorotellen.', pattern: 'sweep',
+    id: 'vihta', name: L('Vihta'), desc: L('Huiskit koivunoksilla eteen ja taakse vuorotellen.', 'You swing a bundle of birch twigs to the front, then the back.'), pattern: 'sweep',
     base: base({ damage: 12, amount: 1, area: 1, cooldown: 1.35, knockback: 60, interval: 0.14 }),
     levels: [amt(), dmg(8), area(15), dmg(8), amt(), area(15), dmg(12)],
     evolvesWith: 'pakuri', evolvesTo: 'loyly', rarity: 100, icon: 'vihta', tint: '#7bc96f',
   },
   kokko: {
-    id: 'kokko', name: 'Kokko', desc: 'Sytytät kokon jalkoihisi. Se palaa hetken ja polttaa ohikulkijat.', pattern: 'zoneAtPlayer',
+    id: 'kokko', name: L('Kokko'), desc: L('Sytytät kokon jalkoihisi. Se palaa hetken ja polttaa ohikulkijat.', 'You light a bonfire at your feet. It burns for a moment and scorches anything that passes.'), pattern: 'zoneAtPlayer',
     base: base({ damage: 4, amount: 1, area: 40, duration: 2.6, cooldown: 3.6, interval: 0.5 }),
     levels: [area(20), dmg(3), dur(20), amt(), area(20), dmg(4), cd(0.6)],
     evolvesWith: 'kynttila', evolvesTo: 'juhannuskokko', rarity: 90, icon: 'kokko', tint: '#ff8a3d',
   },
   kantele: {
-    id: 'kantele', name: 'Kantele', desc: 'Näppäät kielen. Ääniaalto työntää lähellä olevat pois.', pattern: 'ring',
+    id: 'kantele', name: L('Kantele'), desc: L('Näppäät kielen. Ääniaalto työntää lähellä olevat pois.', 'You pluck a string. The sound wave pushes back anything close.'), pattern: 'ring',
     base: base({ damage: 9, amount: 1, area: 100, speed: 260, cooldown: 2.6, knockback: 140, interval: 0.2 }),
     levels: [dmg(8), area(20), kb(60), dmg(8), amt(), area(20), cd(0.5)],
     evolvesWith: 'riimukivi', evolvesTo: 'vainonlaulu', rarity: 80, icon: 'kantele', tint: '#e8d27a',
   },
   ukonvasara: {
-    id: 'ukonvasara', name: 'Ukonvasara', desc: 'Ukko, saamelaisten Horagalles, iskee salamalla satunnaisiin vihollisiin.', pattern: 'strike',
+    id: 'ukonvasara', name: L('Ukonvasara', "Ukko's hammer"), desc: L('Ukko, saamelaisten Horagalles, iskee salamalla satunnaisiin vihollisiin.', 'Ukko, Horagalles to the Sámi, strikes random enemies with lightning.'), pattern: 'strike',
     base: base({ damage: 18, amount: 1, area: 26, cooldown: 3.2, interval: 0.12, knockback: 30 }),
     levels: [amt(), dmg(8), amt(), area(25), dmg(10), amt(), cd(0.6)],
     evolvesWith: 'kompassi', evolvesTo: 'ukonilma', rarity: 80, icon: 'ukonvasara', tint: '#9fd3ff',
   },
   kierukka: {
-    id: 'kierukka', name: 'Hyttyskierukka', desc: 'Savuava kierukka. Vahingoittaa kaikkea ympärilläsi.', pattern: 'aura',
+    id: 'kierukka', name: L('Hyttyskierukka', 'Mosquito coil'), desc: L('Savuava kierukka. Vahingoittaa kaikkea ympärilläsi.', 'A smoking coil. Damages everything around you.'), pattern: 'aura',
     base: base({ damage: 3, amount: 1, area: 48, cooldown: 1.0, knockback: 8 }),
     levels: [area(15), dmg(2), cd(0.1), area(15), dmg(2), cd(0.1), dmg(3)],
     evolvesWith: 'hunaja', evolvesTo: 'savusauna', rarity: 90, icon: 'kierukka', tint: '#b8e0c8',
   },
   sarvet: {
-    id: 'sarvet', name: 'Tapion sarvet', desc: 'Hirvensarvet kiertävät sinua ja tömäyttävät vastaantulijat.', pattern: 'orbit',
+    id: 'sarvet', name: L('Tapion sarvet', "Tapio's antlers"), desc: L('Hirvensarvet kiertävät sinua ja tömäyttävät vastaantulijat.', 'Moose antlers circle you and ram anything in their way.'), pattern: 'orbit',
     base: base({ damage: 12, amount: 1, area: 9, speed: 1, duration: 3.5, cooldown: 3.0, knockback: 45, pierce: Infinity }),
     levels: [amt(), dmg(8), spd(30), dur(30), amt(), area(30), dmg(12)],
     evolvesWith: 'villasukat', evolvesTo: 'hirvilauma', rarity: 80, icon: 'sarvet', tint: '#c9a46c',
   },
   kirves: {
-    id: 'kirves', name: 'Kirves', desc: 'Heität kirveen kaaressa ylös. Se putoaa lauman läpi.', pattern: 'lob',
+    id: 'kirves', name: L('Kirves', 'Axe'), desc: L('Heität kirveen kaaressa ylös. Se putoaa lauman läpi.', 'You throw an axe up in an arc. It falls through the crowd.'), pattern: 'lob',
     base: base({ damage: 22, amount: 1, area: 11, speed: 300, cooldown: 1.6, pierce: 4, knockback: 40, interval: 0.14 }),
     levels: [amt(), dmg(10), pierce(2), area(25), amt(), dmg(10), pierce(3)],
     evolvesWith: 'terva', evolvesTo: 'kalevankirves', rarity: 80, icon: 'kirves', tint: '#c0c0c8',
   },
   jousi: {
-    id: 'jousi', name: 'Jousi', desc: 'Ammut nuolen lähintä vihollista kohti.', pattern: 'nearest',
+    id: 'jousi', name: L('Jousi', 'Bow'), desc: L('Ammut nuolen lähintä vihollista kohti.', 'You shoot an arrow at the nearest enemy.'), pattern: 'nearest',
     base: base({ damage: 12, amount: 1, area: 5, speed: 520, cooldown: 0.95, pierce: 1, knockback: 15, interval: 0.1 }),
     levels: [amt(), dmg(6), amt(), pierce(1), dmg(6), amt(), cd(0.2)],
     evolvesWith: 'tulukset', evolvesTo: 'tulinuolet', rarity: 100, icon: 'jousi', tint: '#e0c08a',
   },
   kiuas: {
-    id: 'kiuas', name: 'Kiuaskivi', desc: 'Heität kuuman kiven. Se hajoaa löylyksi osuessaan.', pattern: 'lobExplode',
+    id: 'kiuas', name: L('Kiuaskivi', 'Sauna stone'), desc: L('Heität kuuman kiven. Se hajoaa löylyksi osuessaan.', 'You throw a hot stone. It bursts into steam when it hits.'), pattern: 'lobExplode',
     base: base({ damage: 11, amount: 1, area: 38, speed: 240, cooldown: 2.4, interval: 0.16, knockback: 30 }),
     levels: [area(20), dmg(6), amt(), area(20), dmg(8), amt(), cd(0.4)],
     evolvesWith: 'kahvipannu', evolvesTo: 'saunanhenki', rarity: 80, icon: 'kiuas', tint: '#ff6b5b',
   },
   viima: {
-    id: 'viima', name: 'Pohjolan viima', desc: 'Jäinen puhuri kimpoaa ruudun reunoista ja läpäisee kaiken.', pattern: 'bounce',
+    id: 'viima', name: L('Pohjolan viima', 'Wind of Pohjola'), desc: L('Jäinen puhuri kimpoaa ruudun reunoista ja läpäisee kaiken.', 'An icy gust bounces off the edges of the screen and goes through everything.'), pattern: 'bounce',
     base: base({ damage: 11, amount: 1, area: 7, speed: 330, duration: 3.0, cooldown: 2.4, pierce: Infinity, knockback: 5, slow: 0.25, interval: 0.15 }),
     levels: [dmg(4), amt(), dur(25), dmg(5), spd(20), amt(), dmg(6)],
     evolvesWith: 'karhunnahka', evolvesTo: 'pakkasukko', rarity: 70, icon: 'viima', tint: '#c8f0ff',
   },
   verkko: {
-    id: 'verkko', name: 'Näkin verkko', desc: 'Heität verkon eteesi. Se hidastaa ja raapii kiinni jääneitä.', pattern: 'trap',
+    id: 'verkko', name: L('Näkin verkko', "Näkki's net"), desc: L('Heität verkon eteesi. Se hidastaa ja raapii kiinni jääneitä.', 'You throw a net ahead of you. It slows and scratches anything caught in it.'), pattern: 'trap',
     base: base({ damage: 3, amount: 1, area: 48, duration: 3.5, cooldown: 3.4, slow: 0.55, interval: 0.5 }),
     levels: [area(20), dur(25), dmg(2), amt(), area(20), dmg(3), cd(0.6)],
     evolvesWith: 'pihlaja', evolvesTo: 'vetehisensyli', rarity: 70, icon: 'verkko', tint: '#6fb7c9',
   },
 
   rumpu: {
-    id: 'rumpu', name: 'Noaidin rumpu', desc: 'Lyöt rumpua. Saivon eläimet lähtevät etsimään vihollisia.', pattern: 'spirit',
+    id: 'rumpu', name: L('Noaidin rumpu', "Noaidi's drum"), desc: L('Lyöt rumpua. Saivon eläimet lähtevät etsimään vihollisia.', 'You beat the drum. Spirit animals from Saivo go out to hunt enemies.'), pattern: 'spirit',
     base: base({ damage: 9, amount: 1, area: 8, speed: 200, duration: 2.2, cooldown: 1.9, pierce: 2, knockback: 25, interval: 0.18 }),
     levels: [amt(), dmg(4), pierce(1), spd(20), amt(), dmg(5), dur(30)],
     evolvesWith: 'ketunhanta', evolvesTo: 'saivo', rarity: 80, icon: 'rumpu', tint: '#e0a8ff',
@@ -154,67 +156,67 @@ export const WEAPONS: Record<string, WeaponDef> = {
 
   // Evolutions. One level, no further upgrades.
   puukkosade: {
-    id: 'puukkosade', name: 'Puukkosade', desc: 'Puukkoja sataa lakkaamatta kulkusuuntaan.', pattern: 'throwFacing', evolved: true,
+    id: 'puukkosade', name: L('Puukkosade', 'Puukko rain'), desc: L('Puukkoja sataa lakkaamatta kulkusuuntaan.', 'Knives rain without end the way you move.'), pattern: 'throwFacing', evolved: true,
     base: base({ damage: 30, amount: 5, speed: 520, cooldown: 0.28, pierce: 6, knockback: 25, area: 7, interval: 0.04 }),
     levels: [], rarity: 0, icon: 'puukko', tint: '#ffffff',
   },
   loyly: {
-    id: 'loyly', name: 'Löyly', desc: 'Kiuas kiehuu. Huiskaisu ympäröi sinut ja jokainen osuma parantaa.', pattern: 'sweep', evolved: true,
+    id: 'loyly', name: L('Löyly'), desc: L('Kiuas kiehuu. Huiskaisu ympäröi sinut ja jokainen osuma parantaa.', 'The sauna is hot. The swing goes all around you and every hit heals.'), pattern: 'sweep', evolved: true,
     base: base({ damage: 60, amount: 3, area: 1.9, cooldown: 0.9, knockback: 90, interval: 0.12, heal: 1 }),
     levels: [], rarity: 0, icon: 'vihta', tint: '#e8fff0',
   },
   juhannuskokko: {
-    id: 'juhannuskokko', name: 'Juhannuskokko', desc: 'Kokko ei sammu. Se seuraa sinua ja polttaa kaiken.', pattern: 'aura', evolved: true,
+    id: 'juhannuskokko', name: L('Juhannuskokko', 'Midsummer bonfire'), desc: L('Kokko ei sammu. Se seuraa sinua ja polttaa kaiken.', 'The bonfire never goes out. It follows you and burns everything.'), pattern: 'aura', evolved: true,
     base: base({ damage: 22, amount: 1, area: 100, cooldown: 0.25, knockback: 10 }),
     levels: [], rarity: 0, icon: 'kokko', tint: '#ffb347',
   },
   vainonlaulu: {
-    id: 'vainonlaulu', name: 'Väinön laulu', desc: 'Laulu joka pysäyttää metsän. Aallot hidastavat ja työntävät.', pattern: 'ring', evolved: true,
+    id: 'vainonlaulu', name: L('Väinön laulu', "Väinö's song"), desc: L('Laulu joka pysäyttää metsän. Aallot hidastavat ja työntävät.', 'A song that stops the forest. The waves slow and push.'), pattern: 'ring', evolved: true,
     base: base({ damage: 30, amount: 2, area: 140, speed: 300, cooldown: 1.5, knockback: 220, interval: 0.3, slow: 0.5 }),
     levels: [], rarity: 0, icon: 'kantele', tint: '#fff3b0',
   },
   ukonilma: {
-    id: 'ukonilma', name: 'Ukonilma', desc: 'Ukonilma. Salamat iskevät joka puolelle ja räjähtävät.', pattern: 'strike', evolved: true,
+    id: 'ukonilma', name: L('Ukonilma', 'Thunderstorm'), desc: L('Ukonilma. Salamat iskevät joka puolelle ja räjähtävät.', 'A thunderstorm. Lightning strikes all around and explodes.'), pattern: 'strike', evolved: true,
     base: base({ damage: 45, amount: 6, area: 60, cooldown: 1.4, interval: 0.06, knockback: 60 }),
     levels: [], rarity: 0, icon: 'ukonvasara', tint: '#dff3ff',
   },
   savusauna: {
-    id: 'savusauna', name: 'Savusauna', desc: 'Paksu savu. Vahingoittaa laajalti ja jokainen osuma parantaa.', pattern: 'aura', evolved: true,
+    id: 'savusauna', name: L('Savusauna', 'Smoke sauna'), desc: L('Paksu savu. Vahingoittaa laajalti ja jokainen osuma parantaa.', 'Thick smoke. Damages a wide area and every hit heals.'), pattern: 'aura', evolved: true,
     base: base({ damage: 18, amount: 1, area: 95, cooldown: 0.4, knockback: 12, heal: 0.15 }),
     levels: [], rarity: 0, icon: 'kierukka', tint: '#d9e8dc',
   },
   hirvilauma: {
-    id: 'hirvilauma', name: 'Hirvilauma', desc: 'Lauma sarvia kiertää sinua tauotta.', pattern: 'orbit', evolved: true,
+    id: 'hirvilauma', name: L('Hirvilauma', 'Moose herd'), desc: L('Lauma sarvia kiertää sinua tauotta.', 'A herd of antlers circles you without a pause.'), pattern: 'orbit', evolved: true,
     base: base({ damage: 45, amount: 7, area: 13, speed: 1.6, duration: 9999, cooldown: 0.5, knockback: 70, pierce: Infinity }),
     levels: [], rarity: 0, icon: 'sarvet', tint: '#e0b878',
   },
   kalevankirves: {
-    id: 'kalevankirves', name: 'Kalevan kirves', desc: 'Jättiläisen kirves. Halkaisee kaiken tiellään.', pattern: 'lob', evolved: true,
+    id: 'kalevankirves', name: L('Kalevan kirves', 'Axe of Kaleva'), desc: L('Jättiläisen kirves. Halkaisee kaiken tiellään.', "A giant's axe. Splits everything in its way."), pattern: 'lob', evolved: true,
     base: base({ damage: 70, amount: 3, area: 22, speed: 320, cooldown: 1.2, pierce: Infinity, knockback: 80, interval: 0.12 }),
     levels: [], rarity: 0, icon: 'kirves', tint: '#ffe9a8',
   },
   tulinuolet: {
-    id: 'tulinuolet', name: 'Tulinuolet', desc: 'Palavat nuolet läpäisevät rivin ja jättävät tulen.', pattern: 'nearest', evolved: true,
+    id: 'tulinuolet', name: L('Tulinuolet', 'Fire arrows'), desc: L('Palavat nuolet läpäisevät rivin ja jättävät tulen.', 'Burning arrows go through a whole line and leave fire behind.'), pattern: 'nearest', evolved: true,
     base: base({ damage: 26, amount: 5, area: 6, speed: 640, cooldown: 0.7, pierce: 6, knockback: 20, interval: 0.06 }),
     levels: [], rarity: 0, icon: 'jousi', tint: '#ffb070',
   },
   saunanhenki: {
-    id: 'saunanhenki', name: 'Saunan henki', desc: 'Löylynhenki heittää kiviä yhtä soittoa. Löyly täyttää metsän.', pattern: 'lobExplode', evolved: true,
+    id: 'saunanhenki', name: L('Saunan henki', 'Sauna spirit'), desc: L('Löylynhenki heittää kiviä yhtä soittoa. Löyly täyttää metsän.', 'The spirit of the steam throws stones without a pause. Steam fills the forest.'), pattern: 'lobExplode', evolved: true,
     base: base({ damage: 40, amount: 4, area: 75, speed: 300, cooldown: 1.1, interval: 0.1, knockback: 50 }),
     levels: [], rarity: 0, icon: 'kiuas', tint: '#ff9a8a',
   },
   pakkasukko: {
-    id: 'pakkasukko', name: 'Pakkasukko', desc: 'Pakkanen paukkuu. Puhurit kimpoavat ikuisesti ja jäädyttävät.', pattern: 'bounce', evolved: true,
+    id: 'pakkasukko', name: L('Pakkasukko', 'Old Man Frost'), desc: L('Pakkanen paukkuu. Puhurit kimpoavat ikuisesti ja jäädyttävät.', 'The frost cracks. The gusts bounce forever and freeze.'), pattern: 'bounce', evolved: true,
     base: base({ damage: 30, amount: 4, area: 10, speed: 400, duration: 8, cooldown: 1.8, pierce: Infinity, knockback: 5, slow: 0.6, interval: 0.1 }),
     levels: [], rarity: 0, icon: 'viima', tint: '#ffffff',
   },
   saivo: {
-    id: 'saivo', name: 'Saivo', desc: 'Toinen maailma aukeaa. Henkieläimiä virtaa lakkaamatta.', pattern: 'spirit', evolved: true,
+    id: 'saivo', name: L('Saivo'), desc: L('Toinen maailma aukeaa. Henkieläimiä virtaa lakkaamatta.', 'The other world opens. Spirit animals pour out without end.'), pattern: 'spirit', evolved: true,
     base: base({ damage: 20, amount: 3, area: 10, speed: 260, duration: 3.2, cooldown: 1.2, pierce: 4, knockback: 40, interval: 0.1 }),
     levels: [], rarity: 0, icon: 'rumpu', tint: '#f0d0ff',
   },
   vetehisensyli: {
-    id: 'vetehisensyli', name: 'Vetehisen syli', desc: 'Vesi vetää. Verkot ovat suuria ja pitävät kiinni lähes kokonaan.', pattern: 'trap', evolved: true,
+    id: 'vetehisensyli', name: L('Vetehisen syli', "Vetehinen's embrace"), desc: L('Vesi vetää. Verkot ovat suuria ja pitävät kiinni lähes kokonaan.', 'The water pulls. The nets are large and hold almost everything still.'), pattern: 'trap', evolved: true,
     base: base({ damage: 14, amount: 3, area: 80, duration: 5, cooldown: 2.4, slow: 0.85, interval: 0.25 }),
     levels: [], rarity: 0, icon: 'verkko', tint: '#8fd8ea',
   },

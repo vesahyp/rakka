@@ -1,6 +1,7 @@
 // Phone screenshots of the game, repeatable: title, select, a run at three
 // points, the level-up overlay. Run `make shots-setup` once, then `make shots`.
-// Needs the dev server: it starts one on port 5198.
+// Needs the dev server: it starts one on port 5198. `node scripts/shots.mjs en`
+// takes the English set into shots/en/ (make shots-en).
 import { chromium, devices } from 'playwright';
 import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
@@ -8,17 +9,20 @@ import { mkdirSync } from 'node:fs';
 const port = 5198;
 const server = spawn('npx', ['vite', '--port', String(port), '--strictPort'], { stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 2500));
-mkdirSync('shots', { recursive: true });
+const lang = process.argv[2] === 'en' ? 'en' : 'fi';
+const dir = lang === 'en' ? 'shots/en' : 'shots';
+const say = (fi, en) => (lang === 'en' ? en : fi);
+mkdirSync(dir, { recursive: true });
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ ...devices['iPhone 15'], hasTouch: true });
 const page = await ctx.newPage();
-const shot = (name) => page.screenshot({ path: `shots/${name}.png` });
+const shot = (name) => page.screenshot({ path: `${dir}/${name}.png` });
 
 try {
-  await page.goto(`http://localhost:${port}/?bot=1&speed=8`);
+  await page.goto(`http://localhost:${port}/?bot=1&speed=8&lang=${lang}`);
   await shot('01-title');
-  await page.getByRole('button', { name: 'Pelaa' }).click();
+  await page.getByRole('button', { name: say('Pelaa', 'Play'), exact: true }).click();
   await page.waitForTimeout(300);
   await shot('02-select');
   await page.getByRole('button', { name: /Lemminkäinen/ }).click();
@@ -41,8 +45,8 @@ try {
   }
   // Co-op, landscape: two heroes, two sticks' worth of HUD.
   await page.setViewportSize({ width: 659, height: 393 });
-  await page.goto(`http://localhost:${port}/?bot=1&speed=8`);
-  await page.getByRole('button', { name: 'Kaksin' }).click();
+  await page.goto(`http://localhost:${port}/?bot=1&speed=8&lang=${lang}`);
+  await page.getByRole('button', { name: say('Kaksin', 'Two players'), exact: true }).click();
   await page.getByRole('button', { name: /Väinö/ }).click();
   await page.getByRole('button', { name: /Aino/ }).click();
   await page.waitForFunction(() => window.__sim && (window.__sim.time >= 180 || window.__sim.gameOver), null, { timeout: 300000 });

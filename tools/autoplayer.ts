@@ -179,7 +179,7 @@ export function playRun(s: SimState, maxMinutes: number, o: BotOptions): RunRepo
     if (s.gameOver) {
       const counts: Record<string, number> = {};
       const p = s.heroes[0].player;
-      for (const e of s.enemies) if (Math.hypot(e.x - p.x, e.y - p.y) < 40) counts[e.def.name] = (counts[e.def.name] ?? 0) + 1;
+      for (const e of s.enemies) if (Math.hypot(e.x - p.x, e.y - p.y) < 40) counts[e.def.id] = (counts[e.def.id] ?? 0) + 1;
       killer = Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 2)

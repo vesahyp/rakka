@@ -18,31 +18,32 @@
  * the refund confirm sat under the same thumb as the button (Altar.tsx).
  */
 import type { StatDelta } from './game/stats';
+import { L, type Text } from './i18n';
 
 export interface AltarItem {
   id: string;
-  name: string;
-  desc: string;
+  name: Text;
+  desc: Text;
   ranks: number;
   /** cones for rank one; each further rank costs more */
   price: number;
   perRank: StatDelta;
-  rankText: string;
+  rankText: Text;
   icon: string;
 }
 
 export const ALTAR: AltarItem[] = [
-  { id: 'elinvoima', name: 'Elinvoima', desc: 'Paksumpi nahka.', ranks: 5, price: 12, perRank: { maxHp: 6 }, rankText: '+6 elinvoima', icon: 'pakuri' },
-  { id: 'vahinko', name: 'Vahinko', desc: 'Terävämpi terä.', ranks: 5, price: 15, perRank: { might: 0.03 }, rankText: '+3 % vahinko', icon: 'terva' },
-  { id: 'palautuminen', name: 'Palautuminen', desc: 'Haavat umpeutuvat.', ranks: 3, price: 18, perRank: { regen: 0.1 }, rankText: '+0.1 elinvoimaa/s', icon: 'hunaja' },
-  { id: 'suoja', name: 'Suoja', desc: 'Osuma sattuu vähemmän.', ranks: 2, price: 32, perRank: { armor: 1 }, rankText: '+1 suoja', icon: 'karhunnahka' },
-  { id: 'nopeus', name: 'Nopeus', desc: 'Kevyemmät jalat.', ranks: 3, price: 15, perRank: { moveSpeed: 0.03 }, rankText: '+3 % nopeus', icon: 'villasukat' },
-  { id: 'alue', name: 'Alue', desc: 'Aseet ulottuvat kauemmas.', ranks: 3, price: 15, perRank: { area: 0.03 }, rankText: '+3 % alue', icon: 'kompassi' },
-  { id: 'lataus', name: 'Latausaika', desc: 'Nopeampi käsi.', ranks: 3, price: 18, perRank: { cooldown: 0.02 }, rankText: '-2 % latausaika', icon: 'kahvipannu' },
-  { id: 'onni', name: 'Onni', desc: 'Metsä suosii.', ranks: 3, price: 15, perRank: { luck: 0.05 }, rankText: '+5 % onni', icon: 'ketunhanta' },
-  { id: 'kokemus', name: 'Kokemus', desc: 'Opit nopeammin.', ranks: 3, price: 15, perRank: { growth: 0.03 }, rankText: '+3 % kokemus', icon: 'riimukivi' },
-  { id: 'keraysalue', name: 'Keräysalue', desc: 'Marjat lentävät kauempaa.', ranks: 3, price: 10, perRank: { magnet: 0.1 }, rankText: '+10 % keräysalue', icon: 'pihlaja' },
-  { id: 'ylosnousemus', name: 'Ylösnousemus', desc: 'Yksi paluu toisesta maailmasta, joka pelissä.', ranks: 1, price: 160, perRank: { revives: 1 }, rankText: '+1 ylösnousemus', icon: 'sammonsiru' },
+  { id: 'elinvoima', name: L('Elinvoima', 'Health'), desc: L('Paksumpi nahka.', 'Thicker skin.'), ranks: 5, price: 12, perRank: { maxHp: 6 }, rankText: L('+6 elinvoima', '+6 health'), icon: 'pakuri' },
+  { id: 'vahinko', name: L('Vahinko', 'Damage'), desc: L('Terävämpi terä.', 'A sharper blade.'), ranks: 5, price: 15, perRank: { might: 0.03 }, rankText: L('+3 % vahinko', '+3% damage'), icon: 'terva' },
+  { id: 'palautuminen', name: L('Palautuminen', 'Recovery'), desc: L('Haavat umpeutuvat.', 'Wounds close.'), ranks: 3, price: 18, perRank: { regen: 0.1 }, rankText: L('+0.1 elinvoimaa/s', '+0.1 health/s'), icon: 'hunaja' },
+  { id: 'suoja', name: L('Suoja', 'Armor'), desc: L('Osuma sattuu vähemmän.', 'A hit hurts less.'), ranks: 2, price: 32, perRank: { armor: 1 }, rankText: L('+1 suoja', '+1 armor'), icon: 'karhunnahka' },
+  { id: 'nopeus', name: L('Nopeus', 'Speed'), desc: L('Kevyemmät jalat.', 'Lighter feet.'), ranks: 3, price: 15, perRank: { moveSpeed: 0.03 }, rankText: L('+3 % nopeus', '+3% speed'), icon: 'villasukat' },
+  { id: 'alue', name: L('Alue', 'Area'), desc: L('Aseet ulottuvat kauemmas.', 'Weapons reach farther.'), ranks: 3, price: 15, perRank: { area: 0.03 }, rankText: L('+3 % alue', '+3% area'), icon: 'kompassi' },
+  { id: 'lataus', name: L('Latausaika', 'Cooldown'), desc: L('Nopeampi käsi.', 'A quicker hand.'), ranks: 3, price: 18, perRank: { cooldown: 0.02 }, rankText: L('-2 % latausaika', '-2% cooldown'), icon: 'kahvipannu' },
+  { id: 'onni', name: L('Onni', 'Luck'), desc: L('Metsä suosii.', 'The forest is on your side.'), ranks: 3, price: 15, perRank: { luck: 0.05 }, rankText: L('+5 % onni', '+5% luck'), icon: 'ketunhanta' },
+  { id: 'kokemus', name: L('Kokemus', 'Experience'), desc: L('Opit nopeammin.', 'You learn faster.'), ranks: 3, price: 15, perRank: { growth: 0.03 }, rankText: L('+3 % kokemus', '+3% experience'), icon: 'riimukivi' },
+  { id: 'keraysalue', name: L('Keräysalue', 'Pickup range'), desc: L('Marjat lentävät kauempaa.', 'Berries fly to you from farther away.'), ranks: 3, price: 10, perRank: { magnet: 0.1 }, rankText: L('+10 % keräysalue', '+10% pickup range'), icon: 'pihlaja' },
+  { id: 'ylosnousemus', name: L('Ylösnousemus', 'Revival'), desc: L('Yksi paluu toisesta maailmasta, joka pelissä.', 'One return from the other world, every run.'), ranks: 1, price: 160, perRank: { revives: 1 }, rankText: L('+1 ylösnousemus', '+1 revival'), icon: 'sammonsiru' },
 ];
 
 export interface Meta {

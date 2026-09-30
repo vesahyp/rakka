@@ -3,7 +3,7 @@ import { ALTAR, buy, rankPrice, refundAll, totalRanks, exportCode, importCode, a
 import { icon } from './icons';
 import { audio } from '../audio';
 import { track } from '../records';
-import { tr } from '../i18n';
+import { t, tr } from '../i18n';
 
 export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Meta) => void; onBack: () => void }) {
   const [confirm, setConfirm] = useState(false);
@@ -46,14 +46,14 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
               <div className="ic">{icon(item.icon)}</div>
               <div className="body">
                 <div className="name">
-                  <span>{item.name}</span>
+                  <span>{t(item.name)}</span>
                   <span className="lvl">
                     {'●'.repeat(have)}
                     {'○'.repeat(item.ranks - have)}
                   </span>
                 </div>
                 <div className="desc">
-                  {item.desc} {item.rankText} {tr('per aste', 'per rank')}.
+                  {t(item.desc)} {t(item.rankText)} {tr('per aste', 'per rank')}.
                 </div>
               </div>
               <button

@@ -3,7 +3,7 @@ import { BASE_STATS, applyDelta, type Stats } from './stats';
 import { PASSIVES, MAX_PASSIVES } from './content/passives';
 import { WEAPONS, BASE_WEAPON_IDS, MAX_WEAPONS, weaponMaxLevel } from './content/weapons';
 import { POWERS, POWER_IDS, MAX_POWERS, POWER_FROM_LEVEL } from './content/powers';
-import { tr } from '../i18n';
+import { t, tr } from '../i18n';
 
 export interface Offer {
   kind: 'weapon' | 'passive' | 'power' | 'heal' | 'gold' | 'evolve';
@@ -59,9 +59,9 @@ function powerOffer(h: Hero, id: string): Offer {
   return {
     kind: 'power',
     id,
-    name: def.name,
-    desc: def.desc,
-    levelText: lvl ? def.levelText : tr('Uusi taika', 'New charm'),
+    name: t(def.name),
+    desc: t(def.desc),
+    levelText: lvl ? t(def.levelText) : tr('Uusi taika', 'New charm'),
     level: lvl + 1,
     maxLevel: def.maxLevel,
     isNew: lvl === 0,
@@ -76,9 +76,9 @@ function weaponOffer(h: Hero, id: string): Offer {
   return {
     kind: 'weapon',
     id,
-    name: def.name,
-    desc: def.desc,
-    levelText: w ? def.levels[w.level - 1].text : tr('Uusi ase', 'New weapon'),
+    name: t(def.name),
+    desc: t(def.desc),
+    levelText: w ? t(def.levels[w.level - 1].text) : tr('Uusi ase', 'New weapon'),
     level,
     maxLevel: weaponMaxLevel(def),
     isNew: !w,
@@ -92,9 +92,9 @@ function passiveOffer(h: Hero, id: string): Offer {
   return {
     kind: 'passive',
     id,
-    name: def.name,
-    desc: def.desc,
-    levelText: p ? def.levelText : tr('Uusi esine', 'New item'),
+    name: t(def.name),
+    desc: t(def.desc),
+    levelText: p ? t(def.levelText) : tr('Uusi esine', 'New item'),
     level: p ? p.level + 1 : 1,
     maxLevel: def.maxLevel,
     isNew: !p,
@@ -219,7 +219,7 @@ export function evolve(s: SimState, h: Hero, from: string, to: string): Offer {
   // Zones of the old weapon (an aura) would otherwise keep ticking with old numbers.
   s.zones = s.zones.filter((z) => !(z.weapon === from && z.owner === h.index));
   const def = WEAPONS[to];
-  return { kind: 'evolve', id: to, name: def.name, desc: def.desc, levelText: tr('Kehittyi!', 'Evolved!'), level: 1, maxLevel: 1, isNew: true, icon: def.icon };
+  return { kind: 'evolve', id: to, name: t(def.name), desc: t(def.desc), levelText: tr('Kehittyi!', 'Evolved!'), level: 1, maxLevel: 1, isNew: true, icon: def.icon };
 }
 
 export interface ChestResult {

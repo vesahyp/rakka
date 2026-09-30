@@ -12,7 +12,7 @@ import { fetchTop, fetchRank, loadInitials, PERIOD_LABELS, type Period, type Top
 import type { RunRecord } from '../records';
 import { audio } from '../audio';
 import type { Meta } from '../meta';
-import { lang, num, tr, type Lang } from '../i18n';
+import { lang, num, t, tr, type Lang } from '../i18n';
 
 export function Title({ records, meta, onPlay, onRecords, onAltar, onLang }: { records: Records; meta: Meta; onPlay: (players: 1 | 2) => void; onRecords: () => void; onAltar: () => void; onLang: (l: Lang) => void }) {
   const best = records.best[0];
@@ -134,12 +134,12 @@ export function Select({ records, players, onPick, onBack }: { records: Records;
             >
               <Portrait c={c} />
               <div className="name">{c.name}</div>
-              <div className="title">{c.title}</div>
-              <div className="desc">{c.desc}</div>
+              <div className="title">{t(c.title)}</div>
+              <div className="desc">{t(c.desc)}</div>
               <div className="weapon">
-                {icon(w.icon)} {w.name}
+                {icon(w.icon)} {t(w.name)}
               </div>
-              <div className="trait">{open ? c.trait : '🔒 ' + c.unlock!.text}</div>
+              <div className="trait">{open ? t(c.trait) : '🔒 ' + t(c.unlock!.text)}</div>
               {pc && (
                 <div className="small">
                   {tr('Paras', 'Best')} {fmtTime(pc.time)}, {tr('taso', 'level')} {pc.level}
@@ -200,12 +200,12 @@ export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSum
       </div>
       <div className="row" style={{ marginBottom: 16, maxWidth: 360 }}>
         {r.weapons.map((id) => (
-          <span key={id} title={WEAPONS[id].name} style={{ fontSize: 24 }}>
+          <span key={id} title={t(WEAPONS[id].name)} style={{ fontSize: 24 }}>
             {icon(WEAPONS[id].icon)}
           </span>
         ))}
         {r.passives.map((id) => (
-          <span key={id} title={PASSIVES[id].name} style={{ fontSize: 24, opacity: 0.8 }}>
+          <span key={id} title={t(PASSIVES[id].name)} style={{ fontSize: 24, opacity: 0.8 }}>
             {icon(PASSIVES[id].icon)}
           </span>
         ))}
@@ -317,7 +317,7 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
                 <td>
                   {charName(e.character)}
                   {e.top && WEAPONS[e.top] && (
-                    <span className="topw" title={`${tr('Eniten vahinkoa', 'Most damage')}: ${WEAPONS[e.top].name}`}>
+                    <span className="topw" title={`${tr('Eniten vahinkoa', 'Most damage')}: ${t(WEAPONS[e.top].name)}`}>
                       {' '}
                       {icon(WEAPONS[e.top].icon)}
                     </span>

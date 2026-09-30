@@ -16,7 +16,7 @@ import { botInput, botPick } from '../../tools/autoplayer';
 import { Rng } from '../game/rng';
 import { audio } from '../audio';
 import { UpdateBanner } from './Update';
-import { tr } from '../i18n';
+import { t, tr } from '../i18n';
 
 export interface RunSummary {
   /** the first hero, for records and the board; `characters` has everyone */
@@ -156,7 +156,7 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
           passives: h.passives.map((p) => ({ id: p.id, level: p.level })),
           powers: h.powers.map((p) => ({ id: p.id, level: p.level })),
         })),
-        boss: boss ? { name: boss.def.name, hp: boss.hp, max: boss.maxHp } : null,
+        boss: boss ? { name: t(boss.def.name), hp: boss.hp, max: boss.maxHp } : null,
         banner: s.banner ? { text: s.banner.text, sub: s.banner.sub } : null,
       });
     };
@@ -345,21 +345,21 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
   const items = (h: HeroHud, right = false) => (
     <div className={'items' + (right ? ' right' : '')}>
       {h.weapons.map((w) => (
-        <div key={w.id} className={'it' + (w.evolved ? ' evo' : '')} title={WEAPONS[w.id].name}>
+        <div key={w.id} className={'it' + (w.evolved ? ' evo' : '')} title={t(WEAPONS[w.id].name)}>
           {icon(WEAPONS[w.id].icon)}
           {!w.evolved && <b>{w.level}</b>}
         </div>
       ))}
       {h.passives.length > 0 && <div className="gap" />}
       {h.passives.map((p) => (
-        <div key={p.id} className="it" title={PASSIVES[p.id].name}>
+        <div key={p.id} className="it" title={t(PASSIVES[p.id].name)}>
           {icon(PASSIVES[p.id].icon)}
           <b>{p.level}</b>
         </div>
       ))}
       {h.powers.length > 0 && <div className="gap" />}
       {h.powers.map((p) => (
-        <div key={p.id} className="it power" title={POWERS[p.id].name}>
+        <div key={p.id} className="it power" title={t(POWERS[p.id].name)}>
           {icon(POWERS[p.id].icon)}
           <b>{p.level}</b>
         </div>
@@ -532,12 +532,12 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
                     <div className="ic">{icon(POWERS[p.id].icon)}</div>
                     <div className="body">
                       <div className="name">
-                        <span>{POWERS[p.id].name}</span>
+                        <span>{t(POWERS[p.id].name)}</span>
                         <span className="lvl">
                           {tr('Taika', 'Charm')} {p.level}/{POWERS[p.id].maxLevel}
                         </span>
                       </div>
-                      <div className="desc">{POWERS[p.id].desc}</div>
+                      <div className="desc">{t(POWERS[p.id].desc)}</div>
                     </div>
                   </div>
                 ))}
@@ -549,12 +549,12 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
                       <div className="ic">{icon(def.icon)}</div>
                       <div className="body">
                         <div className="name">
-                          <span>{def.name}</span>
+                          <span>{t(def.name)}</span>
                           <span className="lvl">{def.evolved ? tr('Kehittynyt', 'Evolved') : `${tr('Taso', 'Level')} ${w.level}/${def.levels.length + 1}`}</span>
                         </div>
                         {evo && !def.evolved && (
                           <div className="desc">
-                            {tr('Kehittyy: taso', 'Evolves: level')} {def.levels.length + 1} + {icon(evo.icon)} {evo.name}
+                            {tr('Kehittyy: taso', 'Evolves: level')} {def.levels.length + 1} + {icon(evo.icon)} {t(evo.name)}
                           </div>
                         )}
                       </div>
