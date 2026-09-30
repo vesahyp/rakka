@@ -6,7 +6,7 @@
 #   make balance    # bot runs, one line per run (MIN=20 RUNS=2 CHAR=; CHAR=vaino+aino is co-op)
 #   make shots      # phone screenshots into shots/ (needs make shots-setup)
 #   make shots-en   # the same in English, into shots/en/
-#   make icon       # re-render the app icon from the game sprites (dev server up)
+#   make icon       # render public/icon.svg to the PNG icons
 #   make plan/apply # Terraform for the analytics pixel host (infra/)
 #   make deploy-pixel  # upload t.gif with no-store to the pixel bucket
 #   make analytics  # run the traffic rollup now (the 08:30 cron does it nightly)
