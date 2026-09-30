@@ -9,6 +9,7 @@ import { loadRecords, saveRun, type Records } from './records';
 import { UpdateBanner } from './ui/Update';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { BUILD, BUILD_NAME } from './version';
+import { lang, setLang } from './i18n';
 
 type Screen = { kind: 'title' } | { kind: 'select'; players: 1 | 2 } | { kind: 'records' } | { kind: 'stats' } | { kind: 'altar' } | { kind: 'run'; characters: CharacterDef[]; seed: number } | { kind: 'dead'; r: RunSummary; rank: number; charBest: boolean; cones: number };
 
@@ -25,6 +26,8 @@ function Screens() {
   const [screen, setScreen] = useState<Screen>(() => (new URLSearchParams(location.search).has('stats') ? { kind: 'stats' } : { kind: 'title' }));
   const [records, setRecords] = useState<Records>(() => loadRecords());
   const [meta, setMeta] = useState<Meta>(() => loadMeta());
+  // The language is module state (i18n.ts); this copy only re-renders the screens when it changes.
+  const [, setLangState] = useState(lang);
   // iOS can leave the fixed body scrolled after a keyboard; every screen
   // starts from the top.
   useEffect(() => {
@@ -36,7 +39,15 @@ function Screens() {
   let body;
   switch (screen.kind) {
     case 'title':
-      body = <Title records={records} meta={meta} onPlay={(players) => setScreen({ kind: 'select', players })} onRecords={() => setScreen({ kind: 'records' })} onAltar={() => setScreen({ kind: 'altar' })} />;
+      body = (
+        <Title
+          records={records} meta={meta} onPlay={(players) => setScreen({ kind: 'select', players })} onRecords={() => setScreen({ kind: 'records' })} onAltar={() => setScreen({ kind: 'altar' })}
+          onLang={(l) => {
+            setLang(l);
+            setLangState(l);
+          }}
+        />
+      );
       break;
     case 'select':
       body = <Select records={records} players={screen.players} onPick={start} onBack={() => setScreen({ kind: 'title' })} />;

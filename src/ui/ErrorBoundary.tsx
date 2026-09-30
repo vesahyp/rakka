@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { reloadApp } from '../version';
+import { tr } from '../i18n';
 
 /** A crash shows a reload button instead of a dead screen on the home-screen app. */
 export class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
@@ -11,10 +12,10 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: s
     if (!this.state.error) return this.props.children;
     return (
       <div className="screen">
-        <h2>Jokin meni pieleen</h2>
+        <h2>{tr('Jokin meni pieleen', 'Something went wrong')}</h2>
         <p className="small">{this.state.error}</p>
         <button className="btn primary" onClick={reloadApp}>
-          Lataa uudelleen
+          {tr('Lataa uudelleen', 'Reload')}
         </button>
       </div>
     );

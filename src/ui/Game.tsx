@@ -16,6 +16,7 @@ import { botInput, botPick } from '../../tools/autoplayer';
 import { Rng } from '../game/rng';
 import { audio } from '../audio';
 import { UpdateBanner } from './Update';
+import { tr } from '../i18n';
 
 export interface RunSummary {
   /** the first hero, for records and the board; `characters` has everyone */
@@ -66,7 +67,7 @@ type Overlay = { kind: 'none' } | { kind: 'levelup'; hero: number; offers: Offer
 function HeroTag({ h }: { h: Hero }) {
   return (
     <div className="herotag" style={{ color: HERO_COLORS[h.index] }}>
-      Pelaaja {h.index + 1} · {h.character.name}
+      {tr('Pelaaja', 'Player')} {h.index + 1} · {h.character.name}
     </div>
   );
 }
@@ -368,13 +369,15 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
   const xpbar = (h: HeroHud, i: number) => (
     <div className="xpbar" key={i} style={coop ? { borderColor: HERO_COLORS[i] } : undefined}>
       <div style={{ width: `${Math.min(100, (h.xp / h.xpNext) * 100)}%` }} />
-      <span>TASO {h.level}</span>
+      <span>
+        {tr('TASO', 'LEVEL')} {h.level}
+      </span>
     </div>
   );
   const hpbar = (h: HeroHud, i: number) => (
     <div className={'hpbar' + (coop ? ` p${i}` : '')} key={i} style={coop ? { borderColor: HERO_COLORS[i] } : undefined}>
       <div style={{ width: `${Math.max(0, (h.hp / h.maxHp) * 100)}%`, opacity: h.alive ? 1 : 0.3 }} />
-      <span>{h.alive ? `${Math.ceil(h.hp)} / ${h.maxHp}` : 'Kaatunut'}</span>
+      <span>{h.alive ? `${Math.ceil(h.hp)} / ${h.maxHp}` : tr('Kaatunut', 'Down')}</span>
     </div>
   );
   return (
@@ -412,13 +415,13 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
           )}
           {overlay.kind === 'none' && (
             <>
-              <button className="pausebtn" data-ui onClick={() => setOverlay({ kind: 'pause' })} aria-label="Tauko">
+              <button className="pausebtn" data-ui onClick={() => setOverlay({ kind: 'pause' })} aria-label={tr('Tauko', 'Pause')}>
                 II
               </button>
               <button
                 className="pausebtn mutebtn"
                 data-ui
-                aria-label={muted ? 'Äänet päälle' : 'Äänet pois'}
+                aria-label={muted ? tr('Äänet päälle', 'Sound on') : tr('Äänet pois', 'Sound off')}
                 onClick={() => {
                   audio.setMuted(!muted);
                   setMuted(!muted);
@@ -446,7 +449,9 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
       {overlay.kind === 'levelup' && s && (
         <div className="overlay" data-ui>
           {coop && <HeroTag h={s.heroes[overlay.hero]} />}
-          <h2>Taso {s.heroes[overlay.hero].player.level}</h2>
+          <h2>
+            {tr('Taso', 'Level')} {s.heroes[overlay.hero].player.level}
+          </h2>
           <div className="cards">
             {overlay.offers.map((o, i) => (
               <OfferCard key={o.id + i} o={o} index={i} onPick={(o) => pick(overlay.hero, o)} />
@@ -462,7 +467,7 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
                 setOverlay({ kind: 'levelup', hero: overlay.hero, offers: rollOffers(s, h) });
               }}
             >
-              🎲 Heitä uudelleen ({s.heroes[overlay.hero].stats.reroll})
+              🎲 {tr('Heitä uudelleen', 'Reroll')} ({s.heroes[overlay.hero].stats.reroll})
             </button>
           )}
         </div>
@@ -471,50 +476,50 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
         <div className="overlay" data-ui onClick={() => setOverlay({ kind: 'none' })}>
           <div className="chest">🪵</div>
           {coop && <HeroTag h={s.heroes[overlay.hero]} />}
-          <h2>{overlay.result.size === 5 ? 'Tapion suuri lahja' : overlay.result.size === 3 ? 'Tapion lahja' : 'Arkku'}</h2>
+          <h2>{overlay.result.size === 5 ? tr('Tapion suuri lahja', "Tapio's great gift") : overlay.result.size === 3 ? tr('Tapion lahja', "Tapio's gift") : tr('Arkku', 'Chest')}</h2>
           <div className="cards">
             {overlay.result.items.map((o, i) => (
               <OfferCard key={o.id + i} o={o} />
             ))}
           </div>
-          <p className="small">Napauta jatkaaksesi</p>
+          <p className="small">{tr('Napauta jatkaaksesi', 'Tap to continue')}</p>
         </div>
       )}
       {overlay.kind === 'pause' && s && (
         <div className="overlay" data-ui>
           <UpdateBanner />
-          <h2>Tauko</h2>
+          <h2>{tr('Tauko', 'Paused')}</h2>
           {!coop && (
             <div className="stats">
-              <span>Aika</span>
+              <span>{tr('Aika', 'Time')}</span>
               <b>{fmtTime(s.time)}</b>
-              <span>Taso</span>
+              <span>{tr('Taso', 'Level')}</span>
               <b>{s.heroes[0].player.level}</b>
-              <span>Kaadot</span>
+              <span>{tr('Kaadot', 'Kills')}</span>
               <b>{s.run.kills}</b>
-              <span>Vahinko</span>
+              <span>{tr('Vahinko', 'Damage')}</span>
               <b>{Math.round(s.heroes[0].stats.might * 100)} %</b>
-              <span>Alue</span>
+              <span>{tr('Alue', 'Area')}</span>
               <b>{Math.round(s.heroes[0].stats.area * 100)} %</b>
-              <span>Latausaika</span>
+              <span>{tr('Latausaika', 'Cooldown')}</span>
               <b>{Math.round(s.heroes[0].stats.cooldown * 100)} %</b>
-              <span>Nopeus</span>
+              <span>{tr('Nopeus', 'Speed')}</span>
               <b>{Math.round(s.heroes[0].stats.moveSpeed * 100)} %</b>
-              <span>Suoja</span>
+              <span>{tr('Suoja', 'Armor')}</span>
               <b>{s.heroes[0].stats.armor}</b>
-              <span>Palautuminen</span>
+              <span>{tr('Palautuminen', 'Recovery')}</span>
               <b>{s.heroes[0].stats.regen.toFixed(1)} /s</b>
-              <span>Onni</span>
+              <span>{tr('Onni', 'Luck')}</span>
               <b>{Math.round(s.heroes[0].stats.luck * 100)} %</b>
-              <span>Kirous</span>
+              <span>{tr('Kirous', 'Curse')}</span>
               <b>{Math.round(s.heroes[0].stats.curse * 100)} %</b>
             </div>
           )}
           {coop && (
             <div className="stats">
-              <span>Aika</span>
+              <span>{tr('Aika', 'Time')}</span>
               <b>{fmtTime(s.time)}</b>
-              <span>Kaadot</span>
+              <span>{tr('Kaadot', 'Kills')}</span>
               <b>{s.run.kills}</b>
             </div>
           )}
@@ -528,7 +533,9 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
                     <div className="body">
                       <div className="name">
                         <span>{POWERS[p.id].name}</span>
-                        <span className="lvl">Taika {p.level}/{POWERS[p.id].maxLevel}</span>
+                        <span className="lvl">
+                          {tr('Taika', 'Charm')} {p.level}/{POWERS[p.id].maxLevel}
+                        </span>
                       </div>
                       <div className="desc">{POWERS[p.id].desc}</div>
                     </div>
@@ -543,11 +550,11 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
                       <div className="body">
                         <div className="name">
                           <span>{def.name}</span>
-                          <span className="lvl">{def.evolved ? 'Kehittynyt' : `Taso ${w.level}/${def.levels.length + 1}`}</span>
+                          <span className="lvl">{def.evolved ? tr('Kehittynyt', 'Evolved') : `${tr('Taso', 'Level')} ${w.level}/${def.levels.length + 1}`}</span>
                         </div>
                         {evo && !def.evolved && (
                           <div className="desc">
-                            Kehittyy: taso {def.levels.length + 1} + {icon(evo.icon)} {evo.name}
+                            {tr('Kehittyy: taso', 'Evolves: level')} {def.levels.length + 1} + {icon(evo.icon)} {evo.name}
                           </div>
                         )}
                       </div>
@@ -559,16 +566,16 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
           </div>
           <div className="row" style={{ marginTop: 16 }}>
             <button className="btn primary" onClick={() => setOverlay({ kind: 'none' })}>
-              Jatka
+              {tr('Jatka', 'Continue')}
             </button>
             <button className="btn ghost" onClick={() => setStickMode(stickMode === 'float' ? 'fixed' : 'float')}>
-              {stickMode === 'float' ? '🕹️ Ohjain: kelluva' : '🕹️ Ohjain: kiinteä'}
+              {stickMode === 'float' ? tr('🕹️ Ohjain: kelluva', '🕹️ Stick: floating') : tr('🕹️ Ohjain: kiinteä', '🕹️ Stick: fixed')}
             </button>
             <button className="btn ghost" onClick={onRestart}>
-              Aloita alusta
+              {tr('Aloita alusta', 'Restart')}
             </button>
             <button className="btn ghost" onClick={onQuit}>
-              Lopeta peli
+              {tr('Lopeta peli', 'Quit run')}
             </button>
           </div>
         </div>

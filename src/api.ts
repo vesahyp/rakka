@@ -4,6 +4,8 @@
  * effort: the game never waits on it and the local records stay the
  * fallback when the network is away.
  */
+import { tr } from './i18n';
+
 export const RECORDS_API = 'https://qsp5ltmjrg.execute-api.eu-north-1.amazonaws.com';
 
 export type Period = 'day' | 'week' | 'month' | 'all';
@@ -21,7 +23,12 @@ export interface TopEntry {
   top?: string;
 }
 
-export const PERIOD_LABELS: Record<Period, string> = { day: 'Tänään', week: 'Viikko', month: 'Kuukausi', all: 'Kaikki' };
+export const PERIOD_LABELS: Record<Period, () => string> = {
+  day: () => tr('Tänään', 'Today'),
+  week: () => tr('Viikko', 'Week'),
+  month: () => tr('Kuukausi', 'Month'),
+  all: () => tr('Kaikki', 'All time'),
+};
 
 export async function fetchTop(period: Period, limit = 25): Promise<TopEntry[]> {
   const r = await fetch(`${RECORDS_API}/top?period=${period}&limit=${limit}`);

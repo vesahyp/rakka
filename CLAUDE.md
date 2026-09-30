@@ -58,6 +58,7 @@ src/
   version.ts          build id and the newer-build check behind the update banner
   ui/StatsScreen.tsx  the traffic board, opened with ?stats (TRACKING.md)
   api.ts              the global records API client (infra/records.tf)
+  i18n.ts             the language: fi or en, tr() and t(), picked from the browser
 analytics/            the clavesa workspace that rolls the pixel logs into
                         data/analytics.json; run-analytics.sh is the 08:30 cron
 tools/
@@ -83,8 +84,12 @@ tools/
    and the tick's flash all live there.
 5. **Bounded arrays.** Enemies cap at 520, berries at 400 (they merge), damage
    texts at 48. The phone is the budget.
-6. **Finnish in the game, English in the code.** UI strings and lore names
-   are Finnish. Identifiers, comments and docs are English.
+6. **Two languages in the game, English in the code.** Every player-facing
+   string exists in Finnish and English (`src/i18n.ts`): UI strings as
+   `tr(fi, en)`, content as `L(fi, en)`. Lore names (heroes, spirits, gods,
+   Finnish things with no English word) stay Finnish in both. The sim may
+   call `t()` and `tr()`: the language is module state with no DOM in it.
+   Identifiers, comments and docs are English.
 7. **A hero, not the player.** Everything that belongs to one build (stats,
    weapons, passives, taiat, level) hangs off a `Hero`; the sim holds a
    list of them. What is shared (enemies, berries, pickups, cones, the

@@ -12,15 +12,16 @@ import { fetchTop, fetchRank, loadInitials, PERIOD_LABELS, type Period, type Top
 import type { RunRecord } from '../records';
 import { audio } from '../audio';
 import type { Meta } from '../meta';
+import { lang, num, tr, type Lang } from '../i18n';
 
-export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: Records; meta: Meta; onPlay: (players: 1 | 2) => void; onRecords: () => void; onAltar: () => void }) {
+export function Title({ records, meta, onPlay, onRecords, onAltar, onLang }: { records: Records; meta: Meta; onPlay: (players: 1 | 2) => void; onRecords: () => void; onAltar: () => void; onLang: (l: Lang) => void }) {
   const best = records.best[0];
   const [muted, setMuted] = useState(audio.muted);
   return (
     <div className="screen">
       <img className="titleicon" src={`${import.meta.env.BASE_URL}icon-512.png`} alt="" width={128} height={128} />
       <h1 className="logo">RÄKKÄ</h1>
-      <p className="tagline">Metsä ei lopu. Räkkä ei lopu.</p>
+      <p className="tagline">{tr('Metsä ei lopu. Räkkä ei lopu.', 'The forest never ends. Neither do the swarms.')}</p>
       <button
         className="btn primary"
         onClick={() => {
@@ -29,7 +30,7 @@ export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: 
         }}
         data-ui
       >
-        Pelaa
+        {tr('Pelaa', 'Play')}
       </button>
       <button
         className="btn"
@@ -39,14 +40,14 @@ export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: 
         }}
         data-ui
       >
-        Kaksin
+        {tr('Kaksin', 'Two players')}
       </button>
       <div className="row">
         <button className="btn ghost" onClick={onRecords} data-ui>
-          Tulostaulu
+          {tr('Tulostaulu', 'Leaderboard')}
         </button>
         <button className="btn ghost" onClick={onAltar} data-ui>
-          🌲 Tapion pöytä{meta.cones > 0 ? ` (${meta.cones})` : ''}
+          🌲 {tr('Tapion pöytä', "Tapio's Table")}{meta.cones > 0 ? ` (${meta.cones})` : ''}
         </button>
         <button
           className="btn ghost"
@@ -57,16 +58,22 @@ export function Title({ records, meta, onPlay, onRecords, onAltar }: { records: 
             setMuted(!muted);
           }}
         >
-          {muted ? '🔇 Äänet pois' : '🔊 Äänet päällä'}
+          {muted ? tr('🔇 Äänet pois', '🔇 Sound off') : tr('🔊 Äänet päällä', '🔊 Sound on')}
+        </button>
+        <button className="btn ghost" data-ui onClick={() => onLang(lang() === 'fi' ? 'en' : 'fi')}>
+          {lang() === 'fi' ? '🌐 English' : '🌐 Suomeksi'}
         </button>
       </div>
       {best && (
         <p className="small" style={{ marginTop: 20 }}>
-          Paras: {fmtTime(best.time)}, taso {best.level}
+          {tr('Paras', 'Best')}: {fmtTime(best.time)}, {tr('taso', 'level')} {best.level}
         </p>
       )}
       <p className="help" style={{ marginTop: 24 }}>
-        Liiku peukalolla. Aseet ampuvat itse. Kerää marjat, valitse päivitys, väistä parvi. Kun kuolet, metsä muistaa kuinka pitkälle pääsit.
+        {tr(
+          'Liiku peukalolla. Aseet ampuvat itse. Kerää marjat, valitse päivitys, väistä parvi. Kun kuolet, metsä muistaa kuinka pitkälle pääsit.',
+          'Move with one thumb. Your weapons fire on their own. Collect the berries, pick an upgrade, stay out of the swarm. When you die, the forest remembers how far you got.',
+        )}
       </p>
     </div>
   );
@@ -95,14 +102,17 @@ export function Select({ records, players, onPick, onBack }: { records: Records;
     <div className="screen" style={{ justifyContent: 'flex-start' }}>
       {who > 0 && (
         <div className="herotag" style={{ color: HERO_COLORS[who - 1] }}>
-          Pelaaja {who}
-          {first ? ` · ${first.name} lähtee jo` : ''}
+          {tr('Pelaaja', 'Player')} {who}
+          {first ? ` · ${first.name} ${tr('lähtee jo', 'is ready')}` : ''}
         </div>
       )}
-      <h2>{who === 2 ? 'Kuka lähtee mukaan?' : 'Kuka lähtee metsään?'}</h2>
+      <h2>{who === 2 ? tr('Kuka lähtee mukaan?', 'Who goes along?') : tr('Kuka lähtee metsään?', 'Who goes into the forest?')}</h2>
       {players === 2 && (
         <p className="small" style={{ maxWidth: 380, marginTop: 0 }}>
-          Yksi puhelin, kaksi peukaloa. Käännä puhelin vaakaan: vasen puoli ohjaa ensimmäistä, oikea toista. Näppäimistöllä WASD ja nuolet. Marjat ovat yhteiset, kaatuneen nostaa seisomalla vieressä.
+          {tr(
+            'Yksi puhelin, kaksi peukaloa. Käännä puhelin vaakaan: vasen puoli ohjaa ensimmäistä, oikea toista. Näppäimistöllä WASD ja nuolet. Marjat ovat yhteiset, kaatuneen nostaa seisomalla vieressä.',
+            'One phone, two thumbs. Turn the phone sideways: the left half moves player one, the right half player two. On a keyboard, WASD and the arrow keys. Berries are shared. To revive a fallen hero, stand next to them.',
+          )}
         </p>
       )}
       <div className="chars">
@@ -130,13 +140,17 @@ export function Select({ records, players, onPick, onBack }: { records: Records;
                 {icon(w.icon)} {w.name}
               </div>
               <div className="trait">{open ? c.trait : '🔒 ' + c.unlock!.text}</div>
-              {pc && <div className="small">Paras {fmtTime(pc.time)}, taso {pc.level}</div>}
+              {pc && (
+                <div className="small">
+                  {tr('Paras', 'Best')} {fmtTime(pc.time)}, {tr('taso', 'level')} {pc.level}
+                </div>
+              )}
             </button>
           );
         })}
       </div>
       <button className="btn ghost" onClick={() => (first ? setFirst(null) : onBack())} data-ui>
-        Takaisin
+        {tr('Takaisin', 'Back')}
       </button>
     </div>
   );
@@ -149,11 +163,11 @@ export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSum
   const [ranks, setRanks] = useState<Record<Period, number> | null>(null);
   return (
     <div className="screen">
-      <h2 style={{ color: 'var(--danger)' }}>Metsä otti omansa</h2>
+      <h2 style={{ color: 'var(--danger)' }}>{tr('Metsä otti omansa', 'The forest took you')}</h2>
       <p className="small">
-        {r.characters.map((c) => c.name).join(' ja ')} {coop ? 'selviytyivät' : 'selviytyi'} {fmtTime(r.time)}
+        {r.characters.map((c) => c.name).join(tr(' ja ', ' and '))} {coop ? tr('selviytyivät', 'survived') : tr('selviytyi', 'survived')} {fmtTime(r.time)}
       </p>
-      {coop && <p className="small">Kaksinpeli ei mene tulostaululle. Kävyt kyllä.</p>}
+      {coop && <p className="small">{tr('Kaksinpeli ei mene tulostaululle. Kävyt kyllä.', 'Two-player runs stay off the leaderboard. The cones still count.')}</p>}
       {stage === 'ask' && (
         <Initials
           r={r}
@@ -164,21 +178,25 @@ export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSum
         />
       )}
       {ranks && <RankLine ranks={ranks} />}
-      {cones > 0 && <div className="earned">+{cones} käpyä Tapion pöydälle</div>}
-      {rank === 0 && <div className="record">Uusi paras aika!</div>}
-      {rank > 0 && <div className="record">Sija {rank + 1} omissa tuloksissa</div>}
-      {rank !== 0 && charBest && <div className="record">Hahmon paras aika</div>}
+      {cones > 0 && <div className="earned">+{cones} {tr('käpyä Tapion pöydälle', "cones for Tapio's Table")}</div>}
+      {rank === 0 && <div className="record">{tr('Uusi paras aika!', 'New best time!')}</div>}
+      {rank > 0 && (
+        <div className="record">
+          {tr('Sija', 'Rank')} {rank + 1} {tr('omissa tuloksissa', 'in your runs')}
+        </div>
+      )}
+      {rank !== 0 && charBest && <div className="record">{tr('Hahmon paras aika', 'Best time for this hero')}</div>}
       <div className="stats">
-        <span>Taso</span>
-        <b>{coop ? r.levels.join(' ja ') : r.level}</b>
-        <span>Kaadot</span>
+        <span>{tr('Taso', 'Level')}</span>
+        <b>{coop ? r.levels.join(tr(' ja ', ' and ')) : r.level}</b>
+        <span>{tr('Kaadot', 'Kills')}</span>
         <b>{r.kills}</b>
-        <span>Pomot</span>
+        <span>{tr('Pomot', 'Bosses')}</span>
         <b>{r.bosses}</b>
-        <span>Arkut</span>
+        <span>{tr('Arkut', 'Chests')}</span>
         <b>{r.chests}</b>
-        <span>Vahinko</span>
-        <b>{Math.round(r.damageDealt).toLocaleString('fi')}</b>
+        <span>{tr('Vahinko', 'Damage')}</span>
+        <b>{num(Math.round(r.damageDealt))}</b>
       </div>
       <div className="row" style={{ marginBottom: 16, maxWidth: 360 }}>
         {r.weapons.map((id) => (
@@ -195,10 +213,10 @@ export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSum
       {stage === 'done' && (
         <>
           <button className="btn primary" onClick={onAgain} data-ui>
-            Uudestaan
+            {tr('Uudestaan', 'Play again')}
           </button>
           <button className="btn ghost" onClick={onMenu} data-ui>
-            Valikkoon
+            {tr('Valikkoon', 'Menu')}
           </button>
         </>
       )}
@@ -267,39 +285,39 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
   }, [tab, myBest, myRow, myRank, list]);
   return (
     <div className="screen" style={{ justifyContent: 'flex-start' }}>
-      <h2>Tulostaulu</h2>
+      <h2>{tr('Tulostaulu', 'Leaderboard')}</h2>
       <div className="tabs">
         {TABS.map((t) => (
           <button key={t} className={'tab' + (tab === t ? ' on' : '')} onClick={() => setTab(t)} data-ui>
-            {t === 'mine' ? 'Omat' : PERIOD_LABELS[t]}
+            {t === 'mine' ? tr('Omat', 'Mine') : PERIOD_LABELS[t]()}
           </button>
         ))}
       </div>
-      {tab !== 'mine' && list === undefined && <p className="small">Haetaan…</p>}
-      {tab !== 'mine' && list === 'error' && <p className="small">Tulostaulua ei saatu haettua.</p>}
-      {tab !== 'mine' && Array.isArray(list) && list.length === 0 && <p className="small">Ei vielä tuloksia. Ole ensimmäinen.</p>}
+      {tab !== 'mine' && list === undefined && <p className="small">{tr('Haetaan…', 'Loading…')}</p>}
+      {tab !== 'mine' && list === 'error' && <p className="small">{tr('Tulostaulua ei saatu haettua.', 'The leaderboard did not load.')}</p>}
+      {tab !== 'mine' && Array.isArray(list) && list.length === 0 && <p className="small">{tr('Ei vielä tuloksia. Ole ensimmäinen.', 'No runs yet. Be the first.')}</p>}
       {tab !== 'mine' && Array.isArray(list) && list.length > 0 && (
         <table className="records global">
           <thead>
             <tr>
               <th>#</th>
-              <th>Nimi</th>
-              <th>Hahmo</th>
-              <th>Aika</th>
-              <th className="n">Taso</th>
-              <th className="n">Kaadot</th>
-              {tab === 'all' && <th className="n">Pvm</th>}
+              <th>{tr('Nimi', 'Name')}</th>
+              <th>{tr('Hahmo', 'Hero')}</th>
+              <th>{tr('Aika', 'Time')}</th>
+              <th className="n">{tr('Taso', 'Level')}</th>
+              <th className="n">{tr('Kaadot', 'Kills')}</th>
+              {tab === 'all' && <th className="n">{tr('Pvm', 'Date')}</th>}
             </tr>
           </thead>
           <tbody>
             {list.map((e, i) => (
-              <tr key={i} className={i === myRow ? 'me best' : e.name === mine ? 'me' : ''} title={`${e.bosses} pomoa`}>
+              <tr key={i} className={i === myRow ? 'me best' : e.name === mine ? 'me' : ''} title={`${e.bosses} ${tr('pomoa', 'bosses')}`}>
                 <td>{i + 1}</td>
                 <td className="name">{e.name}</td>
                 <td>
                   {charName(e.character)}
                   {e.top && WEAPONS[e.top] && (
-                    <span className="topw" title={`Eniten vahinkoa: ${WEAPONS[e.top].name}`}>
+                    <span className="topw" title={`${tr('Eniten vahinkoa', 'Most damage')}: ${WEAPONS[e.top].name}`}>
                       {' '}
                       {icon(WEAPONS[e.top].icon)}
                     </span>
@@ -307,8 +325,8 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
                 </td>
                 <td>{fmtTime(e.time)}</td>
                 <td className="n">{e.level}</td>
-                <td className="n">{e.kills.toLocaleString('fi')}</td>
-                {tab === 'all' && <td className="n small">{e.at.slice(5, 10).replace('-', '.')}</td>}
+                <td className="n">{num(e.kills)}</td>
+                {tab === 'all' && <td className="n small">{lang() === 'en' ? e.at.slice(5, 10).replace('-', '/') : e.at.slice(5, 10).replace('-', '.')}</td>}
               </tr>
             ))}
           </tbody>
@@ -319,27 +337,34 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
           <tbody>
             <tr className="me best">
               <td>{myRank[tab] ?? '…'}</td>
-              <td className="name">{mine || 'Sinä'}</td>
+              <td className="name">{mine || tr('Sinä', 'You')}</td>
               <td>{charName(myBest.character)}</td>
               <td>{fmtTime(myBest.time)}</td>
               <td className="n">{myBest.level}</td>
-              <td className="n">{myBest.kills.toLocaleString('fi')}</td>
-              {tab === 'all' && <td className="n small">oma paras</td>}
+              <td className="n">{num(myBest.kills)}</td>
+              {tab === 'all' && <td className="n small">{tr('oma paras', 'your best')}</td>}
             </tr>
           </tbody>
         </table>
       )}
-      {tab !== 'mine' && <p className="small">Järjestys: aika, sitten kaadot. Päivä vaihtuu keskiyöllä Suomen aikaa, viikko maanantaina. Oma paras korostettu; listan ulkopuolella se näkyy sijoineen alla.</p>}
-      {tab === 'mine' && records.best.length === 0 && <p className="small">Ei vielä yhtään peliä.</p>}
+      {tab !== 'mine' && (
+        <p className="small">
+          {tr(
+            'Järjestys: aika, sitten kaadot. Päivä vaihtuu keskiyöllä Suomen aikaa, viikko maanantaina. Oma paras korostettu; listan ulkopuolella se näkyy sijoineen alla.',
+            'Ranked by time, then kills. The day changes at midnight Finnish time, the week on Monday. Your best is highlighted; when it is not on the list, it shows below with its rank.',
+          )}
+        </p>
+      )}
+      {tab === 'mine' && records.best.length === 0 && <p className="small">{tr('Ei vielä yhtään peliä.', 'No runs yet.')}</p>}
       {tab === 'mine' && records.best.length > 0 && (
         <table className="records">
           <thead>
             <tr>
               <th>#</th>
-              <th>Hahmo</th>
-              <th>Aika</th>
-              <th className="n">Taso</th>
-              <th className="n">Kaadot</th>
+              <th>{tr('Hahmo', 'Hero')}</th>
+              <th>{tr('Aika', 'Time')}</th>
+              <th className="n">{tr('Taso', 'Level')}</th>
+              <th className="n">{tr('Kaadot', 'Kills')}</th>
             </tr>
           </thead>
           <tbody>
@@ -357,11 +382,11 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
       )}
       {tab === 'mine' && (
         <p className="small">
-          {records.runs} peliä, {records.totalKills.toLocaleString('fi')} kaatoa, {fmtTime(records.totalTime)} metsässä
+          {records.runs} {tr('peliä', 'runs')}, {num(records.totalKills)} {tr('kaatoa', 'kills')}, {fmtTime(records.totalTime)} {tr('metsässä', 'in the forest')}
         </p>
       )}
       <button className="btn ghost" onClick={onBack} data-ui>
-        Takaisin
+        {tr('Takaisin', 'Back')}
       </button>
     </div>
   );

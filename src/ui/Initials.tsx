@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadInitials, saveInitials, submitScore, type Period, PERIOD_LABELS } from '../api';
 import type { RunSummary } from './Game';
+import { tr } from '../i18n';
 
 /**
  * Three letters, like a pinball machine. A hidden input drives the keyboard
@@ -35,15 +36,15 @@ export function Initials({ r, onDone }: { r: RunSummary; onDone: (ranks: Record<
       const ranks = await submitScore({ name, character: r.character.id, time: r.time, level: r.level, kills: r.kills, bosses: r.bosses, weapons: r.weapons, top: r.topWeapon });
       onDone(ranks);
     } catch {
-      setError('Tulos ei mennyt perille. Paikallinen tulos on tallessa.');
+      setError(tr('Tulos ei mennyt perille. Paikallinen tulos on tallessa.', 'The score did not reach the server. It is saved on this device.'));
       setBusy(false);
     }
   };
 
   return (
     <div className="initials" data-ui onClick={() => input.current?.focus()}>
-      {name.length < 3 && <div className="small">Napauta laatikoita ja kirjoita</div>}
-      <div className="small">Nimikirjaimet tulostaululle</div>
+      {name.length < 3 && <div className="small">{tr('Napauta laatikoita ja kirjoita', 'Tap the boxes and type')}</div>}
+      <div className="small">{tr('Nimikirjaimet tulostaululle', 'Your initials for the leaderboard')}</div>
       <div className="boxes">
         {[0, 1, 2].map((i) => (
           <div key={i} className={'box' + (name.length === i ? ' active' : '')}>
@@ -64,16 +65,16 @@ export function Initials({ r, onDone }: { r: RunSummary; onDone: (ranks: Record<
         autoCorrect="off"
         spellCheck={false}
         inputMode="text"
-        aria-label="Nimikirjaimet"
+        aria-label={tr('Nimikirjaimet', 'Initials')}
         className="initials-input"
       />
       {error && <div className="small" style={{ color: 'var(--danger)' }}>{error}</div>}
       <div className="row">
         <button className="btn primary" disabled={!ok || busy} onClick={() => void send()}>
-          {busy ? 'Lähetetään' : 'Tallenna'}
+          {busy ? tr('Lähetetään', 'Sending') : tr('Tallenna', 'Save')}
         </button>
         <button className="btn ghost" onClick={() => onDone(null)}>
-          Ohita
+          {tr('Ohita', 'Skip')}
         </button>
       </div>
     </div>
@@ -86,7 +87,7 @@ export function RankLine({ ranks }: { ranks: Record<Period, number> }) {
     <div className="ranks">
       {best.map(([p, n]) => (
         <span key={p} className={n <= 3 ? 'top' : ''}>
-          {PERIOD_LABELS[p]} #{n}
+          {PERIOD_LABELS[p]()} #{n}
         </span>
       ))}
     </div>

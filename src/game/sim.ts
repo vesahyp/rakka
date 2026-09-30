@@ -5,6 +5,7 @@ import { ENEMIES, BOSS_ORDER, type EnemyId } from './content/enemies';
 import { WAVES, SWARM_EVENTS, BOSS_MINUTES, type SpawnEntry } from './content/waves';
 import { updateWeapons, updateProjectiles, updateZones, dropWeapons } from './weapons';
 import { addText, healPlayer, hurt, onScreen, sound } from './combat';
+import { tr } from '../i18n';
 import { computeStats, powerLevel } from './upgrades';
 import { collideTrees, featuresNear, cellKey } from './forest';
 
@@ -170,7 +171,7 @@ function movePlayer(s: SimState, h: Hero, input: Input, dt: number): void {
     if (Math.hypot(f.x - p.x, f.y - p.y) > PLAYER_RADIUS + 7) return;
     s.eaten.add(key);
     s.trip = 9;
-    addText(s, p.x, p.y - 18, 'Kärpässieni! Metsä huojuu', '#ff6a6a', true);
+    addText(s, p.x, p.y - 18, tr('Kärpässieni! Metsä huojuu', 'Fly agaric! The forest sways'), '#ff6a6a', true);
     sound(s, 'swarm');
   });
 }
@@ -223,7 +224,7 @@ function revive(s: SimState, dt: number): void {
     for (const e of s.enemies) {
       if (!e.boss && Math.hypot(e.x - p.x, e.y - p.y) < 120) hurt(s, null, e, 9999, 0, 0, 0);
     }
-    s.banner = { text: `${h.character.name} nousee`, sub: 'Toveri nosti', life: 2.5 };
+    s.banner = { text: `${h.character.name} ${tr('nousee', 'is back up')}`, sub: tr('Toveri nosti', 'A friend helped'), life: 2.5 };
     sound(s, 'revive');
   }
 }
@@ -414,7 +415,7 @@ function direct(s: SimState, dt: number): void {
     drop(s, 'kapyarkku', s.cam.x + Math.cos(a) * far, s.cam.y + Math.sin(a) * far);
     const b = a + Math.PI + (s.rng.next() - 0.5) * 1.6;
     drop(s, 'avain', s.cam.x + Math.cos(b) * far, s.cam.y + Math.sin(b) * far);
-    s.banner = { text: 'Käpyarkku', sub: 'Lukossa. Avain on jossain metsässä', life: 3 };
+    s.banner = { text: tr('Käpyarkku', 'Cone chest'), sub: tr('Lukossa. Avain on jossain metsässä', 'Locked. The key is somewhere in the forest'), life: 3 };
     sound(s, 'chest');
   }
 
@@ -424,7 +425,7 @@ function direct(s: SimState, dt: number): void {
     s.tuoni++;
     spawnPoint(s, tmp, 80);
     spawnEnemy(s, ENEMIES.tuoni, tmp.x, tmp.y);
-    s.banner = { text: 'Tuoni saapuu', sub: s.tuoni === 1 ? 'Metsä sulkeutuu' : 'Toinen tulee', life: 3.5 };
+    s.banner = { text: tr('Tuoni saapuu', 'Tuoni arrives'), sub: s.tuoni === 1 ? tr('Metsä sulkeutuu', 'Death has come for you') : tr('Toinen tulee', 'Another one comes'), life: 3.5 };
     sound(s, 'boss');
     s.shake = 1.2;
   }
@@ -437,7 +438,7 @@ function direct(s: SimState, dt: number): void {
     b.t1 = 3;
     s.bossIndex++;
     s.bossesAlive++;
-    s.banner = { text: `${ENEMIES[id].name} saapuu`, sub: 'Pomo', life: 3 };
+    s.banner = { text: `${ENEMIES[id].name} ${tr('saapuu', 'arrives')}`, sub: tr('Pomo', 'Boss'), life: 3 };
     sound(s, 'boss');
     s.shake = 0.7;
     const i = BOSS_MINUTES.indexOf(s.nextBossMinute);
@@ -463,7 +464,7 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
       e.hp *= 2;
       e.maxHp = e.hp;
     }
-    s.banner = { text: 'Piiri', sub: `${def.name} sulkee renkaan. Murra se.`, life: 3 };
+    s.banner = { text: tr('Piiri', 'The ring'), sub: `${def.name} ${tr('sulkee renkaan. Murra se.', 'close the ring. Break through.')}`, life: 3 };
     sound(s, 'swarm');
     s.shake = 0.6;
     return;
@@ -474,7 +475,7 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
       const a = (i / count) * Math.PI * 2;
       spawnEnemy(s, def, c.x + Math.cos(a) * r, c.y + Math.sin(a) * r);
     }
-    s.banner = { text: 'Räkkä', sub: `${def.name} joka suunnasta`, life: 2.5 };
+    s.banner = { text: 'Räkkä', sub: `${def.name} ${tr('joka suunnasta', 'from every side')}`, life: 2.5 };
     sound(s, 'swarm');
     s.shake = 0.4;
   } else {
@@ -510,7 +511,7 @@ function swarm(s: SimState, kind: 'ring' | 'column' | 'circle', def: EnemyDef, c
         e.maxHp = e.hp;
       }
     }
-    s.banner = { text: 'Vaellus', sub: `${def.name} tulee seinänä`, life: 2.5 };
+    s.banner = { text: tr('Vaellus', 'Migration'), sub: `${def.name} ${tr('tulee seinänä', 'come as a wall')}`, life: 2.5 };
     sound(s, 'swarm');
     s.shake = 0.9;
   }
@@ -721,7 +722,7 @@ function bite(s: SimState, h: Hero, e: Enemy, dmgScale: number): void {
   if (hide > 0 && p.hideCd <= 0 && dmg >= h.stats.maxHp * 0.08) {
     p.invuln = 0.8 * hide + 0.4;
     p.hideCd = 15;
-    addText(s, p.x, p.y - 16, 'Piilossa', '#c8f0ff', true);
+    addText(s, p.x, p.y - 16, tr('Piilossa', 'Hidden'), '#c8f0ff', true);
   }
   if (p.hp <= 0) die(s, h);
 }
@@ -736,7 +737,7 @@ function die(s: SimState, h: Hero): void {
     for (const e of s.enemies) {
       if (!e.boss && Math.hypot(e.x - p.x, e.y - p.y) < 260) hurt(s, null, e, 9999, 0, 0, 0);
     }
-    s.banner = { text: 'Lovi', sub: 'Palaat toisesta maailmasta', life: 2.5 };
+    s.banner = { text: tr('Lovi', 'Trance'), sub: tr('Palaat toisesta maailmasta', 'You return from the other world'), life: 2.5 };
     sound(s, 'revive');
     return;
   }
@@ -751,7 +752,7 @@ function die(s: SimState, h: Hero): void {
     return;
   }
   // Co-op: the partner has three seconds beside them to bring them back.
-  s.banner = { text: `${h.character.name} kaatui`, sub: 'Seiso vierellä, niin hän nousee', life: 3 };
+  s.banner = { text: `${h.character.name} ${tr('kaatui', 'is down')}`, sub: tr('Seiso vierellä, niin hän nousee', 'Stand next to them to revive them'), life: 3 };
   sound(s, 'death');
 }
 
@@ -783,7 +784,7 @@ function reap(s: SimState): void {
       drop(s, 'kapy', e.x - 30, e.y);
       // A boss pays in a spray of berries.
       for (let k = 0; k < 12; k++) addGem(s, e.x + (s.rng.next() - 0.5) * 80, e.y + (s.rng.next() - 0.5) * 80, Math.ceil(e.def.xp / 12));
-      s.banner = { text: `${e.def.name} kaatui`, sub: 'Arkku putosi', life: 2.5 };
+      s.banner = { text: `${e.def.name} ${tr('kaatui', 'is defeated')}`, sub: tr('Arkku putosi', 'A chest dropped'), life: 2.5 };
       sound(s, 'bosskill');
       continue;
     }
@@ -930,7 +931,7 @@ function collect(s: SimState, h: Hero, kind: PickupKind, x: number, y: number): 
       break;
     case 'lakka':
       for (const g of s.gems) g.pull = true;
-      addText(s, x, y, 'Lakka! Marjat lentävät', '#ffb347', true);
+      addText(s, x, y, tr('Lakka! Marjat lentävät', 'Cloudberry! The berries fly to you'), '#ffb347', true);
       sound(s, 'pickup');
       break;
     case 'kekale':
@@ -943,26 +944,26 @@ function collect(s: SimState, h: Hero, kind: PickupKind, x: number, y: number): 
       break;
     case 'kapy':
       s.run.cones++;
-      addText(s, x, y, '+1 käpy', '#c9a46c', true);
+      addText(s, x, y, tr('+1 käpy', '+1 cone'), '#c9a46c', true);
       sound(s, 'pickup');
       break;
     case 'avain':
       s.run.keys++;
-      addText(s, x, y, 'Avain! Etsi käpyarkku', '#e8c060', true);
+      addText(s, x, y, tr('Avain! Etsi käpyarkku', 'A key! Find the cone chest'), '#e8c060', true);
       sound(s, 'pickup');
       break;
     case 'kapyarkku':
       if (s.run.keys <= 0) {
         if (s.lockHint <= 0) {
           s.lockHint = 2;
-          addText(s, x, y - 14, 'Lukossa. Etsi avain', '#e8c060', true);
+          addText(s, x, y - 14, tr('Lukossa. Etsi avain', 'Locked. Find the key'), '#e8c060', true);
         }
         return false;
       }
       s.run.keys--;
       s.run.cones += 5;
       s.pendingChests.push(h.index);
-      addText(s, x, y, '+5 käpyä', '#c9a46c', true);
+      addText(s, x, y, tr('+5 käpyä', '+5 cones'), '#c9a46c', true);
       s.effects.push({ kind: 'burst', x, y, x2: 0, y2: 0, life: 0.6, maxLife: 0.6, color: '#e8c060', radius: 60 });
       sound(s, 'chestbig');
       break;

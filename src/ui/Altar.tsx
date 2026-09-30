@@ -3,6 +3,7 @@ import { ALTAR, buy, rankPrice, refundAll, totalRanks, exportCode, importCode, a
 import { icon } from './icons';
 import { audio } from '../audio';
 import { track } from '../records';
+import { tr } from '../i18n';
 
 export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Meta) => void; onBack: () => void }) {
   const [confirm, setConfirm] = useState(false);
@@ -24,11 +25,16 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
   const pasted = importCode(typed);
   return (
     <div className="screen" style={{ justifyContent: 'flex-start' }}>
-      <h2>Tapion pöytä</h2>
+      <h2>{tr('Tapion pöytä', "Tapio's Table")}</h2>
       <p className="small" style={{ maxWidth: 380 }}>
-        Jätä käpyjä kannolle, niin metsä on vähän armollisempi. Kävyt kerätään metsästä pelin aikana. Jokainen aste maksaa enemmän kuin edellinen, ja mitä täydempi pöytä, sitä kalliimpi seuraava. Kaiken saa takaisin.
+        {tr(
+          'Jätä käpyjä kannolle, niin metsä on vähän armollisempi. Kävyt kerätään metsästä pelin aikana. Jokainen aste maksaa enemmän kuin edellinen, ja mitä täydempi pöytä, sitä kalliimpi seuraava. Kaiken saa takaisin.',
+          'Leave cones on the stump and the forest is a little kinder. You collect cones in the forest during a run. Each rank costs more than the one before, and the fuller the table, the more the next one costs. You can take everything back.',
+        )}
       </p>
-      <div className="cones">🌲 {meta.cones} käpyä</div>
+      <div className="cones">
+        🌲 {meta.cones} {tr('käpyä', 'cones')}
+      </div>
       <div className="cards" style={{ marginTop: 10 }}>
         {ALTAR.map((item) => {
           const have = meta.ranks[item.id] ?? 0;
@@ -47,7 +53,7 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
                   </span>
                 </div>
                 <div className="desc">
-                  {item.desc} {item.rankText} per aste.
+                  {item.desc} {item.rankText} {tr('per aste', 'per rank')}.
                 </div>
               </div>
               <button
@@ -63,7 +69,7 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
                   }
                 }}
               >
-                {maxed ? 'Täysi' : `${price} 🌲`}
+                {maxed ? tr('Täysi', 'Full') : `${price} 🌲`}
               </button>
             </div>
           );
@@ -71,25 +77,25 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
       </div>
       <div className="row" style={{ marginTop: 16 }}>
         <button className="btn primary" onClick={onBack} data-ui>
-          Valmis
+          {tr('Valmis', 'Done')}
         </button>
         <button className="btn ghost" onClick={() => setCodeOpen(!codeOpen)} data-ui>
-          {codeOpen ? 'Piilota koodi' : 'Pöydän koodi'}
+          {codeOpen ? tr('Piilota koodi', 'Hide code') : tr('Pöydän koodi', 'Table code')}
         </button>
         {!confirm && (
           <button className="btn ghost" onClick={() => setConfirm(true)} disabled={owned === 0} data-ui>
-            Ota kaikki takaisin
+            {tr('Ota kaikki takaisin', 'Take everything back')}
           </button>
         )}
       </div>
       {confirm && (
         <div className="panel" style={{ marginTop: 10, maxWidth: 380 }}>
           <p className="small" style={{ margin: '0 0 8px' }}>
-            Kaikki asteet poistuvat ja {meta.spent} käpyä palaa pöydälle. Varmasti?
+            {tr('Kaikki asteet poistuvat ja', 'All ranks are removed and')} {meta.spent} {tr('käpyä palaa pöydälle. Varmasti?', 'cones come back to the table. Are you sure?')}
           </p>
           <div className="row">
             <button className="btn ghost" onClick={() => setConfirm(false)} data-ui>
-              Peru
+              {tr('Peru', 'Cancel')}
             </button>
             <button
               className="btn ghost"
@@ -102,7 +108,7 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
                 setConfirm(false);
               }}
             >
-              Kyllä, ota takaisin
+              {tr('Kyllä, ota takaisin', 'Yes, take it back')}
             </button>
           </div>
         </div>
@@ -110,7 +116,10 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
       {codeOpen && (
         <div className="panel" style={{ marginTop: 10, maxWidth: 380, textAlign: 'left' }}>
           <p className="small" style={{ margin: '0 0 6px' }}>
-            Pöytä on tallessa tässä laitteessa ja selaimessa. Safari ja kotinäytön sovellus eivät jaa tallennusta, joten koodilla pöydän saa siirrettyä toiseen. Kopioi koodi ja liitä se toisaalla.
+            {tr(
+              'Pöytä on tallessa tässä laitteessa ja selaimessa. Safari ja kotinäytön sovellus eivät jaa tallennusta, joten koodilla pöydän saa siirrettyä toiseen. Kopioi koodi ja liitä se toisaalla.',
+              'The table is saved in this browser on this device. Safari and the home screen app do not share storage, so use this code to move the table from one to the other. Copy the code and paste it there.',
+            )}
           </p>
           <div className="code">{code}</div>
           <div className="row" style={{ justifyContent: 'flex-start' }}>
@@ -124,11 +133,13 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
                 );
               }}
             >
-              {copied ? 'Kopioitu' : 'Kopioi'}
+              {copied ? tr('Kopioitu', 'Copied') : tr('Kopioi', 'Copy')}
             </button>
           </div>
-          <p className="small" style={{ margin: '12px 0 6px' }}>Liitä toisen laitteen koodi. Se korvaa tämän pöydän.</p>
-          <input className="codein" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="ESIM. 3K-0-1-0-…" autoCapitalize="characters" autoCorrect="off" spellCheck={false} data-ui />
+          <p className="small" style={{ margin: '12px 0 6px' }}>
+            {tr('Liitä toisen laitteen koodi. Se korvaa tämän pöydän.', 'Paste the code from the other device. It replaces this table.')}
+          </p>
+          <input className="codein" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={tr('ESIM. 3K-0-1-0-…', 'E.G. 3K-0-1-0-…')} autoCapitalize="characters" autoCorrect="off" spellCheck={false} data-ui />
           <div className="row" style={{ justifyContent: 'flex-start', marginTop: 6 }}>
             <button
               className="btn ghost"
@@ -142,9 +153,9 @@ export function Altar({ meta, onChange, onBack }: { meta: Meta; onChange: (m: Me
                 audio.play('pickup');
               }}
             >
-              Tuo pöytä
+              {tr('Tuo pöytä', 'Load table')}
             </button>
-            {typed.trim() !== '' && !pasted && <span className="small">Ei kelpaa koodiksi.</span>}
+            {typed.trim() !== '' && !pasted && <span className="small">{tr('Ei kelpaa koodiksi.', 'That is not a valid code.')}</span>}
           </div>
         </div>
       )}

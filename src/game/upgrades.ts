@@ -3,6 +3,7 @@ import { BASE_STATS, applyDelta, type Stats } from './stats';
 import { PASSIVES, MAX_PASSIVES } from './content/passives';
 import { WEAPONS, BASE_WEAPON_IDS, MAX_WEAPONS, weaponMaxLevel } from './content/weapons';
 import { POWERS, POWER_IDS, MAX_POWERS, POWER_FROM_LEVEL } from './content/powers';
+import { tr } from '../i18n';
 
 export interface Offer {
   kind: 'weapon' | 'passive' | 'power' | 'heal' | 'gold' | 'evolve';
@@ -60,7 +61,7 @@ function powerOffer(h: Hero, id: string): Offer {
     id,
     name: def.name,
     desc: def.desc,
-    levelText: lvl ? def.levelText : 'Uusi taika',
+    levelText: lvl ? def.levelText : tr('Uusi taika', 'New charm'),
     level: lvl + 1,
     maxLevel: def.maxLevel,
     isNew: lvl === 0,
@@ -77,7 +78,7 @@ function weaponOffer(h: Hero, id: string): Offer {
     id,
     name: def.name,
     desc: def.desc,
-    levelText: w ? def.levels[w.level - 1].text : 'Uusi ase',
+    levelText: w ? def.levels[w.level - 1].text : tr('Uusi ase', 'New weapon'),
     level,
     maxLevel: weaponMaxLevel(def),
     isNew: !w,
@@ -93,7 +94,7 @@ function passiveOffer(h: Hero, id: string): Offer {
     id,
     name: def.name,
     desc: def.desc,
-    levelText: p ? def.levelText : 'Uusi esine',
+    levelText: p ? def.levelText : tr('Uusi esine', 'New item'),
     level: p ? p.level + 1 : 1,
     maxLevel: def.maxLevel,
     isNew: !p,
@@ -101,8 +102,8 @@ function passiveOffer(h: Hero, id: string): Offer {
   };
 }
 
-const HEAL_OFFER: Offer = { kind: 'heal', id: 'kanttarelli', name: 'Kanttarelli', desc: 'Parantaa 30 elinvoimaa.', levelText: '', level: 0, maxLevel: 0, isNew: false, icon: 'kanttarelli' };
-const GOLD_OFFER: Offer = { kind: 'gold', id: 'marjat', name: 'Kourallinen lakkoja', desc: 'Kokemusta heti.', levelText: '', level: 0, maxLevel: 0, isNew: false, icon: 'lakka' };
+const healOffer = (): Offer => ({ kind: 'heal', id: 'kanttarelli', name: tr('Kanttarelli', 'Chanterelle'), desc: tr('Parantaa 30 elinvoimaa.', 'Heals 30 health.'), levelText: '', level: 0, maxLevel: 0, isNew: false, icon: 'kanttarelli' });
+const goldOffer = (): Offer => ({ kind: 'gold', id: 'marjat', name: tr('Kourallinen lakkoja', 'A handful of cloudberries'), desc: tr('Kokemusta heti.', 'Experience right now.'), levelText: '', level: 0, maxLevel: 0, isNew: false, icon: 'lakka' });
 
 interface Candidate {
   offer: Offer;
@@ -161,7 +162,7 @@ export function rollOffers(s: SimState, h: Hero): Offer[] {
     picked.push(c.offer);
     pool.splice(pool.indexOf(c), 1);
   }
-  if (picked.length === 0) return [HEAL_OFFER, GOLD_OFFER];
+  if (picked.length === 0) return [healOffer(), goldOffer()];
   return picked;
 }
 
@@ -218,7 +219,7 @@ export function evolve(s: SimState, h: Hero, from: string, to: string): Offer {
   // Zones of the old weapon (an aura) would otherwise keep ticking with old numbers.
   s.zones = s.zones.filter((z) => !(z.weapon === from && z.owner === h.index));
   const def = WEAPONS[to];
-  return { kind: 'evolve', id: to, name: def.name, desc: def.desc, levelText: 'Kehittyi!', level: 1, maxLevel: 1, isNew: true, icon: def.icon };
+  return { kind: 'evolve', id: to, name: def.name, desc: def.desc, levelText: tr('Kehittyi!', 'Evolved!'), level: 1, maxLevel: 1, isNew: true, icon: def.icon };
 }
 
 export interface ChestResult {
@@ -244,8 +245,9 @@ export function openChest(s: SimState, h: Hero): ChestResult {
   while (items.length < size) {
     const pool = candidates(h).filter((c) => !c.offer.isNew && c.offer.kind !== 'power');
     if (pool.length === 0) {
-      items.push(HEAL_OFFER);
-      applyOffer(s, h, HEAL_OFFER);
+      const heal = healOffer();
+      items.push(heal);
+      applyOffer(s, h, heal);
       continue;
     }
     const c = s.rng.weighted(pool, (x) => x.weight);
