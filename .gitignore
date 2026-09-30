@@ -13,3 +13,5 @@ infra/*.tfstate
 infra/*.tfstate.backup
 shots/
 infra/.records.zip
+dist-portal/
+rakka-web.zip

@@ -109,7 +109,9 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
 
     let wake: { release: () => Promise<void> } | null = null;
     const nav = navigator as Navigator & { wakeLock?: { request: (t: 'screen') => Promise<{ release: () => Promise<void> }> } };
-    nav.wakeLock?.request('screen').then((l) => (wake = l)).catch(() => undefined);
+    // Inside a portal's iframe the permissions policy refuses the wake lock
+    // (and logs it), so it is asked for only on our own page.
+    if (window.top === window) nav.wakeLock?.request('screen').then((l) => (wake = l)).catch(() => undefined);
 
     const onResize = () => {
       renderer.resize();

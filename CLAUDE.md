@@ -42,8 +42,8 @@ src/
     types.ts          Enemy, Projectile, Zone, Stats and friends
     content/
       characters.ts   who you play and their starting traits
-      weapons.ts      12 weapons with 8 levels, 12 evolutions
-      passives.ts     14 passive items
+      weapons.ts      13 weapons with 8 levels, 13 evolutions
+      passives.ts     15 passive items
       powers.ts       20 taiat: rule-changing perks outside the slots, 8 per run
       enemies.ts      the roster, minute-0 numbers
       waves.ts        what spawns when, swarm events, boss minutes
@@ -110,6 +110,9 @@ tools/
 - `make plan` and `make apply` for `infra/`: the tracking pixel host and the
   records API (DynamoDB + Lambda + HTTP API). The API URL is baked into
   `src/api.ts`, the pixel URL into `index.html`.
+- itch.io and Newgrounds get the same game as a zip: `make portal`, then
+  `make portal-check`, then a manual upload. `docs/portals.md` has the
+  settings, the store text and what the iframe changes.
 - Deploy is automatic: every push to `main` builds and publishes to GitHub
   Pages (`.github/workflows/deploy.yml`) at https://vesahyp.github.io/rakka/.
 - Screenshots come from `make shots` (Playwright, iPhone emulation), never

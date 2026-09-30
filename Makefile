@@ -10,6 +10,8 @@
 #   make plan/apply # Terraform for the analytics pixel host (infra/)
 #   make deploy-pixel  # upload t.gif with no-store to the pixel bucket
 #   make analytics  # run the traffic rollup now (the 08:30 cron does it nightly)
+#   make portal     # the itch.io / Newgrounds build: dist-portal/ and rakka-web.zip
+#   make portal-check  # that build in a cross-origin iframe: runs, leaderboard, no errors
 #
 # AWS profile: personal by default; PROFILE=name overrides.
 
@@ -17,7 +19,7 @@ PROFILE ?= personal
 AWS      = AWS_PROFILE=$(PROFILE) aws
 TF       = AWS_PROFILE=$(PROFILE) terraform -chdir=infra
 
-.PHONY: dev build check sim-check balance shots shots-en shots-setup preview plan apply outputs deploy-pixel analytics
+.PHONY: portal portal-check dev build check sim-check balance shots shots-en shots-setup preview plan apply outputs deploy-pixel analytics
 
 dev:
 	npm run dev
@@ -69,3 +71,12 @@ analytics:
 
 icon:
 	node scripts/icon.mjs
+
+# One zip for both portals, index.html at its root. See docs/portals.md.
+portal:
+	npx vite build --mode portal --outDir dist-portal --emptyOutDir
+	rm -f rakka-web.zip && cd dist-portal && zip -qr ../rakka-web.zip . -x og.png
+	@ls -lh rakka-web.zip | awk '{print $$5, $$9}'
+
+portal-check:
+	node scripts/portal-check.mjs

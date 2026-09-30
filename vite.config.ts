@@ -25,10 +25,12 @@ function versionFile(id: string): Plugin {
 
 // GitHub Pages serves a project site under https://<user>.github.io/rakka/,
 // so production builds and `vite preview` use that base. Dev stays at '/'.
-export default defineConfig(({ command, isPreview }) => {
+// `--mode portal` is the build for itch.io and Newgrounds: relative paths,
+// because each portal serves the zip from its own folder.
+export default defineConfig(({ command, isPreview, mode }) => {
   const id = buildId();
   return {
-    base: command === 'build' || isPreview ? '/rakka/' : '/',
+    base: mode === 'portal' ? './' : command === 'build' || isPreview ? '/rakka/' : '/',
     plugins: [react(), versionFile(id)],
     define: { __BUILD__: JSON.stringify(id) },
     build: {
