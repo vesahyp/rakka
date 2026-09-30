@@ -116,7 +116,10 @@ resource "aws_apigatewayv2_api" "records" {
   name          = "rakka-records"
   protocol_type = "HTTP"
   cors_configuration {
-    allow_origins = ["https://vesahyp.github.io", "http://localhost:5173", "http://localhost:5198", "http://localhost:5199"]
+    # The game itself, local dev, and the two portals that embed the same
+    # build in an iframe: itch.io serves uploads from html-classic.itch.zone
+    # (html.itch.zone on older pages), Newgrounds from uploads.ungrounded.net.
+    allow_origins = ["https://vesahyp.github.io", "https://html-classic.itch.zone", "https://html.itch.zone", "https://uploads.ungrounded.net", "http://localhost:5173", "http://localhost:5198", "http://localhost:5199"]
     allow_methods = ["GET", "POST", "OPTIONS"]
     allow_headers = ["content-type"]
     max_age       = 3600
