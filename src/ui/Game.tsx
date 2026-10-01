@@ -138,6 +138,59 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
     let deathAcc = 0;
     let raf = 0;
     let pauseKey = false;
+    // Chests by size, for the one run_end beacon.
+    const chestSizes: Record<number, number> = {};
+
+    /** Damage per weapon this run, highest first; taiat and pickups stay out. */
+    const weaponDamage = () => {
+      const weaponIds = new Set(s.heroes.flatMap((h) => h.weapons.map((w) => w.id)));
+      return Object.entries(s.run.damageBy)
+        .filter(([k]) => weaponIds.has(k))
+        .sort((a, b) => b[1] - a[1]);
+    };
+
+    /**
+     * The one beacon a run sends at its end: how it ended and the whole
+     * build behind it. A death, a quit or restart (the unmount below), or the
+     * tab closing (pagehide) all send it, once. Picks and chests used to be a
+     * beacon each; at portal traffic that was most of the requests, and the
+     * build at the end is what balance reads.
+     */
+    let reported = false;
+    const report = (how: 'death' | 'quit' | 'closed') => {
+      if (reported || s.time < 1) return;
+      reported = true;
+      const byWeapon = weaponDamage();
+      // Everything that multiplied the damage rides along, each as its own
+      // value under the tracker's 200-character cap: weapon levels, passives,
+      // taiat, altar ranks and the derived multipliers. The first hero's
+      // build; a co-op run is marked by players=2.
+      const h0 = s.heroes[0];
+      const st = h0.stats;
+      track('run_end', {
+        character: characters.map((c) => c.id).join('+'),
+        players: characters.length,
+        how,
+        time: Math.round(s.time),
+        level: Math.max(...s.heroes.map((h) => h.player.level)),
+        kills: s.run.kills,
+        w: byWeapon.map(([k, v]) => `${k}:${Math.round(v)}`).join(','),
+        top: byWeapon[0]?.[0] ?? '',
+        wl: h0.weapons.map((w) => `${w.id}:${w.level}`).join(','),
+        pas: h0.passives.map((p) => `${p.id}:${p.level}`).join(','),
+        tai: h0.powers.map((p) => `${p.id}:${p.level}`).join(','),
+        alt: Object.entries(altar)
+          .filter(([, v]) => v > 0)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(','),
+        ch: Object.entries(chestSizes)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(','),
+        st: `might:${st.might.toFixed(2)},area:${st.area.toFixed(2)},cd:${st.cooldown.toFixed(2)},amt:${st.amount},spd:${st.speed.toFixed(2)},dur:${st.duration.toFixed(2)},luck:${st.luck.toFixed(2)},curse:${st.curse.toFixed(2)},growth:${st.growth.toFixed(2)},hp:${st.maxHp},armor:${st.armor},regen:${st.regen.toFixed(1)}`,
+      });
+    };
+    const onPageHide = () => report('closed');
+    window.addEventListener('pagehide', onPageHide);
 
     const publishHud = () => {
       const boss = s.enemies.find((e) => e.boss);
@@ -168,7 +221,7 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
       if (s.pendingChests.length > 0) {
         const h = s.heroes[s.pendingChests.shift()!];
         const result = openChest(s, h);
-        track('chest', { size: result.size, items: result.items.map((i) => i.id).join(',') });
+        chestSizes[result.size] = (chestSizes[result.size] ?? 0) + 1;
         audio.play(result.items.some((i) => i.kind === 'evolve') ? 'evolve' : result.size > 1 ? 'chestbig' : 'chest');
         if (bot) return false;
         setOverlay({ kind: 'chest', hero: h.index, result });
@@ -224,37 +277,9 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
         deathAcc += dt;
         if (deathAcc > 1.6 && !endedRef.current) {
           endedRef.current = true;
-          // Per-weapon damage rides in one value: "puukko:12345,kokko:999".
-          // The tracker truncates values past 200 characters, so only the
-          // weapons go, sorted by damage, and taiat and pickups stay out.
-          const weaponIds = new Set(s.heroes.flatMap((h) => h.weapons.map((w) => w.id)));
-          const byWeapon = Object.entries(s.run.damageBy)
-            .filter(([k]) => weaponIds.has(k))
-            .sort((a, b) => b[1] - a[1]);
-          // Everything that multiplied the damage rides along, each as its
-          // own value under the 200-character cap: weapon levels, passives,
-          // taiat, altar ranks and the derived multipliers. The first hero's
-          // build; a co-op run is marked by players=2.
-          const h0 = s.heroes[0];
-          const st = h0.stats;
+          report('death');
+          const byWeapon = weaponDamage();
           const level = Math.max(...s.heroes.map((h) => h.player.level));
-          track('run_end', {
-            character: characters.map((c) => c.id).join('+'),
-            players: characters.length,
-            time: Math.round(s.time),
-            level,
-            kills: s.run.kills,
-            w: byWeapon.map(([k, v]) => `${k}:${Math.round(v)}`).join(','),
-            top: byWeapon[0]?.[0] ?? '',
-            wl: h0.weapons.map((w) => `${w.id}:${w.level}`).join(','),
-            pas: h0.passives.map((p) => `${p.id}:${p.level}`).join(','),
-            tai: h0.powers.map((p) => `${p.id}:${p.level}`).join(','),
-            alt: Object.entries(altar)
-              .filter(([, v]) => v > 0)
-              .map(([k, v]) => `${k}:${v}`)
-              .join(','),
-            st: `might:${st.might.toFixed(2)},area:${st.area.toFixed(2)},cd:${st.cooldown.toFixed(2)},amt:${st.amount},spd:${st.speed.toFixed(2)},dur:${st.duration.toFixed(2)},luck:${st.luck.toFixed(2)},curse:${st.curse.toFixed(2)},growth:${st.growth.toFixed(2)},hp:${st.maxHp},armor:${st.armor},regen:${st.regen.toFixed(1)}`,
-          });
           onEnd({
             character: characters[0],
             characters,
@@ -299,6 +324,9 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
     raf = requestAnimationFrame(frame);
 
     return () => {
+      // Leaving a run that has not ended (quit, restart) still reports it.
+      report('quit');
+      window.removeEventListener('pagehide', onPageHide);
       cancelAnimationFrame(raf);
       audio.stopMusic();
       window.removeEventListener('resize', onResize);
@@ -339,7 +367,6 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
     const s = simRef.current!;
     applyOffer(s, s.heroes[heroIndex], o);
     audio.play('tap');
-    track('pick', { id: o.id, level: o.level, kind: o.kind });
     setOverlay({ kind: 'none' });
   };
 

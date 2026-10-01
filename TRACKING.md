@@ -22,11 +22,20 @@ string intact, which is all a pipeline reads.
 ## Game events
 
 `track(event, data)` in `src/records.ts` wraps `window.__clvtracker.track`.
-Wired events: `run_start` (character, seed), `pick` (upgrade id, level,
-kind), `chest` (size, items), `run_end` (character, time, level, kills, and
-the whole damage context: `w` damage per weapon, `top`, `wl` weapon levels,
-`pas` passives, `tai` taiat, `alt` altar ranks, `st` the derived
-multipliers). Each value stays under the tracker's 200-character cap.
+A run sends two beacons: `run_start` (character, seed) and one `run_end`
+(character, `how` it ended, time, level, kills, and the whole damage
+context: `w` damage per weapon, `top`, `wl` weapon levels, `pas` passives,
+`tai` taiat, `alt` altar ranks, `ch` chests by size, `st` the derived
+multipliers). `how` is `death`, `quit` (quit or restart from the pause
+menu) or `closed` (the tab went away, sent on `pagehide`). Each value stays
+under the tracker's 200-character cap. The altar sends `altar`,
+`altar_refund` and `altar_import` when the player uses it.
+
+Until 2026-10-01 every pick and every chest was its own beacon, and only a
+death sent `run_end`. At portal traffic that was 30 to 60 requests a run;
+it is now two plus the tracker's own (`session_start`, `pageview`, `lcp`,
+`cls`). The rollup keeps reading the old `pick` and `chest` rows for the
+days that have them.
 
 ## Standing it up
 

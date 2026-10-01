@@ -12,8 +12,9 @@ tagged AS (
       WHEN 'scroll'    THEN 'scroll'
       WHEN 'crash'     THEN 'crash'
       WHEN 'error'     THEN 'error'
-      -- Game events from src/records.ts track(): who was played, what was
-      -- picked, how runs ended. The key is the character or the item id.
+      -- Game events from src/records.ts track(): who was played and how
+      -- runs ended. `pick` and `chest` beacons stopped on 2026-10-01 (the
+      -- build and the chests now ride in run_end); old days keep them.
       WHEN 'run_start' THEN 'run_start'
       WHEN 'run_end'   THEN 'run_end'
       WHEN 'pick'      THEN 'pick'
@@ -71,6 +72,15 @@ other AS (
   SELECT day, site, 'weapon_damage' AS dim, weapon AS key, sid, dmg AS w FROM weapons WHERE dmg IS NOT NULL
   UNION ALL
   SELECT day, site, 'weapon_runs' AS dim, weapon AS key, sid, 1 AS w FROM weapons
+  UNION ALL
+  -- How a run ended. Before 2026-10-01 only deaths sent run_end.
+  SELECT day, site, 'run_how' AS dim, COALESCE(NULLIF(q['how'], ''), 'death') AS key, sid, 1 AS w FROM human WHERE e = 'run_end'
+  UNION ALL
+  -- Chests by size from the run_end summary "1:2,3:1". Until 2026-10-01
+  -- each chest was its own beacon; those rows still come from `tagged`.
+  SELECT day, site, 'chest' AS dim, split_part(kv, ':', 1) AS key, sid, COALESCE(TRY_CAST(split_part(kv, ':', 2) AS BIGINT), 0) AS w
+  FROM (SELECT day, site, sid, explode(split(q['ch'], ',')) AS kv FROM human WHERE e = 'run_end' AND q['ch'] IS NOT NULL AND q['ch'] <> '')
+  WHERE kv <> ''
   UNION ALL
   SELECT day, site, 'top_weapon' AS dim, q['top'] AS key, sid, 1 AS w FROM human WHERE e = 'run_end' AND q['top'] IS NOT NULL AND q['top'] <> ''
   UNION ALL

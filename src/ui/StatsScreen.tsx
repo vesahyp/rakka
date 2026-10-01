@@ -64,7 +64,7 @@ export function StatsScreen({ onBack }: { onBack: () => void }) {
       latestRow,
       runs: sumMaps(last30, 'by', 'run_start').reduce((n, [, v]) => n + v, 0),
       characters: sumMaps(last30, 'by', 'run_start').map(([k, v]): [string, number] => [CHARACTERS.find((c) => c.id === k)?.name ?? k, v]).slice(0, 11),
-      picks: sumMaps(last30, 'by', 'pick').slice(0, 12),
+      runHow: sumMaps(last30, 'by', 'run_how').map(([k, v]): [string, number] => [({ death: 'Kuoli', quit: 'Lopetti tai aloitti alusta', closed: 'Sulki välilehden' } as Record<string, string>)[k] ?? k, v]),
       chests: sumMaps(last30, 'by', 'chest'),
       weaponDamage: sumMaps(last30, 'by', 'weapon_damage').map(([k, v]): [string, number] => [WEAPONS[k]?.name.fi ?? k, v]),
       weaponRuns: sumMaps(last30, 'by', 'weapon_runs').map(([k, v]): [string, number] => [WEAPONS[k]?.name.fi ?? k, v]),
@@ -174,8 +174,9 @@ export function StatsScreen({ onBack }: { onBack: () => void }) {
             <BarList items={view.taiat} />
           </section>
           <section className="panel">
-            <h3>Valinnat, 30 pv</h3>
-            <BarList items={view.picks} />
+            <h3>Miten pelit päättyivät, 30 pv</h3>
+            <p className="small">Ennen 1.10.2026 vain kuolemat lähettivät tiedon.</p>
+            <BarList items={view.runHow} />
           </section>
           <section className="panel">
             <h3>Arkut koon mukaan, 30 pv</h3>
