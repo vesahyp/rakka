@@ -224,6 +224,13 @@ export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSum
   );
 }
 
+/** "Updated 40 s ago": the board is cached for a minute, so it can be that old. */
+function updatedText(iso: string): string {
+  const s = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000));
+  const ago = s < 60 ? `${s} s` : `${Math.round(s / 60)} min`;
+  return tr(`Päivitetty ${ago} sitten`, `Updated ${ago} ago`);
+}
+
 const TABS: (Period | 'mine')[] = ['day', 'week', 'month', 'all', 'mine'];
 
 /** The period key of a date on this device's clock: the same keys the API uses in Helsinki time. */
@@ -257,7 +264,9 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
   const [tab, setTab] = useState<Period | 'mine'>('day');
   const [boards, setBoards] = useState<Record<string, Board | 'error' | undefined>>({});
   useEffect(() => {
-    if (tab === 'mine' || boards[tab]) return;
+    // A board stays a minute; coming back to a tab after that fetches it again.
+    const b = boards[tab];
+    if (tab === 'mine' || (b && (b === 'error' || Date.now() - Date.parse(b.updated) < 60_000))) return;
     let live = true;
     fetchBoard(tab)
       .then((b) => live && setBoards((o) => ({ ...o, [tab]: b })))
@@ -285,6 +294,7 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
           </button>
         ))}
       </div>
+      {board && board !== 'error' && <p className="small updated">{updatedText(board.updated)}</p>}
       {tab !== 'mine' && list === undefined && <p className="small">{tr('Haetaan…', 'Loading…')}</p>}
       {tab !== 'mine' && list === 'error' && <p className="small">{tr('Tulostaulua ei saatu haettua.', 'The leaderboard did not load.')}</p>}
       {tab !== 'mine' && Array.isArray(list) && list.length === 0 && <p className="small">{tr('Ei vielä tuloksia. Ole ensimmäinen.', 'No runs yet. Be the first.')}</p>}

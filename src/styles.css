@@ -133,6 +133,7 @@ table.records td.n { text-align: right; }
 .ranks { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-weight: 700; color: var(--muted); margin: 6px 0; }
 .ranks .top { color: var(--accent); }
 .tabs { display: flex; gap: 6px; margin: 4px 0 10px; flex-wrap: wrap; justify-content: center; }
+.small.updated { margin: -4px 0 8px; font-size: 12px; }
 .tab { padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); font-weight: 700; cursor: pointer; }
 .tab.on { background: var(--accent); color: #2a1a00; border-color: var(--accent); }
 table.records td.name { font-family: ui-monospace, Menlo, monospace; font-weight: 900; letter-spacing: 0.1em; color: var(--accent); }
