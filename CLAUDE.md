@@ -108,8 +108,10 @@ tools/
   moves the bot's average survival moves the human's too, in the same
   direction.
 - `make plan` and `make apply` for `infra/`: the tracking pixel host and the
-  records API (DynamoDB + Lambda + HTTP API). The API URL is baked into
-  `src/api.ts`, the pixel URL into `index.html`.
+  records API (DynamoDB + Lambda + HTTP API). The API URL and the cached board
+  URL (`GET /board` through the pixel distribution) are baked into
+  `src/api.ts`, the pixel URL into `index.html`. `infra/budget.tf` emails
+  when rakka's tagged spend passes $20 a month.
 - itch.io and Newgrounds get the same game as a zip: `make portal`, then
   `make portal-check`, then a manual upload. `docs/portals.md` has the
   settings, the store text and what the iframe changes.

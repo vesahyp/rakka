@@ -16,8 +16,9 @@ upload the new zip to both.
 
 ## What works in the iframe
 
-- **The leaderboard** is the same one as on GitHub Pages. The records API
-  allows `html-classic.itch.zone`, `html.itch.zone` and
+- **The leaderboard** is the same one as on GitHub Pages. Players read it
+  through CloudFront (`GET /board`, cached a minute), so a portal feature
+  does not reach the API; only saved scores do. The records API allows `html-classic.itch.zone`, `html.itch.zone` and
   `uploads.ungrounded.net` (`infra/records.tf`). If a portal moves its upload
   host, scores stop posting from there and the leaderboard shows "did not
   load"; add the new origin.
