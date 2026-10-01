@@ -12,6 +12,7 @@
 #   make analytics  # run the traffic rollup now (the 08:30 cron does it nightly)
 #   make portal     # the itch.io / Newgrounds build: dist-portal/ and rakka-web.zip
 #   make portal-check  # that build in a cross-origin iframe: runs, leaderboard, no errors
+#   make store      # English page images for the portals into store/: screenshots, 630x500 cover
 #
 # AWS profile: personal by default; PROFILE=name overrides.
 
@@ -19,7 +20,7 @@ PROFILE ?= personal
 AWS      = AWS_PROFILE=$(PROFILE) aws
 TF       = AWS_PROFILE=$(PROFILE) terraform -chdir=infra
 
-.PHONY: portal portal-check dev build check sim-check balance shots shots-en shots-setup preview plan apply outputs deploy-pixel analytics
+.PHONY: store portal portal-check dev build check sim-check balance shots shots-en shots-setup preview plan apply outputs deploy-pixel analytics
 
 dev:
 	npm run dev
@@ -80,3 +81,6 @@ portal:
 
 portal-check:
 	node scripts/portal-check.mjs
+
+store:
+	node scripts/store-shots.mjs

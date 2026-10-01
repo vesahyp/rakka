@@ -49,8 +49,11 @@ New project at https://itch.io/game/new:
 | Inputs | Touchscreen, Keyboard |
 | Community | Comments |
 
-A cover image (630 × 500) and three to five screenshots are needed. The
-screenshots come from `make shots-en`.
+A cover image (630 × 500) and three to five screenshots are needed. `make
+store` takes both into `store/`: the cover at twice that size, and English
+phone screenshots of a bot run (title, heroes, swarm, boss, minutes 10 and
+16, level-up cards, an evolution chest, co-op). Upload `cover.png`, then
+`04-boss`, `09-co-op`, `06-minute-16`, `02-heroes` and `07-level-up`.
 
 ## Newgrounds
 
