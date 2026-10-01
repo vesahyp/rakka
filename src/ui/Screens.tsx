@@ -8,7 +8,7 @@ import { characterSprite, sprite } from '../render/sprites';
 import { HERO_COLORS } from '../render/renderer';
 import type { RunSummary } from './Game';
 import { Initials, RankLine } from './Initials';
-import { fetchTop, fetchRank, loadInitials, PERIOD_LABELS, type Period, type TopEntry } from '../api';
+import { fetchBoard, rankIn, loadInitials, PERIOD_LABELS, type Board, type Period } from '../api';
 import type { RunRecord } from '../records';
 import { audio } from '../audio';
 import type { Meta } from '../meta';
@@ -255,34 +255,26 @@ function myBestIn(period: Period, best: RunRecord[]): RunRecord | null {
 
 export function RecordsScreen({ records, onBack }: { records: Records; onBack: () => void }) {
   const [tab, setTab] = useState<Period | 'mine'>('day');
-  const [top, setTop] = useState<Record<string, TopEntry[] | 'error' | undefined>>({});
-  const [myRank, setMyRank] = useState<Record<string, number | undefined>>({});
+  const [boards, setBoards] = useState<Record<string, Board | 'error' | undefined>>({});
   useEffect(() => {
-    if (tab === 'mine' || top[tab]) return;
+    if (tab === 'mine' || boards[tab]) return;
     let live = true;
-    fetchTop(tab)
-      .then((t) => live && setTop((o) => ({ ...o, [tab]: t })))
-      .catch(() => live && setTop((o) => ({ ...o, [tab]: 'error' })));
+    fetchBoard(tab)
+      .then((b) => live && setBoards((o) => ({ ...o, [tab]: b })))
+      .catch(() => live && setBoards((o) => ({ ...o, [tab]: 'error' })));
     return () => {
       live = false;
     };
-  }, [tab, top]);
+  }, [tab, boards]);
   const charName = (id: string) => CHARACTERS.find((c) => c.id === id)?.name ?? id;
   const mine = loadInitials();
-  const list = tab === 'mine' ? null : top[tab];
+  const board = tab === 'mine' ? null : boards[tab];
+  const list = board && board !== 'error' ? board.top : board;
   const myBest = tab === 'mine' ? null : myBestIn(tab, records.best);
   // Is my best already a row on the list? Same initials and time is close enough.
   const myRow = myBest && Array.isArray(list) ? list.findIndex((e) => e.name === mine && Math.abs(e.time - Math.floor(myBest.time)) <= 1) : -1;
-  useEffect(() => {
-    if (tab === 'mine' || !myBest || myRow >= 0 || myRank[tab] !== undefined || !Array.isArray(list)) return;
-    let live = true;
-    fetchRank(tab, myBest.time)
-      .then((n) => live && setMyRank((o) => ({ ...o, [tab]: n })))
-      .catch(() => undefined);
-    return () => {
-      live = false;
-    };
-  }, [tab, myBest, myRow, myRank, list]);
+  // Off the list, my rank comes from the board's histogram, on this device.
+  const myRank = myBest && board && board !== 'error' ? rankIn(board, myBest.time) : null;
   return (
     <div className="screen" style={{ justifyContent: 'flex-start' }}>
       <h2>{tr('Tulostaulu', 'Leaderboard')}</h2>
@@ -336,7 +328,7 @@ export function RecordsScreen({ records, onBack }: { records: Records; onBack: (
         <table className="records global myrow">
           <tbody>
             <tr className="me best">
-              <td>{myRank[tab] ?? '…'}</td>
+              <td>{myRank ?? '…'}</td>
               <td className="name">{mine || tr('Sinä', 'You')}</td>
               <td>{charName(myBest.character)}</td>
               <td>{fmtTime(myBest.time)}</td>

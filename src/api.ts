@@ -7,6 +7,8 @@
 import { tr } from './i18n';
 
 export const RECORDS_API = 'https://qsp5ltmjrg.execute-api.eu-north-1.amazonaws.com';
+/** GET /board through CloudFront, cached a minute: what every leaderboard view reads. */
+export const BOARD_URL = 'https://d1x53tebijcunt.cloudfront.net/board';
 
 export type Period = 'day' | 'week' | 'month' | 'all';
 
@@ -30,20 +32,29 @@ export const PERIOD_LABELS: Record<Period, () => string> = {
   all: () => tr('Kaikki', 'All time'),
 };
 
-export async function fetchTop(period: Period, limit = 25): Promise<TopEntry[]> {
-  const r = await fetch(`${RECORDS_API}/top?period=${period}&limit=${limit}`);
-  if (!r.ok) throw new Error(`top ${r.status}`);
-  const j = (await r.json()) as { top: TopEntry[] };
-  // The API orders by time; equal times go to the run with more kills.
-  return j.top.sort((a, b) => b.time - a.time || b.kills - a.kills || b.level - a.level);
+export interface Board {
+  top: TopEntry[];
+  /** runs per survival second in the period, for ranks on the device */
+  hist: Record<string, number>;
+  /** when the server built this answer; the cache can hold it a minute */
+  updated: string;
 }
 
-/** The rank a survival time would hold in a period right now. */
-export async function fetchRank(period: Period, time: number): Promise<number> {
-  const r = await fetch(`${RECORDS_API}/rank?period=${period}&time=${Math.floor(time)}`);
-  if (!r.ok) throw new Error(`rank ${r.status}`);
-  const j = (await r.json()) as { rank: number };
-  return j.rank;
+export async function fetchBoard(period: Period): Promise<Board> {
+  const r = await fetch(`${BOARD_URL}?period=${period}`);
+  if (!r.ok) throw new Error(`board ${r.status}`);
+  const j = (await r.json()) as Board;
+  // The API orders by time; equal times go to the run with more kills.
+  j.top.sort((a, b) => b.time - a.time || b.kills - a.kills || b.level - a.level);
+  return j;
+}
+
+/** The rank a survival time holds in a board: 1 + the runs that lasted longer. */
+export function rankIn(board: Board, time: number): number {
+  const t = Math.floor(time);
+  let above = 0;
+  for (const [sec, n] of Object.entries(board.hist)) if (Number(sec) > t) above += n;
+  return above + 1;
 }
 
 export async function submitScore(s: { name: string; character: string; time: number; level: number; kills: number; bosses: number; weapons: string[]; top: string | null }): Promise<Record<Period, number>> {
