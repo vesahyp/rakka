@@ -137,10 +137,13 @@ export const handler = async (event) => {
       if (!NAME.test(name)) return json(400, { error: 'name' });
       if (!CHARACTERS.has(character)) return json(400, { error: 'character' });
       // Impossible runs are refused; a cheat that stays inside these bounds
-      // is a cheat we accept for a hobby table.
-      if (!(time >= 30 && time <= 4 * 3600)) return json(400, { error: 'time' });
-      if (!(level >= 1 && level <= 300) || !(kills >= 0 && kills <= 200000) || !(bosses >= 0 && bosses <= 60)) return json(400, { error: 'stats' });
-      if (kills > time * 40 || level > time / 4 + 5) return json(400, { error: 'stats' });
+      // is a cheat we accept for a hobby table. The bounds are the real
+      // table with margin (2026-10-01, 87 runs): Tuoni ends every run soon
+      // after minute 28 (longest 26:33), kills peak at 12 a second, levels
+      // under 5 a minute, and a boss comes every five minutes.
+      if (!(time >= 30 && time <= 45 * 60)) return json(400, { error: 'time' });
+      if (!(level >= 1 && level <= 300) || !(kills >= 0) || !(bosses >= 0)) return json(400, { error: 'stats' });
+      if (kills > time * 25 || level > time / 12 + 10 || bosses > Math.floor(time / 300) + 1) return json(400, { error: 'stats' });
       // The build: up to six weapon ids and the one that dealt the most.
       // Optional, so a client without them still scores.
       const weapons = Array.isArray(b.weapons) ? b.weapons.filter((w) => typeof w === 'string' && WEAPON_ID.test(w)).slice(0, 6) : [];

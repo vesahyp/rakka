@@ -161,9 +161,13 @@ resource "aws_apigatewayv2_stage" "records" {
   api_id      = aws_apigatewayv2_api.records.id
   name        = "$default"
   auto_deploy = true
+  # Reads come through the CloudFront cache (GET /board), so what reaches
+  # the API is mostly saved scores: about one a second at 100,000 runs a
+  # day. The cap is for a burst after a portal feature, and for abuse. The
+  # account's Lambda concurrency (10, shared) is the other ceiling.
   default_route_settings {
-    throttling_burst_limit = 20
-    throttling_rate_limit  = 10
+    throttling_burst_limit = 100
+    throttling_rate_limit  = 50
   }
 }
 
