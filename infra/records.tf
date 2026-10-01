@@ -80,7 +80,7 @@ resource "aws_iam_role_policy" "records" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["dynamodb:PutItem", "dynamodb:Query"]
+        Action   = ["dynamodb:PutItem", "dynamodb:Query", "dynamodb:GetItem", "dynamodb:UpdateItem"]
         Resource = [aws_dynamodb_table.scores.arn, "${aws_dynamodb_table.scores.arn}/index/*"]
       },
       {
@@ -139,6 +139,12 @@ resource "aws_apigatewayv2_route" "top" {
   target    = "integrations/${aws_apigatewayv2_integration.records.id}"
 }
 
+resource "aws_apigatewayv2_route" "board" {
+  api_id    = aws_apigatewayv2_api.records.id
+  route_key = "GET /board"
+  target    = "integrations/${aws_apigatewayv2_integration.records.id}"
+}
+
 resource "aws_apigatewayv2_route" "rank" {
   api_id    = aws_apigatewayv2_api.records.id
   route_key = "GET /rank"
@@ -167,6 +173,43 @@ resource "aws_lambda_permission" "records" {
   function_name = aws_lambda_function.records.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.records.execution_arn}/*/*"
+}
+
+# The leaderboard as players read it: GET /board through the pixel
+# distribution (main.tf), cached a minute per period and per Origin, so
+# reads cost the same at any number of players.
+resource "aws_cloudfront_cache_policy" "board" {
+  name        = "rakka-board-cache"
+  comment     = "The origin's max-age (60 s), keyed on period and Origin"
+  default_ttl = 60
+  max_ttl     = 300
+  min_ttl     = 0
+  parameters_in_cache_key_and_forwarded_to_origin {
+    enable_accept_encoding_brotli = true
+    enable_accept_encoding_gzip   = true
+    cookies_config {
+      cookie_behavior = "none"
+    }
+    # API Gateway answers CORS with the asking origin, so the origin is in
+    # the key: a cached answer always carries the header for its asker.
+    headers_config {
+      header_behavior = "whitelist"
+      headers {
+        items = ["Origin"]
+      }
+    }
+    query_strings_config {
+      query_string_behavior = "whitelist"
+      query_strings {
+        items = ["period"]
+      }
+    }
+  }
+}
+
+output "board_url" {
+  description = "The cached leaderboard (bake into src/api.ts)."
+  value       = "https://${aws_cloudfront_distribution.site.domain_name}/board"
 }
 
 output "records_api" {

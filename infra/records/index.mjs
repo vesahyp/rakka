@@ -1,13 +1,22 @@
-// Räkkä records API. One Lambda, two routes:
+// Räkkä records API. One Lambda:
 //   POST /scores        {name, character, time, level, kills, bosses}
-//   GET  /top?period=day|week|month|all&limit=20
-//   GET  /rank?period=...&time=1234   the rank a time would hold now
+//   GET  /board?period=day|week|month|all   the top 25 and the histogram;
+//        the game reads it through CloudFront, cached for a minute
+//   GET  /top?period=...&limit=20      older clients
+//   GET  /rank?period=...&time=1234    older clients: the rank a time would hold
 // Names are three characters, A-Z and 0-9, like a pinball machine. Periods
 // are counted in Europe/Helsinki. The table has one item per run and four
 // indexes keyed by period value and sorted by survival time, so a top list
-// is one Query and a rank is one Count.
+// is one Query.
+//
+// Ranks come from a histogram, one item per period value (`hist#day#2026-10-01`)
+// with one counter per survival second (`s754`), raised with ADD on every
+// score. A rank is the sum of the counters above a time: one GetItem at any
+// table size. The histogram items have no `time` or period attributes, so
+// they stay out of the indexes. A score counted in the histograms carries
+// `h`; scripts/backfill-hist.py counts the ones from before that.
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 const TABLE = process.env.TABLE;
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -41,11 +50,32 @@ function periods(date = new Date()) {
 
 const INDEX = { day: 'byDay', week: 'byWeek', month: 'byMonth', all: 'byAll' };
 
-const json = (status, body) => ({
+const json = (status, body, maxAge = 30) => ({
   statusCode: status,
-  headers: { 'content-type': 'application/json', 'cache-control': status === 200 ? 'public, max-age=30' : 'no-store' },
+  headers: { 'content-type': 'application/json', 'cache-control': status === 200 ? `public, max-age=${maxAge}` : 'no-store' },
   body: JSON.stringify(body),
 });
+
+const histId = (period, value) => `hist#${period}#${value}`;
+
+/** {seconds: runs} for one period value. */
+async function hist(period, value) {
+  const r = await db.send(new GetCommand({ TableName: TABLE, Key: { id: histId(period, value) } }));
+  return counts(r.Item);
+}
+
+function counts(item) {
+  const out = {};
+  for (const [k, v] of Object.entries(item ?? {})) if (/^s\d+$/.test(k)) out[k.slice(1)] = v;
+  return out;
+}
+
+/** 1 + the runs that lasted longer. Equal seconds share a rank. */
+function rankIn(h, time) {
+  let above = 0;
+  for (const [sec, n] of Object.entries(h)) if (Number(sec) > time) above += n;
+  return above + 1;
+}
 
 async function top(period, limit) {
   const p = periods()[period];
@@ -64,17 +94,7 @@ async function top(period, limit) {
 }
 
 async function rank(period, value, time) {
-  const r = await db.send(
-    new QueryCommand({
-      TableName: TABLE,
-      IndexName: INDEX[period],
-      KeyConditionExpression: '#p = :p AND #t > :t',
-      ExpressionAttributeNames: { '#p': period, '#t': 'time' },
-      ExpressionAttributeValues: { ':p': value, ':t': time },
-      Select: 'COUNT',
-    }),
-  );
-  return (r.Count ?? 0) + 1;
+  return rankIn(await hist(period, value), Math.floor(time));
 }
 
 export const handler = async (event) => {
@@ -86,6 +106,13 @@ export const handler = async (event) => {
       const period = INDEX[q.period] ? q.period : 'all';
       const limit = Math.min(50, Math.max(1, Number(q.limit) || 20));
       return json(200, { period, value: periods()[period], top: await top(period, limit) });
+    }
+    if (method === 'GET' && path.endsWith('/board')) {
+      const q = event.queryStringParameters ?? {};
+      const period = INDEX[q.period] ? q.period : 'all';
+      const value = periods()[period];
+      const [list, h] = await Promise.all([top(period, 25), hist(period, value)]);
+      return json(200, { period, value, updated: new Date().toISOString(), top: list, hist: h }, 60);
     }
     if (method === 'GET' && path.endsWith('/rank')) {
       const q = event.queryStringParameters ?? {};
@@ -121,9 +148,23 @@ export const handler = async (event) => {
       const now = new Date();
       const p = periods(now);
       const id = `${now.toISOString()}#${Math.random().toString(36).slice(2, 8)}`;
-      await db.send(new PutCommand({ TableName: TABLE, Item: { id, name, character, time, level, kills, bosses, at: now.toISOString(), ...(weapons.length ? { weapons } : {}), ...(top ? { top } : {}), ...p } }));
+      await db.send(new PutCommand({ TableName: TABLE, Item: { id, name, character, time, level, kills, bosses, at: now.toISOString(), ...(weapons.length ? { weapons } : {}), ...(top ? { top } : {}), ...p, h: 1 } }));
       const ranks = {};
-      for (const k of Object.keys(p)) ranks[k] = await rank(k, p[k], time);
+      await Promise.all(
+        Object.keys(p).map(async (k) => {
+          const r = await db.send(
+            new UpdateCommand({
+              TableName: TABLE,
+              Key: { id: histId(k, p[k]) },
+              UpdateExpression: 'ADD #s :one',
+              ExpressionAttributeNames: { '#s': `s${time}` },
+              ExpressionAttributeValues: { ':one': 1 },
+              ReturnValues: 'ALL_NEW',
+            }),
+          );
+          ranks[k] = rankIn(counts(r.Attributes), time);
+        }),
+      );
       return json(200, { ok: true, ranks });
     }
     return json(404, { error: 'not found' });
