@@ -92,3 +92,10 @@ taso 30, pelaa viisi peliä.
 ## Kehittäjälle
 
 Koodi ja arkkitehtuuri: `CLAUDE.md`. Tulevat työt: `ROADMAP.md`.
+
+Peli on itsenäinen: `npm ci && npm run build` tuottaa sivuston, joka pyörii
+missä tahansa staattisella palvelimella ja pitää tulokset laitteella.
+Maailmanlaajuinen tulostaulu ja kävijäseuranta (`infra/`) ovat valinnainen
+lisä omaan AWS-tiliin; niiden osoitteet annetaan käännöksen ympäristössä,
+ks. `src/config.ts`. Lisenssi: MIT (`LICENSE`), eli saat käyttää, muokata ja
+jakaa vapaasti, ilman takuuta.
