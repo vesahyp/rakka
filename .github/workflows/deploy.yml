@@ -28,7 +28,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # The back end: repository variables, so a fork's build has none and
+      # talks to nothing. src/config.ts explains.
       - run: npm run build
+        env:
+          VITE_RECORDS_API: ${{ vars.VITE_RECORDS_API }}
+          VITE_BOARD_URL: ${{ vars.VITE_BOARD_URL }}
+          VITE_PIXEL_URL: ${{ vars.VITE_PIXEL_URL }}
+          VITE_STATS_URL: ${{ vars.VITE_STATS_URL }}
       - uses: actions/configure-pages@v5
         with:
           enablement: true

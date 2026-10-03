@@ -10,8 +10,10 @@ what Räkkä does differently.
 
 The game deploys to GitHub Pages, which keeps no request logs, so the pixel
 is served from our own CloudFront (Terraform under `infra/`, the sceggle
-shape). The endpoint is an absolute cross-origin URL in `index.html`'s
-`TRACKER_CONFIG`. The tracker is disabled on localhost and when the page is
+shape). The endpoint is an absolute cross-origin URL that `index.html`'s
+`TRACKER_CONFIG` takes from `VITE_PIXEL_URL` at build time (`src/config.ts`
+says where the value lives); a build without it sends no beacons at all. The
+tracker is disabled on localhost and when the page is
 opened with `?bot=1`, which is what `make shots` uses, so screenshot runs and
 dev sessions never count as visits.
 

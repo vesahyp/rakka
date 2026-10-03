@@ -8,7 +8,7 @@ import { characterSprite, sprite } from '../render/sprites';
 import { HERO_COLORS } from '../render/renderer';
 import type { RunSummary } from './Game';
 import { Initials, RankLine } from './Initials';
-import { fetchBoard, rankIn, loadInitials, PERIOD_LABELS, type Board, type Period } from '../api';
+import { fetchBoard, rankIn, loadInitials, PERIOD_LABELS, RECORDS_ON, type Board, type Period } from '../api';
 import type { RunRecord } from '../records';
 import { audio } from '../audio';
 import type { Meta } from '../meta';
@@ -159,7 +159,7 @@ export function Select({ records, players, onPick, onBack }: { records: Records;
 export function Death({ r, rank, charBest, cones, onAgain, onMenu }: { r: RunSummary; rank: number; charBest: boolean; cones: number; onAgain: () => void; onMenu: () => void }) {
   // Runs under a minute do not go on the table; the API refuses them too.
   const coop = r.characters.length > 1;
-  const [stage, setStage] = useState<'ask' | 'done'>(r.time >= 60 && !coop ? 'ask' : 'done');
+  const [stage, setStage] = useState<'ask' | 'done'>(RECORDS_ON && r.time >= 60 && !coop ? 'ask' : 'done');
   const [ranks, setRanks] = useState<Record<Period, number> | null>(null);
   return (
     <div className="screen">
@@ -231,7 +231,7 @@ function updatedText(iso: string): string {
   return tr(`Päivitetty ${ago} sitten`, `Updated ${ago} ago`);
 }
 
-const TABS: (Period | 'mine')[] = ['day', 'week', 'month', 'all', 'mine'];
+const TABS: (Period | 'mine')[] = RECORDS_ON ? ['day', 'week', 'month', 'all', 'mine'] : ['mine'];
 
 /** The period key of a date on this device's clock: the same keys the API uses in Helsinki time. */
 function periodKey(period: Period, d: Date): string {
@@ -261,7 +261,7 @@ function myBestIn(period: Period, best: RunRecord[]): RunRecord | null {
 }
 
 export function RecordsScreen({ records, onBack }: { records: Records; onBack: () => void }) {
-  const [tab, setTab] = useState<Period | 'mine'>('day');
+  const [tab, setTab] = useState<Period | 'mine'>(TABS[0]);
   const [boards, setBoards] = useState<Record<string, Board | 'error' | undefined>>({});
   useEffect(() => {
     // A board stays a minute; coming back to a tab after that fetches it again.

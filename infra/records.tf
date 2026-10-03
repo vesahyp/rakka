@@ -212,11 +212,11 @@ resource "aws_cloudfront_cache_policy" "board" {
 }
 
 output "board_url" {
-  description = "The cached leaderboard (bake into src/api.ts)."
+  description = "The cached leaderboard (VITE_BOARD_URL)."
   value       = "https://${aws_cloudfront_distribution.site.domain_name}/board"
 }
 
 output "records_api" {
-  description = "Base URL of the records API (bake into src/api.ts)."
+  description = "Base URL of the records API (VITE_RECORDS_API)."
   value       = aws_apigatewayv2_api.records.api_endpoint
 }

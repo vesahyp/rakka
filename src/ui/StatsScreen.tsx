@@ -12,7 +12,7 @@ import { ALTAR } from '../meta';
  * linked from the game, not authenticated: obscurity only, so nothing on
  * it may be something that cannot survive being found.
  */
-export const STATS_URL = 'https://d1x53tebijcunt.cloudfront.net/data/analytics.json';
+import { STATS_URL } from '../config';
 
 interface DayRow {
   date: string;
@@ -46,6 +46,7 @@ export function StatsScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     // no-store: a response cached without its CORS header (a first fetch during a
     // CloudFront deploy) would otherwise fail every later read for five minutes.
+    if (!STATS_URL) return setFailed(true);
     fetch(STATS_URL, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then(setRows)

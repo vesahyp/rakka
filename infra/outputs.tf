@@ -14,6 +14,11 @@ output "distribution_domain" {
 }
 
 output "pixel_url" {
-  description = "Full tracking-pixel URL to bake into index.html's TRACKER_CONFIG."
+  description = "The tracking pixel (VITE_PIXEL_URL)."
   value       = "https://${aws_cloudfront_distribution.site.domain_name}/t.gif"
+}
+
+output "stats_url" {
+  description = "The analytics rollup the ?stats page reads (VITE_STATS_URL)."
+  value       = "https://${aws_cloudfront_distribution.site.domain_name}/data/analytics.json"
 }

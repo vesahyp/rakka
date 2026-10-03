@@ -2,13 +2,13 @@
  * The global records API: one Lambda behind an HTTP API (infra/records.tf).
  * Names are three characters like a pinball table. Every call is best
  * effort: the game never waits on it and the local records stay the
- * fallback when the network is away.
+ * fallback when the network is away. The URLs come from src/config.ts; a
+ * build without them has no global records at all.
  */
 import { tr } from './i18n';
+import { BOARD_URL, RECORDS_API, RECORDS_ON } from './config';
 
-export const RECORDS_API = 'https://qsp5ltmjrg.execute-api.eu-north-1.amazonaws.com';
-/** GET /board through CloudFront, cached a minute: what every leaderboard view reads. */
-export const BOARD_URL = 'https://d1x53tebijcunt.cloudfront.net/board';
+export { RECORDS_ON };
 
 export type Period = 'day' | 'week' | 'month' | 'all';
 
@@ -41,6 +41,7 @@ export interface Board {
 }
 
 export async function fetchBoard(period: Period): Promise<Board> {
+  if (!RECORDS_ON) throw new Error('records off');
   const r = await fetch(`${BOARD_URL}?period=${period}`);
   if (!r.ok) throw new Error(`board ${r.status}`);
   const j = (await r.json()) as Board;
@@ -58,6 +59,7 @@ export function rankIn(board: Board, time: number): number {
 }
 
 export async function submitScore(s: { name: string; character: string; time: number; level: number; kills: number; bosses: number; weapons: string[]; top: string | null }): Promise<Record<Period, number>> {
+  if (!RECORDS_ON) throw new Error('records off');
   const r = await fetch(`${RECORDS_API}/scores`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

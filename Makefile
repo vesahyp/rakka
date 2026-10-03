@@ -57,12 +57,22 @@ plan:
 
 apply:
 	$(TF) apply tfplan
-	@echo
-	@echo "Pixel endpoint (bake into index.html's TRACKER_CONFIG):"
-	@$(TF) output -raw pixel_url; echo
+	$(MAKE) env
 
 outputs:
 	$(TF) output
+
+# The back end for builds on this machine, written from the Terraform
+# outputs. Gitignored (*.local): a clone without it builds a game with no
+# global records and no beacon, which is what a fork should get. The Pages
+# deploy reads the same values from GitHub repository variables.
+env:
+	@{ for o in records_api board_url pixel_url stats_url; do \
+	     printf 'VITE_%s=%s\n' "$$(echo $$o | tr a-z A-Z)" "$$($(TF) output -raw $$o)"; done; } > .env.local
+	@cat .env.local
+
+.env.local:
+	@echo "no .env.local: run 'make env' (needs the AWS profile), or build without a back end on purpose with 'touch .env.local'"; exit 1
 
 deploy-pixel:
 	$(AWS) s3 cp public/t.gif s3://$$($(TF) output -raw bucket_name)/t.gif --content-type image/gif --cache-control "no-store"
@@ -74,7 +84,7 @@ icon:
 	node scripts/icon.mjs
 
 # One zip for both portals, index.html at its root. See docs/portals.md.
-portal:
+portal: .env.local
 	npx vite build --mode portal --outDir dist-portal --emptyOutDir
 	rm -f rakka-web.zip && cd dist-portal && zip -qr ../rakka-web.zip . -x og.png
 	@ls -lh rakka-web.zip | awk '{print $$5, $$9}'

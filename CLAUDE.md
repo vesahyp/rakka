@@ -58,6 +58,7 @@ src/
   version.ts          build id and the newer-build check behind the update banner
   ui/StatsScreen.tsx  the traffic board, opened with ?stats (TRACKING.md)
   api.ts              the global records API client (infra/records.tf)
+  config.ts           the back-end URLs, from the build environment; empty in a fork
   i18n.ts             the language: fi or en, tr() and t(), picked from the browser
 analytics/            the clavesa workspace that rolls the pixel logs into
                         data/analytics.json; run-analytics.sh is the 08:30 cron
@@ -108,10 +109,14 @@ tools/
   moves the bot's average survival moves the human's too, in the same
   direction.
 - `make plan` and `make apply` for `infra/`: the tracking pixel host and the
-  records API (DynamoDB + Lambda + HTTP API). The API URL and the cached board
-  URL (`GET /board` through the pixel distribution) are baked into
-  `src/api.ts`, the pixel URL into `index.html`. `infra/budget.tf` emails
-  and pushes to the phone when rakka's tagged spend passes $20 a month.
+  records API (DynamoDB + Lambda + HTTP API). The game learns their URLs
+  only from the build environment (`VITE_*`, read in `src/config.ts`): `make
+  env` writes `.env.local` from the Terraform outputs for builds here, and
+  the Pages deploy reads GitHub repository variables of the same names. A
+  clone or fork without them builds a game with local records only, no
+  beacon, and no traffic to this account. Keep it that way: never put a
+  back-end URL in a committed file. `infra/budget.tf` emails and pushes to
+  the phone when rakka's tagged spend passes $20 a month.
 - itch.io and Newgrounds get the same game as a zip: `make portal`, then
   `make portal-check`, then a manual upload. `docs/portals.md` has the
   settings, the store text and what the iframe changes.
