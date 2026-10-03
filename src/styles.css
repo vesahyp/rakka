@@ -118,8 +118,9 @@ table.records td.n { text-align: right; }
 
 /* update banner and build id */
 .update small { color: var(--muted); font-weight: 500; }
-.update { position: absolute; left: 50%; top: calc(var(--sat) + 12px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: 14px; background: var(--panel); border: 1px solid var(--accent); box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 5; white-space: nowrap; font-weight: 700; }
-.update .btn { min-width: 0; padding: 10px 16px; margin: 0; font-size: 16px; }
+.update { position: absolute; left: 50%; top: calc(var(--sat) + 12px); transform: translateX(-50%); width: min(calc(100% - 24px), 380px); display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: 14px; background: var(--panel); border: 1px solid var(--accent); box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 5; font-weight: 700; text-align: left; }
+.update > span { flex: 1; min-width: 0; }
+.update .btn { flex: none; white-space: nowrap; min-width: 0; padding: 10px 16px; margin: 0; font-size: 16px; }
 .overlay .update { position: static; transform: none; margin-bottom: 10px; }
 .build { position: absolute; right: calc(var(--sar) + 10px); bottom: calc(var(--sab) + 6px); font-size: 11px; color: rgba(255,255,255,0.3); font-family: ui-monospace, Menlo, monospace; }
 
