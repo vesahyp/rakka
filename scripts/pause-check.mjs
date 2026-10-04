@@ -57,7 +57,30 @@ try {
     bv = await buttonsVisible();
     if (bv.some((b) => !b.ok)) fail(`${name}: buttons off screen at the end: ${JSON.stringify(bv)}`);
     await page.screenshot({ path: `shots/pause/${name}-end.png` });
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Restart and Quit ask first: one tap arms, only the second ends the run.
+    for (const [label, sure] of [['Quit run', 'Really quit?'], ['Restart', 'Really restart?']]) {
+      await page.getByRole('button', { name: label, exact: true }).tap();
+      await page.waitForTimeout(300);
+      if (!(await page.locator('.overlay h2').count()) || !(await page.getByRole('button', { name: sure }).count())) fail(`${name}: one tap on ${label} did not stop at the confirm`);
+      if (!(await page.evaluate(() => !!window.__sim && !window.__sim.gameOver))) fail(`${name}: one tap on ${label} ended the run`);
+      await page.waitForTimeout(4400);
+      if (!(await page.getByRole('button', { name: label, exact: true }).count())) fail(`${name}: ${label} confirm did not time out`);
+    }
+    await page.getByRole('button', { name: 'Restart', exact: true }).tap();
+    await page.getByRole('button', { name: 'Really restart?' }).tap();
+    await page.waitForTimeout(600);
+    if (await page.locator('.overlay').count()) fail(`${name}: confirmed Restart did not start a new run`);
+    await page.locator('.pausebtn').first().tap();
+    await page.waitForSelector('.overlay h2');
+    await page.getByRole('button', { name: 'Quit run', exact: true }).tap();
+    await page.getByRole('button', { name: 'Really quit?' }).tap();
+    await page.waitForTimeout(600);
+    if (!(await page.getByRole('button', { name: /Lemminkäinen/ }).count())) fail(`${name}: confirmed Quit did not leave the run`);
+    await page.getByRole('button', { name: /Lemminkäinen/ }).tap();
+    await page.waitForFunction(() => window.__sim);
+    await page.locator('.pausebtn').first().tap();
+    await page.waitForSelector('.overlay h2');
+    await page.getByRole('button', { name: 'Continue' }).tap();
     if (await page.locator('.pausebar').count()) fail(`${name}: Continue did not close the pause screen`);
     console.log(`${name}: scrolled ${before.top} -> ${after.top} -> ${end.top} of ${end.max}`);
     await ctx.close();

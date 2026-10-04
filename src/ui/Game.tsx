@@ -72,6 +72,21 @@ function HeroTag({ h }: { h: Hero }) {
   );
 }
 
+/** A button that throws the run away: the first tap arms it, a second tap within a few seconds does it. */
+function ConfirmButton({ label, sure, onConfirm }: { label: string; sure: string; onConfirm: () => void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const id = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(id);
+  }, [armed]);
+  return (
+    <button className={armed ? 'btn ghost danger' : 'btn ghost'} onClick={() => (armed ? onConfirm() : setArmed(true))}>
+      {armed ? sure : label}
+    </button>
+  );
+}
+
 export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }: { characters: CharacterDef[]; seed: number; meta: StatDelta; altar: Record<string, number>; onEnd: (r: RunSummary) => void; onQuit: () => void; onRestart: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -600,12 +615,8 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
             <button className="btn ghost" onClick={() => setStickMode(stickMode === 'float' ? 'fixed' : 'float')}>
               {stickMode === 'float' ? tr('🕹️ Ohjain: kelluva', '🕹️ Stick: floating') : tr('🕹️ Ohjain: kiinteä', '🕹️ Stick: fixed')}
             </button>
-            <button className="btn ghost" onClick={onRestart}>
-              {tr('Aloita alusta', 'Restart')}
-            </button>
-            <button className="btn ghost" onClick={onQuit}>
-              {tr('Lopeta peli', 'Quit run')}
-            </button>
+            <ConfirmButton label={tr('Aloita alusta', 'Restart')} sure={tr('Aloita alusta varmasti?', 'Really restart?')} onConfirm={onRestart} />
+            <ConfirmButton label={tr('Lopeta peli', 'Quit run')} sure={tr('Lopeta varmasti?', 'Really quit?')} onConfirm={onQuit} />
           </div>
         </div>
       )}
