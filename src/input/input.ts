@@ -145,6 +145,8 @@ export class InputController {
   };
 
   private onTouchMove = (e: TouchEvent) => {
+    // Overlays (pause, level-up) scroll by touch: leave their moves alone.
+    if ((e.target as HTMLElement).closest('[data-ui]')) return;
     for (const t of Array.from(e.changedTouches)) {
       for (const st of this.sticks) {
         if (st.touchId !== t.identifier) continue;

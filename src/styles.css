@@ -114,6 +114,11 @@ table.records td.n { text-align: right; }
 .chest { font-size: 72px; animation: chestPop 0.6s ease-out; }
 @keyframes chestPop { 0% { transform: scale(0.3) rotate(-10deg); } 60% { transform: scale(1.2) rotate(4deg); } 100% { transform: none; } }
 .help { color: var(--muted); font-size: 13px; max-width: 360px; line-height: 1.4; }
+.overlay { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+/* The pause buttons stay at the bottom of the screen while the list scrolls. */
+.pausebar { position: sticky; bottom: calc(-1 * (var(--sab) + 12px)); width: calc(100% + 24px); margin: 12px -12px calc(-1 * (var(--sab) + 12px)); padding: 10px 12px calc(var(--sab) + 10px); background: #060f08; border-top: 1px solid rgba(255,255,255,0.12); flex: none; }
+.pausebar .btn { margin: 2px; }
+.overlay > * { flex-shrink: 0; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
 /* update banner and build id */

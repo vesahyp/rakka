@@ -6,6 +6,7 @@
 #   make balance    # bot runs, one line per run (MIN=20 RUNS=2 CHAR=; CHAR=vaino+aino is co-op)
 #   make shots      # phone screenshots into shots/ (needs make shots-setup)
 #   make shots-en   # the same in English, into shots/en/
+#   make pause-check  # the pause screen with a long build: touch scroll, buttons reachable
 #   make icon       # render public/icon.svg to the PNG icons
 #   make plan/apply # Terraform for the analytics pixel host (infra/)
 #   make deploy-pixel  # upload t.gif with no-store to the pixel bucket
@@ -20,7 +21,7 @@ PROFILE ?= personal
 AWS      = AWS_PROFILE=$(PROFILE) aws
 TF       = AWS_PROFILE=$(PROFILE) terraform -chdir=infra
 
-.PHONY: store portal portal-check dev build check sim-check balance shots shots-en shots-setup preview plan apply outputs deploy-pixel analytics
+.PHONY: store portal portal-check dev build check sim-check balance shots shots-en pause-check shots-setup preview plan apply outputs deploy-pixel analytics
 
 dev:
 	npm run dev
@@ -50,6 +51,9 @@ shots:
 
 shots-en:
 	node scripts/shots.mjs en
+
+pause-check:
+	node scripts/pause-check.mjs
 
 plan:
 	$(TF) init -input=false

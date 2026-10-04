@@ -593,7 +593,7 @@ export function Game({ characters, seed, meta, altar, onEnd, onQuit, onRestart }
               </div>
             ))}
           </div>
-          <div className="row" style={{ marginTop: 16 }}>
+          <div className="row pausebar">
             <button className="btn primary" onClick={() => setOverlay({ kind: 'none' })}>
               {tr('Jatka', 'Continue')}
             </button>
