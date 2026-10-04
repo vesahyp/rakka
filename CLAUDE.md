@@ -122,6 +122,10 @@ tools/
   settings, the store text and what the iframe changes.
 - Deploy is automatic: every push to `main` builds and publishes to GitHub
   Pages (`.github/workflows/deploy.yml`) at https://vesahyp.github.io/rakka/.
+- `make pause-check` when you touch an overlay or the input: it scrolls the pause
+  screen with a long build by touch, in portrait and landscape, and checks that
+  Continue, Restart and Quit stay on screen. A `touchmove` handler that calls
+  `preventDefault` outside `[data-ui]` breaks overlay scrolling.
 - Screenshots come from `make shots` (Playwright, iPhone emulation), never
   from a hand-held browser.
 - When a change alters what the player sees or does, update `README.md` in
